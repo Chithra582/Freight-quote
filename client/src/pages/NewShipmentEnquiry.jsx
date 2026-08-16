@@ -26,6 +26,8 @@ import {
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
+import { API_BASE_URL } from '../config/api'
+
 
 
 const INDIAN_STATES_HUBS = [
@@ -485,8 +487,9 @@ export default function NewShipmentEnquiry() {
     const token = localStorage.getItem('token')
     if (token) {
       try {
-        await fetch('http://localhost:8000/api/v1/shipments/', {
+        await fetch(`${API_BASE_URL}/api/v1/shipments/`, {
           method: 'POST',
+
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`

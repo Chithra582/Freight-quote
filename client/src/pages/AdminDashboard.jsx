@@ -32,6 +32,8 @@ import {
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
+import { API_BASE_URL } from '../config/api'
+
 
 
 const ADMIN_AUDIT_LOGS = [
@@ -127,7 +129,7 @@ export default function AdminDashboard() {
     }
 
     // Fetch live rate config
-    fetch('http://localhost:8000/api/v1/pricing/rate-config/', {
+    fetch(`${API_BASE_URL}/api/v1/pricing/rate-config/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
@@ -145,7 +147,7 @@ export default function AdminDashboard() {
     setIsSaving(true)
     const token = localStorage.getItem('token')
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pricing/rate-config/', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/pricing/rate-config/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,13 +170,14 @@ export default function AdminDashboard() {
     setIsRetraining(true)
     const token = localStorage.getItem('token')
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pricing/retrain-ml/', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/pricing/retrain-ml/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         }
       })
+
       const data = await res.json()
       if (data.success) {
         setMlMetrics(data.metrics)

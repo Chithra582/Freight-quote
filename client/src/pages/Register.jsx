@@ -20,8 +20,10 @@ import {
   Sliders,
   Globe
 } from 'lucide-react'
+import { API_BASE_URL } from '../config/api'
 
 export default function RegisterPage() {
+
   const [selectedRole, setSelectedRole] = useState('CUSTOMER') // 'CUSTOMER', 'BROKER', 'ADMIN'
   const [formData, setFormData] = useState({
     fullName: '',
@@ -69,8 +71,9 @@ export default function RegisterPage() {
 
     try {
       // Call Django REST Framework backend JWT register endpoint
-      const response = await fetch('http://localhost:8000/api/v1/auth/register/', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
         method: 'POST',
+
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,

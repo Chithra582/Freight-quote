@@ -147,8 +147,14 @@ CORS_ALLOWED_ORIGINS = config(
     default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000',
     cast=Csv()
 )
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.onrender\.com$",
+    r"^https://.*\.vercel\.app$",
+    r"^http://localhost:\d+$",
+]
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # For ease of development/testing
+CORS_ALLOW_ALL_ORIGINS = True  # Production friendly for dynamic Render subdomains
+
 
 # drf-spectacular API Documentation Settings
 SPECTACULAR_SETTINGS = {

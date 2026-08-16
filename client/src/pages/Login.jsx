@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react'
+import { API_BASE_URL } from '../config/api'
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState('user') // 'user', 'broker', 'admin'
@@ -57,7 +58,8 @@ export default function LoginPage() {
 
     try {
       // Call Django REST Framework backend JWT login endpoint with strict role enforcement
-      const response = await fetch('http://localhost:8000/api/v1/auth/login/', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/`, {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

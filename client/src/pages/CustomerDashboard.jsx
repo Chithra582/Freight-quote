@@ -24,6 +24,8 @@ import {
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
 import { downloadQuotePDF } from '../utils/exportUtils'
+import { API_BASE_URL } from '../config/api'
+
 
 
 
@@ -147,8 +149,9 @@ export default function CustomerDashboard() {
     if (e) e.preventDefault()
     setIsCalculating(true)
     try {
-      const res = await fetch('http://localhost:8000/api/v1/pricing/instant-quote/', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/pricing/instant-quote/`, {
         method: 'POST',
+
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(calcForm)
       })
