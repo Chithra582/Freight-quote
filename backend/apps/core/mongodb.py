@@ -5,10 +5,17 @@ Customer Feedback, Rate History, and Audit Logs.
 """
 
 import os
-import certifi
 from decouple import config
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+
+try:
+    import certifi
+    from pymongo import MongoClient
+    from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+    PYMONGO_AVAILABLE = True
+except ImportError:
+    certifi = None
+    MongoClient = None
+    PYMONGO_AVAILABLE = False
 
 MONGODB_URI = config(
     'MONGODB_URI',
@@ -24,11 +31,14 @@ def get_mongodb_client():
     Returns singleton MongoClient with SSL/TLS certificate configuration.
     """
     global _mongo_client
+    if not PYMONGO_AVAILABLE:
+        return None
     if _mongo_client is None:
         try:
+            tls_ca = certifi.where() if certifi else None
             _mongo_client = MongoClient(
                 MONGODB_URI,
-                tlsCAFile=certifi.where(),
+                tlsCAFile=tls_ca,
                 tlsAllowInvalidCertificates=True,
                 serverSelectionTimeoutMS=5000,
                 connectTimeoutMS=5000,
@@ -39,6 +49,7 @@ def get_mongodb_client():
             print(f"[MongoDB Atlas] Connection initialization warning: {e}")
             return None
     return _mongo_client
+
 
 
 def get_mongodb_db():
