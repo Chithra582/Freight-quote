@@ -37,8 +37,10 @@ import {
   X,
   Key,
   UserCheck,
-  UserX
+  UserX,
+  Briefcase
 } from 'lucide-react'
+
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
@@ -508,8 +510,9 @@ export default function AdminDashboard() {
                   className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer shrink-0 active:scale-95"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>Create New User</span>
+                  <span>+ Add User</span>
                 </button>
+
               </div>
 
               {/* Search & Filter Bar */}
