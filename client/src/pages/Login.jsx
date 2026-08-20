@@ -56,10 +56,51 @@ export default function LoginPage() {
     setIsLoading(true)
     setErrorMessage('')
 
+    // 1. Check if user matches an Admin-created account in systemUsers
     try {
-      // Call Django REST Framework backend JWT login endpoint with strict role enforcement
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/`, {
+      const stored = localStorage.getItem('systemUsers')
+      if (stored) {
+        const sysUsers = JSON.parse(stored)
+        const inputId = formData.usernameOrEmail.trim().toLowerCase()
+        const matched = sysUsers.find(u => 
+          (u.email?.toLowerCase() === inputId || u.fullName?.toLowerCase() === inputId)
+        )
 
+        if (matched) {
+          if (matched.status === 'Suspended') {
+            setErrorMessage('This user account has been suspended by the administrator.')
+            setIsLoading(false)
+            return
+          }
+
+          if (matched.password && matched.password !== formData.password) {
+            setErrorMessage('Invalid password for this account. Please enter the correct password.')
+            setIsLoading(false)
+            return
+          }
+
+          // Valid credentials created by Admin!
+          const token = 'jwt-user-' + (matched.id || Date.now())
+          const userRole = (matched.role || selectedRole).toLowerCase()
+          localStorage.setItem('token', token)
+          localStorage.setItem('userRole', userRole)
+          localStorage.setItem('selectedAccessRole', userRole)
+          localStorage.setItem('userEmail', matched.email)
+          localStorage.setItem('userName', matched.fullName)
+          if (matched.companyName) localStorage.setItem('userCompany', matched.companyName)
+
+          setIsSuccess(true)
+          navigate('/dashboard')
+          return
+        }
+      }
+    } catch (e) {
+      console.log('Local user check error:', e)
+    }
+
+    // 2. Call Django REST Framework backend JWT login endpoint
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,6 +118,8 @@ export default function LoginPage() {
         localStorage.setItem('refreshToken', data.refresh)
         localStorage.setItem('userRole', data.user.role)
         localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userName', data.user.full_name || data.user.username)
+        localStorage.setItem('selectedAccessRole', selectedRole)
         setIsSuccess(true)
         navigate('/dashboard')
       } else {
@@ -89,7 +132,7 @@ export default function LoginPage() {
         setErrorMessage(errorMsg)
       }
     } catch (err) {
-      // Fast fallback login in case backend is waking up
+      // Fallback fast demo login
       localStorage.setItem('token', 'demo-jwt-' + Date.now())
       localStorage.setItem('userRole', selectedRole.toUpperCase())
       localStorage.setItem('userEmail', formData.usernameOrEmail)
@@ -99,6 +142,7 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+
 
   }
 

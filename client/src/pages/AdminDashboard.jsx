@@ -277,6 +277,7 @@ export default function AdminDashboard() {
       id: `USR-${Math.floor(100 + Math.random() * 900)}`,
       fullName: userForm.fullName.trim(),
       email: userForm.email.trim().toLowerCase(),
+      password: userForm.password,
       role: userForm.role,
       companyName: userForm.companyName.trim() || 'Global Freight Client',
       phone: userForm.phone.trim() || '+91 98000 00000',
@@ -288,8 +289,27 @@ export default function AdminDashboard() {
     setUsers(updated)
     localStorage.setItem('systemUsers', JSON.stringify(updated))
     setIsCreateModalOpen(false)
-    alert(`Account for ${newUser.fullName} (${newUser.role}) created successfully!`)
+
+    // Also register user on backend API in background
+    try {
+      fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newUser.email,
+          password: userForm.password,
+          confirm_password: userForm.password,
+          full_name: newUser.fullName,
+          phone: newUser.phone,
+          company_name: newUser.companyName,
+          role: newUser.role.toLowerCase()
+        })
+      }).catch(err => console.log('Backend sync status:', err))
+    } catch {}
+
+    alert(`Account for ${newUser.fullName} (${newUser.role}) created successfully! They can now log in using ${newUser.email} and the password you assigned.`)
   }
+
 
   const handleOpenEditUser = (u) => {
     setSelectedUser(u)
