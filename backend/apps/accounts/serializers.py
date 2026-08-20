@@ -106,7 +106,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True, required=False)
     company_name = serializers.CharField(required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
-    role = serializers.ChoiceField(choices=UserRole.choices, default=UserRole.CUSTOMER, required=False)
+    role = serializers.CharField(required=False, default='CUSTOMER')
 
     class Meta:
         model = User
@@ -125,6 +125,17 @@ class RegisterSerializer(serializers.ModelSerializer):
                 "email": "An account with this email address already exists. Please sign in instead."
             })
 
+        # Normalize role case
+        raw_role = str(attrs.get('role', 'CUSTOMER')).strip().upper()
+        if raw_role in ('USER', 'CUSTOMER'):
+            attrs['role'] = UserRole.CUSTOMER
+        elif raw_role in ('BROKER', 'SENIOR_BROKER'):
+            attrs['role'] = UserRole.BROKER
+        elif raw_role == 'ADMIN':
+            attrs['role'] = UserRole.ADMIN
+        else:
+            attrs['role'] = UserRole.CUSTOMER
+
         # Auto-generate username from email if not provided
         if not attrs.get('username'):
             base_username = email.split('@')[0].lower().replace('.', '_').replace('-', '_')
@@ -138,6 +149,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         if 'confirm_password' in attrs and attrs.get('password') != attrs.get('confirm_password'):
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
         return attrs
+
 
     def create(self, validated_data):
         validated_data.pop('confirm_password', None)
