@@ -71,6 +71,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         title: 'ADMINISTRATION',
         items: [
           { name: 'Admin Console', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'User Management', path: '/dashboard?tab=users', icon: Users },
           { name: 'Master Data Management', path: '/dashboard/master-data', icon: Database },
           { name: 'System Shipments', path: '/dashboard/shipments', icon: BarChart3 },
           { name: 'Customer Feedback', path: '/dashboard?tab=feedback', icon: MessageSquare }
@@ -79,6 +80,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
     ]
 
   } else {
+
     // Broker Workbench
     sections = [
       {

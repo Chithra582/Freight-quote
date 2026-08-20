@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ShieldCheck, 
   Database, 
@@ -26,15 +26,23 @@ import {
   Trash2,
   CheckCircle,
   Filter,
-  Star
+  Star,
+  UserPlus,
+  Edit3,
+  Search,
+  Lock,
+  Building,
+  Phone,
+  Shield,
+  X,
+  Key,
+  UserCheck,
+  UserX
 } from 'lucide-react'
-
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
 import { API_BASE_URL } from '../config/api'
-
-
 
 const ADMIN_AUDIT_LOGS = [
   { id: 1, action: 'Master Data Seeding', detail: 'Seeded 16 Sea Ports & 11 Cargo Airports', time: '10 mins ago', status: 'Success' },
@@ -82,6 +90,13 @@ const SAMPLE_FEEDBACKS = [
   }
 ]
 
+const INITIAL_USERS = [
+  { id: 'USR-101', fullName: 'Alex Shipper', email: 'user@freighthub.com', role: 'CUSTOMER', companyName: 'Apex Global Logistics', phone: '+91 98765 43210', status: 'Active', created: 'Aug 10, 2026' },
+  { id: 'USR-102', fullName: 'Rajesh Exports', email: 'rajesh@texport.in', role: 'CUSTOMER', companyName: 'Rajesh Textiles Exports', phone: '+91 98234 56789', status: 'Active', created: 'Aug 12, 2026' },
+  { id: 'USR-103', fullName: 'Freight Broker Pro', email: 'broker@freighthub.com', role: 'BROKER', companyName: 'FreightIQ Maritime Brokerage', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
+  { id: 'USR-104', fullName: 'Vikram Mehta', email: 'vikram.broker@oceanroutes.com', role: 'BROKER', companyName: 'Ocean Routes Intl', phone: '+91 97222 33445', status: 'Active', created: 'Aug 05, 2026' },
+  { id: 'USR-105', fullName: 'System Administrator', email: 'admin@freighthub.com', role: 'ADMIN', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
+]
 
 export default function AdminDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -98,6 +113,23 @@ export default function AdminDashboard() {
   const [isSaving, setIsSaving] = useState(false)
   const [feedbacks, setFeedbacks] = useState(SAMPLE_FEEDBACKS)
   const [feedbackFilter, setFeedbackFilter] = useState('all')
+
+  // User Management State
+  const [users, setUsers] = useState(INITIAL_USERS)
+  const [userSearch, setUserSearch] = useState('')
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [userForm, setUserForm] = useState({
+    fullName: '',
+    email: '',
+    role: 'CUSTOMER',
+    companyName: '',
+    phone: '',
+    password: '',
+    status: 'Active'
+  })
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -123,6 +155,23 @@ export default function AdminDashboard() {
           const remaining = SAMPLE_FEEDBACKS.filter(f => !ids.has(f.id))
           setFeedbacks([...parsed, ...remaining])
         }
+      }
+    } catch (err) {
+      console.error(err)
+    }
+
+    // Load user management accounts
+    try {
+      const storedUsers = localStorage.getItem('systemUsers')
+      if (storedUsers) {
+        const parsedUsers = JSON.parse(storedUsers)
+        if (Array.isArray(parsedUsers) && parsedUsers.length > 0) {
+          const uIds = new Set(parsedUsers.map(u => u.id))
+          const remaining = INITIAL_USERS.filter(u => !uIds.has(u.id))
+          setUsers([...parsedUsers, ...remaining])
+        }
+      } else {
+        localStorage.setItem('systemUsers', JSON.stringify(INITIAL_USERS))
       }
     } catch (err) {
       console.error(err)
@@ -177,7 +226,6 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}`
         }
       })
-
       const data = await res.json()
       if (data.success) {
         setMlMetrics(data.metrics)
@@ -202,38 +250,156 @@ export default function AdminDashboard() {
     localStorage.setItem('customerFeedbackList', JSON.stringify(filtered))
   }
 
-  const filteredFeedbacks = feedbacks.filter(f => {
-    if (feedbackFilter === 'all') return true
-    return f.status.toLowerCase() === feedbackFilter.toLowerCase()
+  // === USER MANAGEMENT HANDLERS ===
+  const handleOpenCreateUser = () => {
+    setUserForm({
+      fullName: '',
+      email: '',
+      role: 'CUSTOMER',
+      companyName: '',
+      phone: '',
+      password: '',
+      status: 'Active'
+    })
+    setIsCreateModalOpen(true)
+  }
+
+  const handleCreateUserSubmit = (e) => {
+    e.preventDefault()
+    if (!userForm.fullName || !userForm.email || !userForm.password) {
+      alert('Please provide Name, Email, and Password.')
+      return
+    }
+
+    const newUser = {
+      id: `USR-${Math.floor(100 + Math.random() * 900)}`,
+      fullName: userForm.fullName.trim(),
+      email: userForm.email.trim().toLowerCase(),
+      role: userForm.role,
+      companyName: userForm.companyName.trim() || 'Global Freight Client',
+      phone: userForm.phone.trim() || '+91 98000 00000',
+      status: userForm.status || 'Active',
+      created: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    }
+
+    const updated = [newUser, ...users]
+    setUsers(updated)
+    localStorage.setItem('systemUsers', JSON.stringify(updated))
+    setIsCreateModalOpen(false)
+    alert(`Account for ${newUser.fullName} (${newUser.role}) created successfully!`)
+  }
+
+  const handleOpenEditUser = (u) => {
+    setSelectedUser(u)
+    setUserForm({
+      fullName: u.fullName,
+      email: u.email,
+      role: u.role,
+      companyName: u.companyName,
+      phone: u.phone,
+      password: '',
+      status: u.status
+    })
+    setIsEditModalOpen(true)
+  }
+
+  const handleEditUserSubmit = (e) => {
+    e.preventDefault()
+    if (!selectedUser) return
+
+    const updated = users.map(u => {
+      if (u.id === selectedUser.id) {
+        return {
+          ...u,
+          fullName: userForm.fullName,
+          role: userForm.role,
+          companyName: userForm.companyName,
+          phone: userForm.phone,
+          status: userForm.status
+        }
+      }
+      return u
+    })
+
+    setUsers(updated)
+    localStorage.setItem('systemUsers', JSON.stringify(updated))
+    setIsEditModalOpen(false)
+    setSelectedUser(null)
+    alert('User account updated successfully!')
+  }
+
+  const handleToggleUserStatus = (userId) => {
+    const updated = users.map(u => {
+      if (u.id === userId) {
+        const nextStatus = u.status === 'Active' ? 'Suspended' : 'Active'
+        return { ...u, status: nextStatus }
+      }
+      return u
+    })
+    setUsers(updated)
+    localStorage.setItem('systemUsers', JSON.stringify(updated))
+  }
+
+  const handleDeleteUser = (userId) => {
+    if (window.confirm('Are you sure you want to remove this user from the system?')) {
+      const filtered = users.filter(u => u.id !== userId)
+      setUsers(filtered)
+      localStorage.setItem('systemUsers', JSON.stringify(filtered))
+    }
+  }
+
+  // Filtered lists
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = u.fullName.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          u.companyName.toLowerCase().includes(userSearch.toLowerCase())
+    const matchesRole = userRoleFilter === 'ALL' || u.role === userRoleFilter
+    return matchesSearch && matchesRole
   })
 
+  const filteredFeedbacks = feedbacks.filter(f => {
+    if (feedbackFilter === 'all') return true
+    return f.status?.toLowerCase() === feedbackFilter.toLowerCase()
+  })
+
+  const renderStarRating = (count = 5) => {
+    return (
+      <div className="flex items-center gap-1 text-amber-400">
+        {[...Array(5)].map((_, i) => (
+          <Star
+            key={i}
+            className={`w-3.5 h-3.5 ${i < count ? 'fill-amber-400 text-amber-400' : 'text-slate-300 fill-slate-100'}`}
+          />
+        ))}
+        <span className="text-xs font-bold text-slate-700 ml-1">{count}.0</span>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex h-screen bg-[#f3f5f8] font-sans antialiased overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isMobileOpen={isMobileOpen}
-        setIsMobileOpen={setIsMobileOpen}
+    <div className="flex h-screen bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden">
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed} 
+        isMobileOpen={isMobileOpen} 
+        setIsMobileOpen={setIsMobileOpen} 
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
 
-          
-          {/* Top Welcome Card */}
-          <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 sm:p-8 text-white relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* Admin Hero Header */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden border border-slate-800">
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold tracking-wide uppercase mb-3">
-                <ShieldCheck className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-3">
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
                 <span>System Administration & Governance</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 Admin Control Center
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                Configure tariff rate cards, maintain global transport gateways, manage customer feedback inquiries, and monitor system health.
+                Configure tariff rate cards, maintain global transport gateways, manage system user accounts, and oversee customer inquiries.
               </p>
             </div>
 
@@ -246,6 +412,15 @@ export default function AdminDashboard() {
               >
                 <Sliders className="w-3.5 h-3.5" />
                 <span>Overview</span>
+              </Link>
+              <Link
+                to="/dashboard?tab=users"
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'users' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>User Management ({users.length})</span>
               </Link>
               <Link
                 to="/dashboard?tab=feedback"
@@ -272,19 +447,19 @@ export default function AdminDashboard() {
           {/* System KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <DashboardCard
+              title="SYSTEM USERS"
+              value={`${users.length} Active`}
+              change={`${users.filter(u => u.role === 'BROKER').length} Brokers · ${users.filter(u => u.role === 'CUSTOMER').length} Customers`}
+              isPositive={true}
+              icon={Users}
+              color="indigo"
+            />
+            <DashboardCard
               title="GLOBAL GATEWAYS"
               value="27 Hubs"
               change="16 Ports · 11 Airports"
               isPositive={true}
               icon={Globe}
-              color="indigo"
-            />
-            <DashboardCard
-              title="RATE CARDS ACTIVE"
-              value="10 Carriers"
-              change="Ocean FCL/LCL & Air"
-              isPositive={true}
-              icon={FileSpreadsheet}
               color="blue"
             />
             <DashboardCard
@@ -305,8 +480,179 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Customer Feedback Panel (Shown when tab=feedback or always accessible) */}
-          {(currentTab === 'feedback' || currentTab === 'overview') && (
+          {/* ========================================================================= */}
+          {/* TAB 1: USER MANAGEMENT CONSOLE (ADMIN ONLY CREATE & MANAGE) */}
+          {/* ========================================================================= */}
+          {currentTab === 'users' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              
+              {/* Header & Create Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      System User Accounts & Role Governance
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {filteredUsers.length} Users Found
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Administrator exclusive access: Provision and manage credentials for Customers, Freight Brokers, and System Administrators.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleOpenCreateUser}
+                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer shrink-0 active:scale-95"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Create New User</span>
+                </button>
+              </div>
+
+              {/* Search & Filter Bar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <div className="relative w-full sm:w-80">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, company..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-xs font-semibold text-slate-500">Role:</span>
+                  <select
+                    value={userRoleFilter}
+                    onChange={(e) => setUserRoleFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  >
+                    <option value="ALL">All Roles</option>
+                    <option value="CUSTOMER">Customers (Shippers)</option>
+                    <option value="BROKER">Freight Brokers</option>
+                    <option value="ADMIN">System Admins</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50/80 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3.5">User Details</th>
+                      <th className="px-4 py-3.5">System Role</th>
+                      <th className="px-4 py-3.5">Company & Contact</th>
+                      <th className="px-4 py-3.5">Status</th>
+                      <th className="px-4 py-3.5">Created Date</th>
+                      <th className="px-4 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {filteredUsers.map((u) => {
+                      const isCustomer = u.role === 'CUSTOMER'
+                      const isBroker = u.role === 'BROKER'
+                      const isAdmin = u.role === 'ADMIN'
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${
+                                isCustomer ? 'bg-blue-100 text-blue-700' :
+                                isBroker ? 'bg-purple-100 text-purple-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {u.fullName?.charAt(0) || 'U'}
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900">{u.fullName}</div>
+                                <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                                  <Mail className="w-3 h-3 text-slate-400" />
+                                  <span>{u.email}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                              isCustomer ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                              isBroker ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                              'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}>
+                              {isCustomer && <User className="w-3 h-3" />}
+                              {isBroker && <Briefcase className="w-3 h-3" />}
+                              {isAdmin && <Shield className="w-3 h-3" />}
+                              <span>{u.role}</span>
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                              <Building className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{u.companyName}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{u.phone}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <button
+                              onClick={() => handleToggleUserStatus(u.id)}
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-all ${
+                                u.status === 'Active'
+                                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                  : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                              }`}
+                              title="Click to toggle status"
+                            >
+                              {u.status === 'Active' ? <UserCheck className="w-3 h-3" /> : <UserX className="w-3 h-3" />}
+                              <span>{u.status}</span>
+                            </button>
+                          </td>
+
+                          <td className="px-4 py-3.5 text-slate-500 text-[11px] font-mono">
+                            {u.created}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditUser(u)}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <Edit3 className="w-3 h-3" /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete user"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: CUSTOMER FEEDBACK PANEL */}
+          {/* ========================================================================= */}
+          {currentTab === 'feedback' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
                 <div>
@@ -330,90 +676,85 @@ export default function AdminDashboard() {
                   <select
                     value={feedbackFilter}
                     onChange={(e) => setFeedbackFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-bold focus:outline-none focus:border-indigo-500 cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
                   >
-                    <option value="all">All Inquiries</option>
-                    <option value="new">New</option>
+                    <option value="all">All Feedback</option>
+                    <option value="new">New Inquiries</option>
                     <option value="reviewed">Reviewed</option>
                     <option value="resolved">Resolved</option>
                   </select>
                 </div>
               </div>
 
-              {/* Feedback List Table with Star Ratings */}
+              {/* Feedback List Table */}
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                      <th className="py-3 px-4">Ref ID</th>
-                      <th className="py-3 px-4">Shipper / Contact</th>
-                      <th className="py-3 px-4">Rating</th>
-                      <th className="py-3 px-4">Inquiry / Feedback</th>
-                      <th className="py-3 px-4">Received Date</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Customer / Shipper</th>
+                      <th className="px-4 py-3">Rating</th>
+                      <th className="px-4 py-3">Feedback Message</th>
+                      <th className="px-4 py-3">Received</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredFeedbacks.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-bold text-indigo-600">
-                          {item.id}
+                    {filteredFeedbacks.map((fb) => (
+                      <tr key={fb.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <div className="font-bold text-slate-900">{fb.name}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">{fb.email}</div>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900">{item.name}</div>
-                          <div className="text-[11px] text-slate-400">{item.email}</div>
+
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {renderStarRating(fb.rating || 5)}
                         </td>
-                        
-                        {/* Star Rating */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-0.5">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-3.5 h-3.5 ${
-                                  star <= (item.rating || 5)
-                                    ? 'text-amber-400 fill-amber-400'
-                                    : 'text-slate-200'
-                                }`}
-                              />
-                            ))}
-                            <span className="text-[11px] font-bold text-slate-700 ml-1.5">
-                              {item.rating || 5}.0
-                            </span>
+
+                        <td className="px-4 py-3.5 max-w-xs sm:max-w-md">
+                          <p className="text-slate-700 leading-relaxed font-medium">
+                            "{fb.message}"
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3.5 text-slate-400 text-[11px] whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>{fb.date}</span>
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 max-w-xs sm:max-w-md">
-                          <p className="text-slate-700 font-medium leading-relaxed line-clamp-2">
-                            {item.message}
-                          </p>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-500 text-[11px] whitespace-nowrap">
-                          {item.date}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                            item.status === 'New' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                            item.status === 'Reviewed' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                            'bg-slate-100 text-slate-700 border border-slate-200'
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            fb.status === 'New' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                            fb.status === 'Reviewed' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                            'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           }`}>
-                            {item.status}
+                            {fb.status}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+
+                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            {item.status !== 'Resolved' && (
+                            {fb.status === 'New' && (
                               <button
-                                onClick={() => handleUpdateFeedbackStatus(item.id, item.status === 'New' ? 'Reviewed' : 'Resolved')}
-                                className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10.5px] cursor-pointer transition-colors"
+                                onClick={() => handleUpdateFeedbackStatus(fb.id, 'Reviewed')}
+                                className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                               >
-                                {item.status === 'New' ? 'Mark Reviewed' : 'Resolve'}
+                                Mark Reviewed
+                              </button>
+                            )}
+                            {fb.status !== 'Resolved' && (
+                              <button
+                                onClick={() => handleUpdateFeedbackStatus(fb.id, 'Resolved')}
+                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                              >
+                                Resolve
                               </button>
                             )}
                             <button
-                              onClick={() => handleDeleteFeedback(item.id)}
-                              className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                              onClick={() => handleDeleteFeedback(fb.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                               title="Delete inquiry"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -422,219 +763,380 @@ export default function AdminDashboard() {
                         </td>
                       </tr>
                     ))}
-                    {filteredFeedbacks.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-400">
-                          No feedback inquiries found matching filter.
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: OVERVIEW (TARIFF RULES & ML PERFORMANCE) */}
+          {/* ========================================================================= */}
+          {currentTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+              {/* Pricing Rate Configuration Engine */}
+              <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black text-slate-900">
+                      Multi-Modal Tariff Rate Parameters
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Adjust base haulage distance rates, bunker fuel surcharge index, and mode multipliers.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                    Live Engine
+                  </span>
+                </div>
+
+                <form onSubmit={handleSaveRateConfig} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                        Base Rate (₹/km)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={rateConfig.base_rate_per_km}
+                        onChange={e => setRateConfig({ ...rateConfig, base_rate_per_km: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                        Bunker Fuel Surcharge (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={rateConfig.fuel_surcharge_pct}
+                        onChange={e => setRateConfig({ ...rateConfig, fuel_surcharge_pct: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Transport Mode Multipliers
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {['ROAD', 'RAIL', 'SEA', 'AIR'].map(m => (
+                        <div key={m} className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[10px] font-bold text-slate-400">{m}</span>
+                          <input
+                            type="number"
+                            step="0.05"
+                            value={rateConfig.mode_multipliers?.[m] || 1.0}
+                            onChange={e => setRateConfig({
+                              ...rateConfig,
+                              mode_multipliers: { ...rateConfig.mode_multipliers, [m]: parseFloat(e.target.value) || 1.0 }
+                            })}
+                            className="w-full mt-1 bg-white border border-slate-200 px-2 py-1 rounded text-xs font-extrabold text-slate-800"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    {isSaving ? 'Updating Tariff Parameters...' : 'Save & Publish Tariff Rules'}
+                  </button>
+                </form>
+              </div>
+
+              {/* ML Transit & Cost Predictor Health */}
+              <div className="lg:col-span-5 bg-slate-900 text-white border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black text-white">
+                      AI Dynamic Pricing Engine
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Stage 2 Gradient Boosting regression & LightGBM performance telemetry.
+                    </p>
+                  </div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-center">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">R² Model Fit</span>
+                    <div className="text-lg font-black text-emerald-400 mt-1">{mlMetrics.r2_score}</div>
+                  </div>
+                  <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-center">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">RMSE Cost</span>
+                    <div className="text-lg font-black text-white mt-1">₹{mlMetrics.rmse?.toFixed(0)}</div>
+                  </div>
+                  <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-center">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">MAE Accuracy</span>
+                    <div className="text-lg font-black text-white mt-1">₹{mlMetrics.mae?.toFixed(0)}</div>
+                  </div>
+                </div>
+
+                {/* Audit Logs */}
+                <div className="space-y-2 pt-2 border-t border-slate-800 text-xs">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
+                    Recent Governance Audit Trail
+                  </span>
+                  {ADMIN_AUDIT_LOGS.map(log => (
+                    <div key={log.id} className="flex justify-between items-center py-1.5 border-b border-slate-800/60 text-slate-300">
+                      <div>
+                        <span className="font-semibold text-white">{log.action}</span>
+                        <p className="text-[10px] text-slate-400">{log.detail}</p>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">{log.time}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleRetrainML}
+                  disabled={isRetraining}
+                  className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isRetraining ? 'Retraining ML Models...' : 'Retrain Gradient Boosting Regressor'}
+                </button>
               </div>
 
             </div>
           )}
 
-          {/* Pricing Engine Rate Configuration Panel */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-indigo-600" />
-                  <h2 className="text-base sm:text-lg font-black text-slate-900">
-                    Rule-Based & ML Pricing Configuration
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Tune mathematical coefficients, baseline distance rates, and train gradient boosted regressors.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleRetrainML}
-                disabled={isRetraining}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
-              >
-                <Activity className={`w-3.5 h-3.5 ${isRetraining ? 'animate-spin' : ''}`} />
-                <span>{isRetraining ? 'Retraining ML Model...' : '⚡ Retrain ML Regressor'}</span>
-              </button>
-            </div>
-
-            {/* ML Model Score Card */}
-            <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest block mb-1">
-                  ACTIVE MACHINE LEARNING PRICING MODEL
-                </span>
-                <h3 className="text-sm font-bold">GradientBoostingRegressor (v2.4 Production)</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Trained on distance, weight, volume, cargo type, transport mode & seasonal indexes.</p>
-              </div>
-              <div className="flex items-center gap-4 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700 shrink-0">
-                <div className="text-center">
-                  <div className="text-emerald-400 font-extrabold text-sm">{(mlMetrics.r2_score * 100).toFixed(1)}%</div>
-                  <div className="text-[9px] text-slate-400">R² Score</div>
-                </div>
-                <div className="w-[1px] h-6 bg-slate-700" />
-                <div className="text-center">
-                  <div className="text-blue-400 font-extrabold text-sm">₹{mlMetrics.rmse.toFixed(0)}</div>
-                  <div className="text-[9px] text-slate-400">RMSE</div>
-                </div>
-                <div className="w-[1px] h-6 bg-slate-700" />
-                <div className="text-center">
-                  <div className="text-amber-400 font-extrabold text-sm">₹{mlMetrics.mae.toFixed(0)}</div>
-                  <div className="text-[9px] text-slate-400">MAE</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Rate Tuning Form */}
-            <form onSubmit={handleSaveRateConfig} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Base Rate per KM (INR)</label>
-                  <input
-                    type="number"
-                    step="0.05"
-                    value={rateConfig.base_rate_per_km}
-                    onChange={e => setRateConfig({ ...rateConfig, base_rate_per_km: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Fuel Surcharge (%)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={rateConfig.fuel_surcharge_pct}
-                    onChange={e => setRateConfig({ ...rateConfig, fuel_surcharge_pct: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Standard Cargo Multiplier</label>
-                  <input
-                    type="number"
-                    step="0.05"
-                    value={rateConfig.cargo_multipliers?.STANDARD || 1.0}
-                    onChange={e => setRateConfig({
-                      ...rateConfig,
-                      cargo_multipliers: { ...rateConfig.cargo_multipliers, STANDARD: parseFloat(e.target.value) || 1.0 }
-                    })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Hazardous Multiplier</label>
-                  <input
-                    type="number"
-                    step="0.05"
-                    value={rateConfig.cargo_multipliers?.HAZARDOUS || 1.5}
-                    onChange={e => setRateConfig({
-                      ...rateConfig,
-                      cargo_multipliers: { ...rateConfig.cargo_multipliers, HAZARDOUS: parseFloat(e.target.value) || 1.5 }
-                    })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {/* Mode Multipliers */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Cargo Classification Multipliers</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['FRAGILE', 'PERISHABLE'].map(c => (
-                      <div key={c}>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase">{c}</label>
-                        <input
-                          type="number"
-                          step="0.05"
-                          value={rateConfig.cargo_multipliers?.[c] || 1.0}
-                          onChange={e => setRateConfig({
-                            ...rateConfig,
-                            cargo_multipliers: { ...rateConfig.cargo_multipliers, [c]: parseFloat(e.target.value) || 1.0 }
-                          })}
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Transport Mode Multipliers</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['ROAD', 'RAIL', 'SEA', 'AIR'].map(m => (
-                      <div key={m}>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase">{m}</label>
-                        <input
-                          type="number"
-                          step="0.05"
-                          value={rateConfig.mode_multipliers?.[m] || 1.0}
-                          onChange={e => setRateConfig({
-                            ...rateConfig,
-                            mode_multipliers: { ...rateConfig.mode_multipliers, [m]: parseFloat(e.target.value) || 1.0 }
-                          })}
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition-all cursor-pointer"
-                >
-                  {isSaving ? 'Saving Configurations...' : '💾 Save Rate Configuration'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Audit Log Section */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-              <div>
-                <h2 className="text-base sm:text-lg font-black text-slate-900">System Audit Log & Telemetry</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Automated logging of core administrative transactions and calculations.</p>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span>Django API: Operational</span>
-              </div>
-            </div>
-
-            <div className="divide-y divide-slate-100">
-              {ADMIN_AUDIT_LOGS.map((log) => (
-                <div key={log.id} className="py-3.5 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-800">{log.action}</h4>
-                      <p className="text-[11px] text-slate-500">{log.detail}</p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-medium text-slate-400 shrink-0">
-                    {log.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </main>
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL: CREATE USER */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-base font-black text-slate-900">Create New System User</h3>
+                </div>
+                <button
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateUserSubmit} className="space-y-4 mt-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. John Doe"
+                    value={userForm.fullName}
+                    onChange={e => setUserForm({ ...userForm, fullName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="john@example.com"
+                      value={userForm.email}
+                      onChange={e => setUserForm({ ...userForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">System Role</label>
+                    <select
+                      value={userForm.role}
+                      onChange={e => setUserForm({ ...userForm, role: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold"
+                    >
+                      <option value="CUSTOMER">CUSTOMER (Shipper)</option>
+                      <option value="BROKER">BROKER (Rate Adjuster)</option>
+                      <option value="ADMIN">ADMIN (System Owner)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Company Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Global Freight Ltd"
+                      value={userForm.companyName}
+                      onChange={e => setUserForm({ ...userForm, companyName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="+91 98765 00000"
+                      value={userForm.phone}
+                      onChange={e => setUserForm({ ...userForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Initial Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Min 6 characters"
+                    value={userForm.password}
+                    onChange={e => setUserForm({ ...userForm, password: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                  >
+                    Create User Account
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT USER */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {isEditModalOpen && selectedUser && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-base font-black text-slate-900">Edit User: {selectedUser.fullName}</h3>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditUserSubmit} className="space-y-4 mt-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={userForm.fullName}
+                    onChange={e => setUserForm({ ...userForm, fullName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">System Role</label>
+                    <select
+                      value={userForm.role}
+                      onChange={e => setUserForm({ ...userForm, role: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold"
+                    >
+                      <option value="CUSTOMER">CUSTOMER (Shipper)</option>
+                      <option value="BROKER">BROKER (Rate Adjuster)</option>
+                      <option value="ADMIN">ADMIN (System Owner)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Account Status</label>
+                    <select
+                      value={userForm.status}
+                      onChange={e => setUserForm({ ...userForm, status: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Company</label>
+                    <input
+                      type="text"
+                      value={userForm.companyName}
+                      onChange={e => setUserForm({ ...userForm, companyName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Phone</label>
+                    <input
+                      type="text"
+                      value={userForm.phone}
+                      onChange={e => setUserForm({ ...userForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }
