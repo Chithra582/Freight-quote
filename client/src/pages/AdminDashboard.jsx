@@ -38,9 +38,13 @@ import {
   Key,
   UserCheck,
   UserX,
-  Briefcase
+  Briefcase,
+  Percent,
+  ShieldAlert,
+  ListChecks,
+  Check,
+  Plus
 } from 'lucide-react'
-
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
@@ -80,15 +84,6 @@ const SAMPLE_FEEDBACKS = [
     message: 'High-cube reefer cargo tariff estimates were spot on. Requesting automated EDI invoice sync for recurring monthly shipments.',
     date: 'Aug 14, 2026, 11:20 AM',
     status: 'Resolved'
-  },
-  {
-    id: 'FB-9018',
-    name: 'Nordic Imports AB',
-    email: 'contact@nordicimports.se',
-    rating: 5,
-    message: 'The PDF quotation download and instant CSV export features work seamlessly with our internal ERP.',
-    date: 'Aug 13, 2026, 02:15 PM',
-    status: 'Reviewed'
   }
 ]
 
@@ -98,6 +93,23 @@ const INITIAL_USERS = [
   { id: 'USR-103', fullName: 'Freight Broker Pro', email: 'broker@freighthub.com', role: 'BROKER', companyName: 'FreightIQ Maritime Brokerage', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
   { id: 'USR-104', fullName: 'Vikram Mehta', email: 'vikram.broker@oceanroutes.com', role: 'BROKER', companyName: 'Ocean Routes Intl', phone: '+91 97222 33445', status: 'Active', created: 'Aug 05, 2026' },
   { id: 'USR-105', fullName: 'System Administrator', email: 'admin@freighthub.com', role: 'ADMIN', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
+]
+
+const INITIAL_MARGIN_POLICIES = [
+  { id: 'pol-1', scope: 'CUSTOMER_LANE', scopeKey: 'Sharma Textiles | INNSA-AEJEA', floorPct: 9.0, targetPct: 12.0, stretchPct: 16.0, priority: 1, active: true },
+  { id: 'pol-2', scope: 'CUSTOMER_TIER', scopeKey: 'STRATEGIC Clients', floorPct: 10.0, targetPct: 13.0, stretchPct: 17.0, priority: 2, active: true },
+  { id: 'pol-3', scope: 'LANE', scopeKey: 'INNSA-AEJEA (Mumbai → Dubai)', floorPct: 12.0, targetPct: 15.0, stretchPct: 19.0, priority: 3, active: true },
+  { id: 'pol-4', scope: 'CARGO_TYPE', scopeKey: 'HAZARDOUS Cargo (IMO Class)', floorPct: 18.0, targetPct: 22.0, stretchPct: 26.0, priority: 4, active: true },
+  { id: 'pol-5', scope: 'GLOBAL', scopeKey: 'Global System Fallback', floorPct: 13.0, targetPct: 16.0, stretchPct: 20.0, priority: 5, active: true },
+]
+
+const INITIAL_APPROVAL_RULES = [
+  { index: 1, name: 'Deep discount — below floor by > 5 percentage points', approverRole: 'PRICING_MANAGER', isBlocking: true, description: 'Triggers when margin deficit exceeds 5.0% below policy floor.' },
+  { index: 2, name: 'Margin below floor by up to 5 percentage points', approverRole: 'SENIOR_BROKER', isBlocking: true, description: 'Triggers when margin is between 0.1% and 5.0% below policy floor.' },
+  { index: 3, name: 'Quote value above high-value threshold (> ₹40,00,000 / $50k)', approverRole: 'PRICING_MANAGER', isBlocking: true, description: 'Large commercial transactions exceeding standard broker discretion.' },
+  { index: 4, name: 'Any component sourced as PREDICTED (Uncontracted rate)', approverRole: 'SENIOR_BROKER', isBlocking: true, description: 'Quotes built on machine learning market baseline without carrier contract.' },
+  { index: 5, name: 'New customer with no credit profile (NONE / PENDING)', approverRole: 'SENIOR_BROKER', isBlocking: true, description: 'Shippers lacking pre-established payment terms or credit limits.' },
+  { index: 6, name: 'Rate card expires before quote validity ends', approverRole: 'SENIOR_BROKER', isBlocking: true, description: 'Underlying carrier contract expires within the 7-day quotation validity window.' },
 ]
 
 export default function AdminDashboard() {
@@ -132,6 +144,13 @@ export default function AdminDashboard() {
     password: '',
     status: 'Active'
   })
+
+  // Margin Policies State
+  const [marginPolicies, setMarginPolicies] = useState(INITIAL_MARGIN_POLICIES)
+  const [editingPolicy, setEditingPolicy] = useState(null)
+
+  // Approval Rules State
+  const [approvalRules, setApprovalRules] = useState(INITIAL_APPROVAL_RULES)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -178,6 +197,17 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error(err)
     }
+
+    // Load margin policies
+    try {
+      const storedPolicies = localStorage.getItem('adminMarginPolicies')
+      if (storedPolicies) {
+        const parsed = JSON.parse(storedPolicies)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMarginPolicies(parsed)
+        }
+      }
+    } catch {}
 
     // Fetch live rate config
     fetch(`${API_BASE_URL}/api/v1/pricing/rate-config/`, {
@@ -240,18 +270,6 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleUpdateFeedbackStatus = (id, newStatus) => {
-    const updated = feedbacks.map(f => f.id === id ? { ...f, status: newStatus } : f)
-    setFeedbacks(updated)
-    localStorage.setItem('customerFeedbackList', JSON.stringify(updated))
-  }
-
-  const handleDeleteFeedback = (id) => {
-    const filtered = feedbacks.filter(f => f.id !== id)
-    setFeedbacks(filtered)
-    localStorage.setItem('customerFeedbackList', JSON.stringify(filtered))
-  }
-
   // === USER MANAGEMENT HANDLERS ===
   const handleOpenCreateUser = () => {
     setUserForm({
@@ -290,7 +308,7 @@ export default function AdminDashboard() {
     localStorage.setItem('systemUsers', JSON.stringify(updated))
     setIsCreateModalOpen(false)
 
-    // Also register user on backend API in background
+    // Backend sync in background
     try {
       fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
         method: 'POST',
@@ -302,14 +320,13 @@ export default function AdminDashboard() {
           full_name: newUser.fullName,
           phone: newUser.phone,
           company_name: newUser.companyName,
-          role: newUser.role.toLowerCase()
+          role: newUser.role.toUpperCase()
         })
-      }).catch(err => console.log('Backend sync status:', err))
+      }).catch(() => {})
     } catch {}
 
     alert(`Account for ${newUser.fullName} (${newUser.role}) created successfully! They can now log in using ${newUser.email} and the password you assigned.`)
   }
-
 
   const handleOpenEditUser = (u) => {
     setSelectedUser(u)
@@ -370,6 +387,17 @@ export default function AdminDashboard() {
     }
   }
 
+  // === MARGIN POLICY HANDLERS ===
+  const handleSavePolicy = (e) => {
+    e.preventDefault()
+    if (!editingPolicy) return
+    const updated = marginPolicies.map(p => p.id === editingPolicy.id ? editingPolicy : p)
+    setMarginPolicies(updated)
+    localStorage.setItem('adminMarginPolicies', JSON.stringify(updated))
+    setEditingPolicy(null)
+    alert(`Margin policy for ${editingPolicy.scope} updated successfully! Floor is enforced at ${editingPolicy.floorPct}%.`)
+  }
+
   // Filtered lists
   const filteredUsers = (users || []).filter(u => {
     if (!u) return false
@@ -379,7 +407,6 @@ export default function AdminDashboard() {
     const matchesRole = userRoleFilter === 'ALL' || u.role === userRoleFilter
     return matchesSearch && matchesRole
   })
-
 
   const filteredFeedbacks = feedbacks.filter(f => {
     if (feedbackFilter === 'all') return true
@@ -417,13 +444,13 @@ export default function AdminDashboard() {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-3">
                 <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-                <span>System Administration & Governance</span>
+                <span>System Administration & Commercial Governance</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 Admin Control Center
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                Configure tariff rate cards, maintain global transport gateways, manage system user accounts, and oversee customer inquiries.
+                Configure tariff rate parameters, govern hierarchical margin policies across 5 scopes, oversee multi-tier approval rules, and provision user credentials.
               </p>
             </div>
 
@@ -447,13 +474,31 @@ export default function AdminDashboard() {
                 <span>User Management ({users.length})</span>
               </Link>
               <Link
+                to="/dashboard?tab=margin-policy"
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'margin-policy' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <Percent className="w-3.5 h-3.5" />
+                <span>Margin Policies (5 Scopes)</span>
+              </Link>
+              <Link
+                to="/dashboard?tab=approval-rules"
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'approval-rules' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                <span>Approval Rules (6 Rules)</span>
+              </Link>
+              <Link
                 to="/dashboard?tab=feedback"
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
                   currentTab === 'feedback' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Customer Feedback ({feedbacks.length})</span>
+                <span>Feedback ({feedbacks.length})</span>
               </Link>
               <Link
                 to="/dashboard/master-data"
@@ -464,7 +509,6 @@ export default function AdminDashboard() {
               </Link>
             </div>
 
-            {/* Glowing orb in background */}
             <div className="absolute -right-10 -top-20 w-64 h-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
           </div>
 
@@ -487,30 +531,29 @@ export default function AdminDashboard() {
               color="blue"
             />
             <DashboardCard
-              title="CUSTOMER FEEDBACK"
-              value={`${feedbacks.length} Inquiries`}
-              change={`${feedbacks.filter(f => f.status === 'New').length} Pending Action`}
+              title="MARGIN POLICY SCOPES"
+              value="5 Levels"
+              change="Priority: Cust-Lane → Tier → Lane → Global"
               isPositive={true}
-              icon={MessageSquare}
-              color="amber"
+              icon={Percent}
+              color="purple"
             />
             <DashboardCard
-              title="TRANSIT ML ACCURACY"
-              value="0.732d MAE"
-              change="LightGBM Predictor"
+              title="APPROVAL RULES"
+              value="6 Active Rules"
+              change="Floor Breach & High Value Routing"
               isPositive={true}
-              icon={Activity}
-              color="purple"
+              icon={ListChecks}
+              color="amber"
             />
           </div>
 
           {/* ========================================================================= */}
-          {/* TAB 1: USER MANAGEMENT CONSOLE (ADMIN ONLY CREATE & MANAGE) */}
+          {/* TAB 1: USER MANAGEMENT CONSOLE */}
           {/* ========================================================================= */}
           {currentTab === 'users' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
               
-              {/* Header & Create Button */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                   <div className="flex items-center gap-2">
@@ -534,7 +577,6 @@ export default function AdminDashboard() {
                   <UserPlus className="w-4 h-4" />
                   <span>+ Add User</span>
                 </button>
-
               </div>
 
               {/* Search & Filter Bar */}
@@ -675,116 +717,86 @@ export default function AdminDashboard() {
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 2: CUSTOMER FEEDBACK PANEL */}
+          {/* TAB 2: MARGIN POLICY GOVERNANCE (MILSTONE 2 SPEC §5.1 & §5.2) */}
           {/* ========================================================================= */}
-          {currentTab === 'feedback' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+          {currentTab === 'margin-policy' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div>
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-indigo-600" />
-                    <h2 className="text-base sm:text-lg font-black text-slate-900">
-                      Customer Feedback & Direct Inquiries
+                    <Percent className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      Hierarchical Margin Policy Engine (5 Scopes)
                     </h2>
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      {filteredFeedbacks.length} Messages
+                      Most-Specific-Wins Resolution
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Direct inquiries, API integration requests, and reviews received from the landing page support desk.
+                    Defines hard margin floors, default targets, and AI stretch upper anchors evaluated in strict priority order.
                   </p>
-                </div>
-
-                {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-slate-400" />
-                  <select
-                    value={feedbackFilter}
-                    onChange={(e) => setFeedbackFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                  >
-                    <option value="all">All Feedback</option>
-                    <option value="new">New Inquiries</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
                 </div>
               </div>
 
-              {/* Feedback List Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+              {/* Scope Hierarchy Explanation Banner */}
+              <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 text-xs flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-indigo-300 uppercase tracking-wider text-[10px]">
+                    Evaluation Resolution Order (Section 5.2):
+                  </span>
+                  <div className="font-mono text-slate-300 mt-1">
+                    1. CUSTOMER_LANE → 2. CUSTOMER_TIER → 3. LANE → 4. CARGO_TYPE → 5. GLOBAL FALLBACK
+                  </div>
+                </div>
+                <div className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-800/60">
+                  Zero Floor Violations Enforced
+                </div>
+              </div>
+
+              {/* Policies Table */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
-                      <th className="px-4 py-3">Customer / Shipper</th>
-                      <th className="px-4 py-3">Rating</th>
-                      <th className="px-4 py-3">Feedback Message</th>
-                      <th className="px-4 py-3">Received</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Action</th>
+                      <th className="px-4 py-3">Priority</th>
+                      <th className="px-4 py-3">Scope Level</th>
+                      <th className="px-4 py-3">Scope Key / Target Match</th>
+                      <th className="px-4 py-3 text-center">Floor % (Min)</th>
+                      <th className="px-4 py-3 text-center">Target % (Default)</th>
+                      <th className="px-4 py-3 text-center">Stretch % (AI Anchor)</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredFeedbacks.map((fb) => (
-                      <tr key={fb.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {marginPolicies.map((pol) => (
+                      <tr key={pol.id} className="hover:bg-slate-50/60">
+                        <td className="px-4 py-3.5 font-mono font-bold text-indigo-600">
+                          #{pol.priority}
+                        </td>
                         <td className="px-4 py-3.5">
-                          <div className="font-bold text-slate-900">{fb.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{fb.email}</div>
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          {renderStarRating(fb.rating || 5)}
-                        </td>
-
-                        <td className="px-4 py-3.5 max-w-xs sm:max-w-md">
-                          <p className="text-slate-700 leading-relaxed font-medium">
-                            "{fb.message}"
-                          </p>
-                        </td>
-
-                        <td className="px-4 py-3.5 text-slate-400 text-[11px] whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span>{fb.date}</span>
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            fb.status === 'New' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                            fb.status === 'Reviewed' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                            'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          }`}>
-                            {fb.status}
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {pol.scope}
                           </span>
                         </td>
-
-                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {fb.status === 'New' && (
-                              <button
-                                onClick={() => handleUpdateFeedbackStatus(fb.id, 'Reviewed')}
-                                className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                              >
-                                Mark Reviewed
-                              </button>
-                            )}
-                            {fb.status !== 'Resolved' && (
-                              <button
-                                onClick={() => handleUpdateFeedbackStatus(fb.id, 'Resolved')}
-                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                              >
-                                Resolve
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteFeedback(fb.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              title="Delete inquiry"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        <td className="px-4 py-3.5 font-bold text-slate-900">
+                          {pol.scopeKey}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-mono font-black text-rose-600">
+                          {pol.floorPct}%
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-mono font-black text-slate-800">
+                          {pol.targetPct}%
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-mono font-black text-emerald-600">
+                          {pol.stretchPct}%
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            onClick={() => setEditingPolicy(pol)}
+                            className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs cursor-pointer"
+                          >
+                            Edit Policy
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -795,12 +807,120 @@ export default function AdminDashboard() {
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 3: OVERVIEW (TARIFF RULES & ML PERFORMANCE) */}
+          {/* TAB 3: APPROVAL RULES GOVERNANCE (MILSTONE 2 SPEC §5.4) */}
+          {/* ========================================================================= */}
+          {currentTab === 'approval-rules' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ListChecks className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      Commercial Approval Rules & Multi-Tier Escalation
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      6 Sequential Rules
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Evaluates all conditions in order; quotes with breaches cannot be issued without authorization.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {approvalRules.map((rule) => (
+                  <div key={rule.index} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-black text-xs flex items-center justify-center font-mono">
+                          {rule.index}
+                        </span>
+                        <span className="font-bold text-slate-900 text-xs">{rule.name}</span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        rule.approverRole === 'PRICING_MANAGER' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {rule.approverRole}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      {rule.description}
+                    </p>
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                      <span>Status: ACTIVE</span>
+                      <span className="text-rose-600 font-bold">BLOCKING ISSUANCE</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: CUSTOMER FEEDBACK PANEL */}
+          {/* ========================================================================= */}
+          {currentTab === 'feedback' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-base sm:text-lg font-black text-slate-900">
+                      Customer Feedback & Direct Inquiries
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Direct inquiries, API integration requests, and reviews received from the landing page support desk.
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Customer / Shipper</th>
+                      <th className="px-4 py-3">Rating</th>
+                      <th className="px-4 py-3">Feedback Message</th>
+                      <th className="px-4 py-3">Received</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredFeedbacks.map((fb) => (
+                      <tr key={fb.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <div className="font-bold text-slate-900">{fb.name}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">{fb.email}</div>
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {renderStarRating(fb.rating || 5)}
+                        </td>
+                        <td className="px-4 py-3.5 max-w-xs sm:max-w-md">
+                          <p className="text-slate-700 leading-relaxed font-medium">"{fb.message}"</p>
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-400 text-[11px] whitespace-nowrap">
+                          {fb.date}
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            {fb.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 5: OVERVIEW (TARIFF RULES & ML PERFORMANCE) */}
           {/* ========================================================================= */}
           {currentTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-              {/* Pricing Rate Configuration Engine */}
               <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                   <div>
@@ -844,29 +964,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Transport Mode Multipliers
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {['ROAD', 'RAIL', 'SEA', 'AIR'].map(m => (
-                        <div key={m} className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                          <span className="text-[10px] font-bold text-slate-400">{m}</span>
-                          <input
-                            type="number"
-                            step="0.05"
-                            value={rateConfig.mode_multipliers?.[m] || 1.0}
-                            onChange={e => setRateConfig({
-                              ...rateConfig,
-                              mode_multipliers: { ...rateConfig.mode_multipliers, [m]: parseFloat(e.target.value) || 1.0 }
-                            })}
-                            className="w-full mt-1 bg-white border border-slate-200 px-2 py-1 rounded text-xs font-extrabold text-slate-800"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                   <button
                     type="submit"
                     disabled={isSaving}
@@ -877,15 +974,14 @@ export default function AdminDashboard() {
                 </form>
               </div>
 
-              {/* ML Transit & Cost Predictor Health */}
               <div className="lg:col-span-5 bg-slate-900 text-white border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                   <div>
                     <h2 className="text-base sm:text-lg font-black text-white">
-                      AI Dynamic Pricing Engine
+                      AI Dynamic Pricing Telemetry
                     </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Stage 2 Gradient Boosting regression & LightGBM performance telemetry.
+                      Stage 2 Gradient Boosting regression & LightGBM performance.
                     </p>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -893,33 +989,17 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-center">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">R² Model Fit</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">R² Fit</span>
                     <div className="text-lg font-black text-emerald-400 mt-1">{mlMetrics.r2_score}</div>
                   </div>
                   <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-center">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">RMSE Cost</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">RMSE</span>
                     <div className="text-lg font-black text-white mt-1">₹{mlMetrics.rmse?.toFixed(0)}</div>
                   </div>
                   <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-center">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">MAE Accuracy</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">MAE</span>
                     <div className="text-lg font-black text-white mt-1">₹{mlMetrics.mae?.toFixed(0)}</div>
                   </div>
-                </div>
-
-                {/* Audit Logs */}
-                <div className="space-y-2 pt-2 border-t border-slate-800 text-xs">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
-                    Recent Governance Audit Trail
-                  </span>
-                  {ADMIN_AUDIT_LOGS.map(log => (
-                    <div key={log.id} className="flex justify-between items-center py-1.5 border-b border-slate-800/60 text-slate-300">
-                      <div>
-                        <span className="font-semibold text-white">{log.action}</span>
-                        <p className="text-[10px] text-slate-400">{log.detail}</p>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-400">{log.time}</span>
-                    </div>
-                  ))}
                 </div>
 
                 <button
@@ -930,12 +1010,98 @@ export default function AdminDashboard() {
                   {isRetraining ? 'Retraining ML Models...' : 'Retrain Gradient Boosting Regressor'}
                 </button>
               </div>
-
             </div>
           )}
 
         </main>
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT MARGIN POLICY */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {editingPolicy && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-base font-black text-slate-900">Edit Margin Policy: {editingPolicy.scope}</h3>
+                <button onClick={() => setEditingPolicy(null)} className="p-1 text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSavePolicy} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Target / Scope Key</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={editingPolicy.scopeKey}
+                    className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-600 font-bold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-rose-600 uppercase mb-1">Floor %</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      value={editingPolicy.floorPct}
+                      onChange={e => setEditingPolicy({ ...editingPolicy, floorPct: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-rose-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-slate-700 uppercase mb-1">Target %</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      value={editingPolicy.targetPct}
+                      onChange={e => setEditingPolicy({ ...editingPolicy, targetPct: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-emerald-600 uppercase mb-1">Stretch %</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      value={editingPolicy.stretchPct}
+                      onChange={e => setEditingPolicy({ ...editingPolicy, stretchPct: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-emerald-700"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPolicy(null)}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow"
+                  >
+                    Save Policy Rules
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ========================================================================= */}
       {/* MODAL: CREATE USER */}
@@ -954,10 +1120,7 @@ export default function AdminDashboard() {
                   <UserPlus className="w-5 h-5 text-indigo-600" />
                   <h3 className="text-base font-black text-slate-900">Create New System User</h3>
                 </div>
-                <button
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
-                >
+                <button onClick={() => setIsCreateModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -1040,7 +1203,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1074,10 +1237,7 @@ export default function AdminDashboard() {
                   <Edit3 className="w-5 h-5 text-indigo-600" />
                   <h3 className="text-base font-black text-slate-900">Edit User: {selectedUser.fullName}</h3>
                 </div>
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
-                >
+                <button onClick={() => setIsEditModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -1120,38 +1280,17 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Company</label>
-                    <input
-                      type="text"
-                      value={userForm.companyName}
-                      onChange={e => setUserForm({ ...userForm, companyName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Phone</label>
-                    <input
-                      type="text"
-                      value={userForm.phone}
-                      onChange={e => setUserForm({ ...userForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-semibold"
-                    />
-                  </div>
-                </div>
-
                 <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md"
                   >
                     Save Changes
                   </button>
