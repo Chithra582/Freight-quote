@@ -82,22 +82,41 @@ export default function RegisterPage() {
           full_name: formData.fullName,
           phone: formData.phone,
           company_name: formData.companyName,
-          role: selectedRole
+          role: (selectedRole || 'CUSTOMER').toUpperCase()
         })
       })
 
       const data = await response.json()
+
+      // Save user locally in systemUsers as well
+      const newRegisteredUser = {
+        id: `USR-${Math.floor(100 + Math.random() * 900)}`,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        role: (selectedRole || 'CUSTOMER').toUpperCase(),
+        companyName: formData.companyName.trim() || 'Global Freight Client',
+        phone: formData.phone.trim() || '+91 98000 00000',
+        status: 'Active',
+        created: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      }
+      try {
+        const storedUsers = localStorage.getItem('systemUsers')
+        const currentUsers = storedUsers ? JSON.parse(storedUsers) : []
+        localStorage.setItem('systemUsers', JSON.stringify([newRegisteredUser, ...currentUsers]))
+      } catch {}
 
       if (response.ok && data.access) {
         setIsSuccess(true)
         // Store JWT tokens & session data
         localStorage.setItem('token', data.access)
         localStorage.setItem('refreshToken', data.refresh)
-        localStorage.setItem('userRole', data.user.role)
-        localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userRole', data.user.role || (selectedRole || 'CUSTOMER').toUpperCase())
+        localStorage.setItem('userEmail', data.user.email || formData.email)
+        localStorage.setItem('userName', data.user.full_name || formData.fullName)
         localStorage.setItem('selectedAccessRole', selectedRole.toLowerCase())
 
-        // Navigate immediately without artificial delay
+        // Navigate immediately without delay
         navigate('/dashboard')
       } else {
         // Extract server-side field error messages
@@ -112,7 +131,7 @@ export default function RegisterPage() {
     } catch (err) {
       // Fallback fast registration in case backend is waking up from sleep on free tier
       localStorage.setItem('token', 'demo-jwt-' + Date.now())
-      localStorage.setItem('userRole', selectedRole.toUpperCase())
+      localStorage.setItem('userRole', (selectedRole || 'CUSTOMER').toUpperCase())
       localStorage.setItem('userEmail', formData.email)
       localStorage.setItem('userName', formData.fullName)
       localStorage.setItem('selectedAccessRole', selectedRole.toLowerCase())
@@ -120,6 +139,7 @@ export default function RegisterPage() {
     } finally {
       setIsLoading(false)
     }
+
 
   }
 
