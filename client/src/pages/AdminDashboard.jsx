@@ -351,13 +351,15 @@ export default function AdminDashboard() {
   }
 
   // Filtered lists
-  const filteredUsers = users.filter(u => {
-    const matchesSearch = u.fullName.toLowerCase().includes(userSearch.toLowerCase()) ||
-                          u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-                          u.companyName.toLowerCase().includes(userSearch.toLowerCase())
+  const filteredUsers = (users || []).filter(u => {
+    if (!u) return false
+    const matchesSearch = (u.fullName || '').toLowerCase().includes((userSearch || '').toLowerCase()) ||
+                          (u.email || '').toLowerCase().includes((userSearch || '').toLowerCase()) ||
+                          (u.companyName || '').toLowerCase().includes((userSearch || '').toLowerCase())
     const matchesRole = userRoleFilter === 'ALL' || u.role === userRoleFilter
     return matchesSearch && matchesRole
   })
+
 
   const filteredFeedbacks = feedbacks.filter(f => {
     if (feedbackFilter === 'all') return true
