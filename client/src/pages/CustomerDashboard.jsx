@@ -12,17 +12,20 @@ import {
   Train, 
   FileText, 
   Download, 
-  ArrowRight,
+  ArrowRight, 
   MapPin,
   Calendar,
   AlertCircle,
   TrendingUp,
   Shield,
-  ExternalLink
+  ExternalLink,
+  Calculator,
+  Sparkles
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
+import InstantQuoteCalculator from '../components/InstantQuoteCalculator'
 import { downloadQuotePDF } from '../utils/exportUtils'
 import { API_BASE_URL } from '../config/api'
 
@@ -59,12 +62,12 @@ const CUSTOMER_QUOTES = [
     destination: 'Singapore (SGSIN)',
     mode: 'Ocean',
     service: 'ONE Alliance Loop',
-    sellPrice: '₹1,95,000',
-    status: 'Delivered',
-    validUntil: 'Completed',
+    sellPrice: '₹1,48,350',
+    status: 'Issued',
+    validUntil: 'Aug 28, 2026',
     transitDays: '5 Days',
-    cargo: '2 x 20GP Containers (Automotive Parts)',
-    trackingStep: 4
+    cargo: '2 x 40HC Containers (Automotive Parts)',
+    trackingStep: 2
   }
 ]
 
@@ -76,6 +79,7 @@ export default function CustomerDashboard() {
   const [userEmail, setUserEmail] = useState('user@freighthub.com')
   const [acceptedQuotes, setAcceptedQuotes] = useState({})
   const [activeShipmentCount, setActiveShipmentCount] = useState(3)
+  const [activeTab, setActiveTab] = useState('quotes') // 'quotes' | 'calculator'
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -128,6 +132,11 @@ export default function CustomerDashboard() {
     alert(`Quotation ${quoteId} declined.`)
   }
 
+  const handleSavedQuoteFromCalc = (newQuote) => {
+    setQuotes(prev => [newQuote, ...prev])
+    setActiveTab('quotes')
+  }
+
   const getModeIcon = (mode) => {
     switch (mode?.toLowerCase()) {
       case 'air':
@@ -164,17 +173,28 @@ export default function CustomerDashboard() {
                 Welcome back, {userName}
               </h1>
               <p className="text-xs sm:text-sm text-blue-100/90 mt-1 max-w-xl">
-                Track your active shipments, review newly issued quotations with transparent pricing, and launch custom multi-modal freight requests.
+                Track active shipments, test live freight calculations (Base Freight, BAF, THC, Docs & Margin), and issue verified quotes.
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-wrap gap-3">
+            <div className="relative z-10 flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('calculator')}
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs shadow-lg flex items-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'calculator' ? 'bg-emerald-500 text-white' : 'bg-white/15 hover:bg-white/25 text-white'
+                }`}
+              >
+                <Calculator className="w-4 h-4" />
+                <span>⚡ Quote Calculator</span>
+              </button>
+
               <Link
                 to="/dashboard/new-shipment"
-                className="px-5 py-3 rounded-2xl bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs sm:text-sm shadow-lg flex items-center gap-2 transition-all cursor-pointer active:scale-95"
+                className="px-4 py-2.5 rounded-2xl bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs shadow-lg flex items-center gap-2 transition-all cursor-pointer active:scale-95"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Request New Quote</span>
+                <span>5-Agent Verification</span>
               </Link>
             </div>
 
@@ -218,123 +238,160 @@ export default function CustomerDashboard() {
             />
           </div>
 
-          {/* ========================================================================= */}
-          {/* ACTIVE QUOTATIONS & ENQUIRIES SECTION */}
-          {/* ========================================================================= */}
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-              <div>
-                <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                  Your Active Quotations & Enquiries
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Review commercial proposals with guaranteed validity timers and transparent pricing.
-                </p>
-              </div>
-              <Link
-                to="/dashboard/new-shipment"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700"
-              >
-                <span>Request New Quote</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+          {/* Tab Navigation */}
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+            <button
+              onClick={() => setActiveTab('quotes')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'quotes'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Active Quotations ({quotes.length})</span>
+            </button>
 
-            {/* Quote Cards */}
-            <div className="space-y-4 mt-6">
-              {quotes.map((quote) => (
-                <div
-                  key={quote.id}
-                  className="bg-slate-50 hover:bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 transition-all"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    
-                    {/* Route & Cargo details */}
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-800">
-                          {quote.id}
-                        </span>
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-200/80 text-[11px] font-semibold text-slate-700">
-                          {getModeIcon(quote.mode)}
-                          <span>{quote.mode}</span>
-                        </div>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          quote.dispatchedStatus === 'Dispatched to Client' || quote.status === 'Dispatched to Client' || quote.status === 'Dispatched' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                          quote.status === 'Issued' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                          quote.status === 'Booked' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                          quote.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                          'bg-amber-100 text-amber-800 border border-amber-200'
-                        }`}>
-                          {quote.dispatchedStatus || quote.status}
-                        </span>
-
-                        <span className="text-[11px] text-slate-400">
-                          Valid until: <strong className="text-slate-600">{quote.validUntil}</strong>
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm sm:text-base font-black text-slate-800 pt-1">
-                        <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span>{quote.origin}</span>
-                        <span className="text-slate-400 font-normal">➔</span>
-                        <span>{quote.destination}</span>
-                      </div>
-
-                      <p className="text-xs text-slate-500 font-medium">
-                        Carrier Service: <span className="text-slate-800 font-semibold">{quote.service}</span> • Estimated Transit: <span className="text-slate-800 font-semibold">{quote.transitDays}</span>
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Cargo: {quote.cargo}
-                      </p>
-                    </div>
-
-                    {/* Price & Action Buttons */}
-                    <div className="flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-end justify-between gap-4 shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-200">
-                      <div className="text-left lg:text-right">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                          TOTAL ALL-IN SELL RATE
-                        </span>
-                        <span className="text-2xl font-black text-slate-900 tracking-tight">
-                          {quote.sellPrice}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {quote.status === 'Issued' && (
-                          <>
-                            <button
-                              onClick={() => handleAcceptQuote(quote.id)}
-                              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Accept Quote</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleDeclineQuote(quote.id)}
-                              className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer transition-all"
-                            >
-                              <span>Decline</span>
-                            </button>
-                          </>
-                        )}
-
-                        <button
-                          onClick={() => downloadQuotePDF(quote)}
-                          className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-                          title="Download Quote PDF"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              ))}
-            </div>
+            <button
+              onClick={() => setActiveTab('calculator')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'calculator'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              <span>Interactive Quote Calculator (Chennai → Singapore)</span>
+            </button>
           </div>
+
+          {/* ========================================================================= */}
+          {/* TAB 1: QUOTATIONS LIST */}
+          {/* ========================================================================= */}
+          {activeTab === 'quotes' && (
+            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Your Active Quotations & Enquiries
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Review commercial proposals with guaranteed validity timers and transparent pricing.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('calculator')}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  <span>⚡ Open Calculator</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Quote Cards */}
+              <div className="space-y-4 mt-6">
+                {quotes.map((quote) => (
+                  <div
+                    key={quote.id}
+                    className="bg-slate-50 hover:bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 transition-all"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                      
+                      {/* Route & Cargo details */}
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-800">
+                            {quote.id}
+                          </span>
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-200/80 text-[11px] font-semibold text-slate-700">
+                            {getModeIcon(quote.mode)}
+                            <span>{quote.mode}</span>
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            quote.dispatchedStatus === 'Dispatched to Client' || quote.status === 'Dispatched to Client' || quote.status === 'Dispatched' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                            quote.status === 'Issued' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                            quote.status === 'Booked' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                            quote.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                            'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}>
+                            {quote.dispatchedStatus || quote.status}
+                          </span>
+
+                          <span className="text-[11px] text-slate-400">
+                            Valid until: <strong className="text-slate-600">{quote.validUntil}</strong>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm sm:text-base font-black text-slate-800 pt-1">
+                          <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span>{quote.origin}</span>
+                          <span className="text-slate-400 font-normal">➔</span>
+                          <span>{quote.destination}</span>
+                        </div>
+
+                        <p className="text-xs text-slate-500 font-medium">
+                          Carrier Service: <span className="text-slate-800 font-semibold">{quote.service}</span> • Estimated Transit: <span className="text-slate-800 font-semibold">{quote.transitDays}</span>
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Cargo: {quote.cargo}
+                        </p>
+                      </div>
+
+                      {/* Price & Action Buttons */}
+                      <div className="flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-end justify-between gap-4 shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-200">
+                        <div className="text-left lg:text-right">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                            TOTAL ALL-IN SELL RATE
+                          </span>
+                          <span className="text-2xl font-black text-slate-900 tracking-tight">
+                            {quote.sellPrice}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {quote.status === 'Issued' && (
+                            <>
+                              <button
+                                onClick={() => handleAcceptQuote(quote.id)}
+                                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Accept Quote</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleDeclineQuote(quote.id)}
+                                className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer transition-all"
+                              >
+                                <span>Decline</span>
+                              </button>
+                            </>
+                          )}
+
+                          <button
+                            onClick={() => downloadQuotePDF(quote)}
+                            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                            title="Download Quote PDF"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: INSTANT QUOTE CALCULATOR */}
+          {/* ========================================================================= */}
+          {activeTab === 'calculator' && (
+            <InstantQuoteCalculator onSaveToDashboard={handleSavedQuoteFromCalc} />
+          )}
 
         </main>
       </div>
