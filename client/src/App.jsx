@@ -7,6 +7,7 @@ import NewShipmentEnquiry from './pages/NewShipmentEnquiry'
 import Shipments from './pages/Shipments'
 import MasterData from './pages/MasterData'
 import RouteIntelligence from './pages/RouteIntelligence'
+import QuoteCalculatorPage from './pages/QuoteCalculatorPage'
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<DashboardRouter />} />
+        <Route path="/dashboard/calculator" element={<QuoteCalculatorPage />} />
+        <Route path="/calculator" element={<Navigate to="/dashboard/calculator" replace />} />
         <Route path="/dashboard/new-shipment" element={<NewShipmentEnquiry />} />
         <Route path="/ship" element={<Navigate to="/dashboard/new-shipment" replace />} />
         <Route path="/dashboard/shipments" element={<Shipments />} />
@@ -28,4 +31,3 @@ function App() {
 }
 
 export default App
-

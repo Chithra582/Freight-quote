@@ -16,7 +16,11 @@ import {
   Users,
   Database,
   Anchor,
-  MessageSquare
+  MessageSquare,
+  Calculator,
+  ShieldCheck,
+  Percent,
+  ListChecks
 } from 'lucide-react'
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) {
@@ -60,6 +64,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         title: 'CUSTOMER PORTAL',
         items: [
           { name: 'My Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator },
           { name: 'Request Quote', path: '/dashboard/new-shipment', icon: PlusCircle },
           { name: 'My Shipments', path: '/dashboard/shipments', icon: BarChart3 }
         ]
@@ -71,22 +76,25 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         title: 'ADMINISTRATION',
         items: [
           { name: 'Admin Console', path: '/dashboard', icon: LayoutDashboard },
+          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator },
           { name: 'User Management', path: '/dashboard?tab=users', icon: Users },
-          { name: 'Master Data Management', path: '/dashboard/master-data', icon: Database },
+          { name: 'Margin Policies', path: '/dashboard?tab=margin-policy', icon: Percent },
+          { name: 'Approval Rules', path: '/dashboard?tab=approval-rules', icon: ListChecks },
+          { name: 'Master Data', path: '/dashboard/master-data', icon: Database },
           { name: 'System Shipments', path: '/dashboard/shipments', icon: BarChart3 },
           { name: 'Customer Feedback', path: '/dashboard?tab=feedback', icon: MessageSquare }
         ]
       }
     ]
-
   } else {
-
     // Broker Workbench
     sections = [
       {
         title: 'WORKBENCH',
         items: [
           { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator },
+          { name: 'Approvals Queue', path: '/dashboard?tab=approvals', icon: ShieldCheck },
           { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 },
           { name: 'Quotations', path: '/dashboard?tab=quotations', icon: FileText }
         ]
@@ -100,9 +108,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
     ]
   }
 
-
-
-
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('userEmail')
@@ -110,143 +115,129 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
     navigate('/')
   }
 
-  const sidebarContent = (
-    <div className="h-full flex flex-col justify-between py-6">
-      <div>
+  return (
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div 
+          onClick={() => setIsMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden transition-opacity"
+        />
+      )}
+
+      {/* Main Sidebar */}
+      <aside 
+        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ease-in-out lg:static ${
+          isCollapsed ? 'w-20' : 'w-64'
+        } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+      >
         {/* Brand Header */}
-        <div className={`px-6 flex items-center justify-between mb-6 ${isCollapsed ? 'justify-center' : ''}`}>
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0">
-              <Truck className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between h-20 px-5 border-b border-slate-100">
+          <Link to="/dashboard" className="flex items-center gap-3 overflow-hidden">
+            <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-blue-500 text-white shadow-lg shadow-blue-500/25 shrink-0">
+              <Truck className="w-5 h-5" />
             </div>
             {!isCollapsed && (
-              <div className="transition-all duration-300">
-                <span className="text-lg font-black tracking-tight text-slate-800">
-                  PORT<span className="text-blue-600">LINE</span>
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col"
+              >
+                <span className="text-lg font-black tracking-tight text-slate-900 flex items-center gap-1">
+                  Freight<span className="text-blue-600">IQ</span>
                 </span>
-                <p className="text-[9px] text-blue-600 font-extrabold tracking-wider uppercase">
-                  Freight AI Workspace
-                </p>
-              </div>
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+                  Logistics OS
+                </span>
+              </motion.div>
             )}
           </Link>
+
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
 
-        {/* Navigation Links grouped by Section */}
-        <nav className="px-3 space-y-4">
-          {sections.map((section) => (
-            <div key={section.title} className="space-y-1">
-              {!isCollapsed && (
-                <div className="px-4 text-[9px] font-extrabold text-slate-400 tracking-wider uppercase mb-1.5 pt-2">
+        {/* Navigation Sections */}
+        <div className="flex-1 px-3 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+          {sections.map((section, idx) => (
+            <div key={idx} className="space-y-1">
+              {!isCollapsed && section.title && (
+                <div className="px-3 mb-2 text-[10.5px] font-black text-slate-400 tracking-wider uppercase">
                   {section.title}
                 </div>
               )}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon
-                  const query = location.search
-                  const isActive = item.path.includes('?')
-                    ? query === item.path.substring(item.path.indexOf('?'))
-                    : activePath === item.path && !query
-                  
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.isMock ? '#' : item.path}
-                      onClick={(e) => {
-                        if (item.isMock) {
-                          e.preventDefault()
-                          alert(`${item.name} section is currently a placeholder for the presentation.`)
-                        }
-                        if (setIsMobileOpen) setIsMobileOpen(false)
-                      }}
-                      className={`flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 group relative ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500'
-                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-                      } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                      title={isCollapsed ? item.name : ''}
-                    >
-                      <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-700 transition-colors'}`} />
-                      {!isCollapsed && <span>{item.name}</span>}
-                    </Link>
-                  )
-                })}
-              </div>
+              {section.items.map((item, itemIdx) => {
+                const IconComponent = item.icon
+                const isSelected = activePath === item.path || (item.path.includes('?') && location.search.includes(item.path.split('?')[1]))
+
+                return (
+                  <Link
+                    key={itemIdx}
+                    to={item.path}
+                    onClick={() => setIsMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all relative group cursor-pointer ${
+                      isSelected
+                        ? 'bg-blue-50 text-blue-700 font-extrabold shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <IconComponent className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                      isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                    }`} />
+                    
+                    {!isCollapsed && (
+                      <span className="truncate">{item.name}</span>
+                    )}
+
+                    {isSelected && (
+                      <motion.div 
+                        layoutId="activePill"
+                        className="absolute right-2 w-1.5 h-4 rounded-full bg-blue-600" 
+                      />
+                    )}
+                  </Link>
+                )
+              })}
             </div>
           ))}
-        </nav>
-      </div>
-
-      {/* Footer / Logout */}
-      <div className="px-3 space-y-4">
-        {/* User Account State (if not collapsed) */}
-        {!isCollapsed && (
-          <div className="mx-2 p-3 bg-slate-50 rounded-xl border border-slate-150 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200 uppercase">
-              {userName.charAt(0) || 'U'}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-800 truncate">{userName}</p>
-              <span className="text-[10px] text-slate-500 block truncate">{userEmail}</span>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={handleLogout}
-          className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-500 hover:text-white hover:bg-rose-600 transition-all cursor-pointer ${
-            isCollapsed ? 'justify-center px-0' : ''
-          }`}
-          title={isCollapsed ? 'Logout' : ''}
-        >
-          <LogOut className="w-4.5 h-4.5 shrink-0" />
-          {!isCollapsed && <span>Log Out</span>}
-        </button>
-      </div>
-    </div>
-  )
-
-  return (
-    <>
-      {/* Desktop Sidebar (in-flow, never hides content) */}
-      <aside
-        className={`hidden md:flex flex-col h-screen sticky top-0 bg-white border-r border-slate-200 text-slate-600 z-30 shrink-0 transition-all duration-300 relative ${
-          isCollapsed ? 'w-20' : 'w-64'
-        }`}
-      >
-        {sidebarContent}
-
-        {/* Collapse Toggle Button */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute top-1/2 -right-3.5 transform -translate-y-1/2 w-7 h-7 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 flex items-center justify-center shadow-md cursor-pointer focus:outline-none z-50 hover:text-slate-800 transition-colors"
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
-      </aside>
-
-
-      {/* Mobile Drawer (visible on mobile only, overlays content) */}
-      {isMobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 flex">
-          {/* Backdrop overlay */}
-          <div
-            className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm"
-            onClick={() => setIsMobileOpen(false)}
-          />
-          {/* Sidebar drawer body */}
-          <motion.div
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="relative w-64 bg-white h-full flex flex-col shadow-2xl z-50 border-r border-slate-200"
-          >
-            {sidebarContent}
-          </motion.div>
         </div>
-      )}
+
+        {/* User Info / Logout Footer */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+          <div className={`flex items-center gap-3 p-2 rounded-2xl bg-white border border-slate-200/80 shadow-sm ${
+            isCollapsed ? 'justify-center' : 'justify-between'
+          }`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900 text-white font-black text-xs shrink-0">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              {!isCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-slate-800 truncate">{userName}</span>
+                  <span className="text-[10px] text-slate-400 truncate uppercase font-semibold">{userRole}</span>
+                </div>
+              )}
+            </div>
+
+            {!isCollapsed && (
+              <button
+                onClick={handleLogout}
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+      </aside>
     </>
   )
 }
