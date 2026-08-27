@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import CustomerDashboard from './CustomerDashboard'
 import BrokerDashboard from './BrokerDashboard'
 import AdminDashboard from './AdminDashboard'
+import CustomsDashboard from './CustomsDashboard'
+import AgentOperationsDashboard from './AgentOperationsDashboard'
+import AnalyticsManagementDashboard from './AnalyticsManagementDashboard'
 
 export default function DashboardRouter() {
   const [role, setRole] = useState(() => {
     return (
       localStorage.getItem('selectedAccessRole') ||
       localStorage.getItem('userRole') ||
-      'broker'
+      'customer'
     ).toLowerCase()
   })
   const navigate = useNavigate()
@@ -18,18 +21,18 @@ export default function DashboardRouter() {
     let token = localStorage.getItem('token')
     if (!token) {
       localStorage.setItem('token', 'demo-jwt-token')
-      localStorage.setItem('userEmail', 'broker@freighthub.com')
-      localStorage.setItem('userName', 'Ravi S.')
-      localStorage.setItem('userRole', 'broker')
-      localStorage.setItem('selectedAccessRole', 'broker')
-      setRole('broker')
+      localStorage.setItem('userEmail', 'alex@apexgl.com')
+      localStorage.setItem('userName', 'Alex Shipper')
+      localStorage.setItem('userRole', 'customer')
+      localStorage.setItem('selectedAccessRole', 'customer')
+      setRole('customer')
       return
     }
 
     const storedRole = (
       localStorage.getItem('selectedAccessRole') ||
       localStorage.getItem('userRole') ||
-      'broker'
+      'customer'
     ).toLowerCase()
 
     setRole(storedRole)
@@ -43,7 +46,18 @@ export default function DashboardRouter() {
     return <AdminDashboard />
   }
 
-  // Default to Broker Dashboard for broker / senior broker
+  if (role === 'customs' || role === 'customs_officer') {
+    return <CustomsDashboard />
+  }
+
+  if (role === 'agents' || role === 'agent_operator' || role === 'agent_op') {
+    return <AgentOperationsDashboard />
+  }
+
+  if (role === 'analytics' || role === 'manager') {
+    return <AnalyticsManagementDashboard />
+  }
+
+  // Default to Broker Dashboard for broker
   return <BrokerDashboard />
 }
-
