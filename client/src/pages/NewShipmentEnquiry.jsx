@@ -331,9 +331,11 @@ export default function NewShipmentEnquiry() {
 
     const quoteId = verifiedResult?.quoteId || `QT-2026-${Math.floor(10000 + Math.random() * 90000)}`
     const finalPrice = verifiedResult?.totalPriceFormatted || `₹ ${estimate.cost.toLocaleString('en-IN')}`
+    const shipmentId = `SH-${Math.floor(4000 + Math.random() * 9000)}`
 
     const newQuote = {
       id: quoteId,
+      shipmentId: shipmentId,
       origin: `${formData.origin} Port`,
       destination: `${formData.destination} Port`,
       mode: formData.serviceMode,
@@ -346,12 +348,36 @@ export default function NewShipmentEnquiry() {
       trackingStep: 2
     }
 
+    const newShipment = {
+      id: shipmentId,
+      quoteId: quoteId,
+      origin: formData.origin,
+      destination: formData.destination,
+      mode: formData.serviceMode,
+      status: 'In Transit',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      shippingMethod: formData.containerLoad || 'FCL',
+      items: formData.items,
+      declaredValue: formData.declaredValue || '3500000',
+      currency: formData.currency || 'INR',
+      specialInstructions: formData.specialInstructions || 'Standard freight handling required.'
+    }
+
     try {
+      // 1. Save to customer quotes list (appears in User Dashboard Active Quotes)
       const stored = localStorage.getItem('customerQuotes')
       let list = stored ? JSON.parse(stored) : []
       list.unshift(newQuote)
       localStorage.setItem('customerQuotes', JSON.stringify(list))
-    } catch {}
+
+      // 2. Save to allShipments list (appears in My Shipments & Tracking)
+      const storedShips = localStorage.getItem('allShipments')
+      let shipList = storedShips ? JSON.parse(storedShips) : []
+      shipList.unshift(newShipment)
+      localStorage.setItem('allShipments', JSON.stringify(shipList))
+    } catch (err) {
+      console.error(err)
+    }
 
     setTimeout(() => {
       setIsSubmitting(false)

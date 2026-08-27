@@ -138,8 +138,10 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
   const handleSaveQuote = () => {
     if (!calculationResult) return
 
+    const shipmentId = `SH-${Math.floor(4000 + Math.random() * 9000)}`
     const newQuote = {
       id: calculationResult.quoteId,
+      shipmentId: shipmentId,
       origin: `${calculationResult.from} Port`,
       destination: `${calculationResult.to} Port`,
       mode: 'Ocean',
@@ -154,17 +156,47 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
       margin: `${calculationResult.marginPct}% (₹${calculationResult.marginAmount.toLocaleString('en-IN')})`
     }
 
+    const newShipment = {
+      id: shipmentId,
+      quoteId: calculationResult.quoteId,
+      origin: calculationResult.from,
+      destination: calculationResult.to,
+      mode: 'Ocean',
+      status: 'Booked',
+      date: calculationResult.date,
+      shippingMethod: 'FCL',
+      items: [
+        {
+          id: 1,
+          packageType: 'container',
+          containerType: calculationResult.containerType.toLowerCase(),
+          unitCount: String(calculationResult.containerCount),
+          weight: String(calculationResult.containerCount * 18400),
+          commodity: 'Export Merchandise',
+          hsCode: '8504.40.90'
+        }
+      ],
+      declaredValue: String(calculationResult.sellPrice * 2),
+      currency: 'INR',
+      specialInstructions: 'Direct FCL sea freight container shipment.'
+    }
+
     try {
       const storedCust = localStorage.getItem('customerQuotes')
       let list = storedCust ? JSON.parse(storedCust) : []
       list.unshift(newQuote)
       localStorage.setItem('customerQuotes', JSON.stringify(list))
 
+      const storedShips = localStorage.getItem('allShipments')
+      let shipList = storedShips ? JSON.parse(storedShips) : []
+      shipList.unshift(newShipment)
+      localStorage.setItem('allShipments', JSON.stringify(shipList))
+
       if (onSaveToDashboard) {
         onSaveToDashboard(newQuote)
       }
       setSavedSuccess(true)
-      alert(`Quotation ${newQuote.id} saved to your dashboard!`)
+      alert(`Quotation ${newQuote.id} & Shipment ${shipmentId} saved to your dashboard!`)
     } catch (err) {
       console.error(err)
     }
