@@ -1,26 +1,20 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
   Rocket,
   User,
   Briefcase,
   Shield,
-  Mail,
   Lock,
   Eye,
   EyeOff,
   ArrowRight,
   Zap,
   Calculator,
-  Sliders,
-  Globe,
-  CheckCircle2,
   AlertCircle,
   Scale,
   Cpu,
   TrendingUp,
-  KeyRound
 } from 'lucide-react'
 import { API_BASE_URL } from '../config/api'
 
@@ -39,23 +33,6 @@ export default function LoginPage() {
   const handleRoleChange = (role) => {
     setSelectedRole(role)
     setErrorMessage('')
-  }
-
-  const handleQuickDemoLogin = (role, email, name) => {
-    localStorage.setItem('token', 'demo-jwt-' + Date.now())
-    localStorage.setItem('userRole', role.toUpperCase())
-    localStorage.setItem('userEmail', email)
-    localStorage.setItem('userName', name)
-    localStorage.setItem('selectedAccessRole', role)
-
-    let dest = '/dashboard'
-    if (role === 'user' || role === 'customer') dest = '/user/dashboard'
-    else if (role === 'admin') dest = '/admin/dashboard'
-    else if (role === 'customs_officer') dest = '/customs/dashboard'
-    else if (role === 'agent_operator') dest = '/agents/dashboard'
-    else if (role === 'manager') dest = '/analytics/dashboard'
-
-    navigate(dest)
   }
 
   const handleInputChange = (e) => {
@@ -83,11 +60,31 @@ export default function LoginPage() {
       if (stored) {
         const sysUsers = JSON.parse(stored)
         const inputId = formData.usernameOrEmail.trim().toLowerCase()
-        const matched = sysUsers.find(u => 
-          (u.email?.toLowerCase() === inputId || u.fullName?.toLowerCase() === inputId)
+        const inputRole = selectedRole.toLowerCase()
+
+        // First: find by email (any role)
+        const emailMatches = sysUsers.filter(u =>
+          u.email?.toLowerCase() === inputId || u.fullName?.toLowerCase() === inputId
         )
 
-        if (matched) {
+        if (emailMatches.length > 0) {
+          // Now find one that also matches the selected role
+          const matched = emailMatches.find(u =>
+            u.role?.toLowerCase() === inputRole ||
+            (inputRole === 'user' && u.role?.toLowerCase() === 'customer') ||
+            (inputRole === 'customer' && u.role?.toLowerCase() === 'user')
+          )
+
+          if (!matched) {
+            // Email exists but for a different role
+            const existingRoles = emailMatches.map(u => u.role).join(', ')
+            setErrorMessage(
+              `This email is registered under the "${existingRoles}" role, not "${selectedRole.toUpperCase()}". Please select the correct role tab and try again.`
+            )
+            setIsLoading(false)
+            return
+          }
+
           if (matched.status === 'Suspended') {
             setErrorMessage('This user account has been suspended by the administrator.')
             setIsLoading(false)
@@ -95,12 +92,12 @@ export default function LoginPage() {
           }
 
           if (matched.password && matched.password !== formData.password) {
-            setErrorMessage('Invalid password for this account. Please enter the correct password.')
+            setErrorMessage('Incorrect password. Please try again.')
             setIsLoading(false)
             return
           }
 
-          // Valid credentials created by Admin!
+          // Valid credentials!
           const token = 'jwt-user-' + (matched.id || Date.now())
           const userRole = (matched.role || selectedRole).toLowerCase()
           localStorage.setItem('token', token)
@@ -167,21 +164,7 @@ export default function LoginPage() {
         setErrorMessage(errorMsg)
       }
     } catch (err) {
-      // Fallback fast demo login
-      localStorage.setItem('token', 'demo-jwt-' + Date.now())
-      localStorage.setItem('userRole', selectedRole.toUpperCase())
-      localStorage.setItem('userEmail', formData.usernameOrEmail)
-      localStorage.setItem('userName', formData.usernameOrEmail.split('@')[0])
-      localStorage.setItem('selectedAccessRole', selectedRole)
-
-      let dest = '/dashboard'
-      if (selectedRole === 'user' || selectedRole === 'customer') dest = '/user/dashboard'
-      else if (selectedRole === 'admin') dest = '/admin/dashboard'
-      else if (selectedRole === 'customs_officer') dest = '/customs/dashboard'
-      else if (selectedRole === 'agent_operator') dest = '/agents/dashboard'
-      else if (selectedRole === 'manager') dest = '/analytics/dashboard'
-
-      navigate(dest)
+      setErrorMessage('Unable to connect to the server. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -271,7 +254,7 @@ export default function LoginPage() {
               Sign In to Workspace
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-5">
-              Select your role or click a 1-click demo badge below:
+              Select your role and enter your credentials to sign in.
             </p>
 
             {/* Role Switcher Tabs (6 Roles Grid) */}
@@ -372,56 +355,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Quick 1-Click Demo Badges */}
-            <div className="pt-4 mt-4 border-t border-slate-100">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block mb-2">
-                ⚡ FAST 1-CLICK DEMO ACCESS:
-              </span>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('user', 'alex@apexgl.com', 'Alex Shipper')}
-                  className="p-1.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer"
-                >
-                  👤 Shipper
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('admin', 'admin@freightiq.com', 'System Admin')}
-                  className="p-1.5 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer"
-                >
-                  🛡️ Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('customs_officer', 'customs@icegate.gov.in', 'Officer Verma')}
-                  className="p-1.5 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer"
-                >
-                  ⚖️ Customs
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('agent_operator', 'ai.ops@freightiq.com', 'AI Ops Lead')}
-                  className="p-1.5 bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer"
-                >
-                  🤖 Agent Op
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('manager', 'exec@freightiq.com', 'Director Patel')}
-                  className="p-1.5 bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-200 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer"
-                >
-                  📊 Manager
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('broker', 'broker@freightiq.com', 'Ravi Broker')}
-                  className="p-1.5 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer"
-                >
-                  💼 Broker
-                </button>
-              </div>
-            </div>
+
 
           </div>
         </div>

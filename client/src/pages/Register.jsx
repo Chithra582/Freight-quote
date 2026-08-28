@@ -67,13 +67,29 @@ export default function RegisterPage() {
       return
     }
 
+    // Check if same email + same role already registered locally
+    try {
+      const storedUsers = localStorage.getItem('systemUsers')
+      const currentUsers = storedUsers ? JSON.parse(storedUsers) : []
+      const inputEmail = formData.email.trim().toLowerCase()
+      const inputRole = (selectedRole || 'CUSTOMER').toUpperCase()
+      const alreadyExists = currentUsers.find(
+        u => u.email?.toLowerCase() === inputEmail && u.role?.toUpperCase() === inputRole
+      )
+      if (alreadyExists) {
+        setErrorMessage(
+          `An account with this email already exists for the ${inputRole} role. Please log in instead, or register with a different role.`
+        )
+        return
+      }
+    } catch {}
+
     setIsLoading(true)
 
     try {
       // Call Django REST Framework backend JWT register endpoint
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
         method: 'POST',
-
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
@@ -88,7 +104,52 @@ export default function RegisterPage() {
 
       const data = await response.json()
 
-      // Save user locally in systemUsers as well
+      if (response.ok && data.access) {
+        // Save new user locally in systemUsers
+        const newRegisteredUser = {
+          id: `USR-${Math.floor(100 + Math.random() * 900)}`,
+          fullName: formData.fullName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+          role: (selectedRole || 'CUSTOMER').toUpperCase(),
+          companyName: formData.companyName.trim() || 'Global Freight Client',
+          phone: formData.phone.trim() || '+91 98000 00000',
+          status: 'Active',
+          created: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+        }
+        try {
+          const storedUsers = localStorage.getItem('systemUsers')
+          const currentUsers = storedUsers ? JSON.parse(storedUsers) : []
+          localStorage.setItem('systemUsers', JSON.stringify([newRegisteredUser, ...currentUsers]))
+        } catch {}
+
+        setIsSuccess(true)
+        localStorage.setItem('token', data.access)
+        localStorage.setItem('refreshToken', data.refresh)
+        const userRole = (data.user?.role || selectedRole || 'CUSTOMER').toLowerCase()
+        localStorage.setItem('userRole', userRole)
+        localStorage.setItem('userEmail', data.user?.email || formData.email)
+        localStorage.setItem('userName', data.user?.full_name || formData.fullName)
+        localStorage.setItem('selectedAccessRole', userRole)
+
+        // Route to correct role dashboard
+        let dest = '/dashboard'
+        if (userRole === 'customer') dest = '/user/dashboard'
+        else if (userRole === 'admin') dest = '/admin/dashboard'
+        else if (userRole === 'broker') dest = '/dashboard'
+        navigate(dest)
+      } else {
+        // Extract server-side field error messages
+        const errorMsg = data.email?.[0] || 
+                         data.detail || 
+                         data.password?.[0] || 
+                         data.confirm_password?.[0] || 
+                         data.non_field_errors?.[0] || 
+                         'Registration failed. Please check your information.'
+        setErrorMessage(errorMsg)
+      }
+    } catch (err) {
+      // Backend unreachable — save locally and log in
       const newRegisteredUser = {
         id: `USR-${Math.floor(100 + Math.random() * 900)}`,
         fullName: formData.fullName.trim(),
@@ -106,42 +167,23 @@ export default function RegisterPage() {
         localStorage.setItem('systemUsers', JSON.stringify([newRegisteredUser, ...currentUsers]))
       } catch {}
 
-      if (response.ok && data.access) {
-        setIsSuccess(true)
-        // Store JWT tokens & session data
-        localStorage.setItem('token', data.access)
-        localStorage.setItem('refreshToken', data.refresh)
-        localStorage.setItem('userRole', data.user.role || (selectedRole || 'CUSTOMER').toUpperCase())
-        localStorage.setItem('userEmail', data.user.email || formData.email)
-        localStorage.setItem('userName', data.user.full_name || formData.fullName)
-        localStorage.setItem('selectedAccessRole', selectedRole.toLowerCase())
-
-        // Navigate immediately without delay
-        navigate('/dashboard')
-      } else {
-        // Extract server-side field error messages
-        const errorMsg = data.email?.[0] || 
-                         data.detail || 
-                         data.password?.[0] || 
-                         data.confirm_password?.[0] || 
-                         data.non_field_errors?.[0] || 
-                         'Registration failed. Please check your information.'
-        setErrorMessage(errorMsg)
-      }
-    } catch (err) {
-      // Fallback fast registration in case backend is waking up from sleep on free tier
-      localStorage.setItem('token', 'demo-jwt-' + Date.now())
-      localStorage.setItem('userRole', (selectedRole || 'CUSTOMER').toUpperCase())
+      const userRole = (selectedRole || 'CUSTOMER').toLowerCase()
+      localStorage.setItem('token', 'local-jwt-' + Date.now())
+      localStorage.setItem('userRole', userRole)
       localStorage.setItem('userEmail', formData.email)
       localStorage.setItem('userName', formData.fullName)
-      localStorage.setItem('selectedAccessRole', selectedRole.toLowerCase())
-      navigate('/dashboard')
+      localStorage.setItem('selectedAccessRole', userRole)
+
+      setIsSuccess(true)
+      let dest = '/dashboard'
+      if (userRole === 'customer') dest = '/user/dashboard'
+      else if (userRole === 'admin') dest = '/admin/dashboard'
+      navigate(dest)
     } finally {
       setIsLoading(false)
     }
-
-
   }
+
 
   return (
     <div className="min-h-screen bg-[#0d1424] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
