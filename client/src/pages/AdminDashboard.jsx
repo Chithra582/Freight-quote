@@ -603,6 +603,9 @@ export default function AdminDashboard() {
                     <option value="CUSTOMER">Customers (Shippers)</option>
                     <option value="BROKER">Freight Brokers</option>
                     <option value="ADMIN">System Admins</option>
+                    <option value="CUSTOMS_OFFICER">Customs Officers</option>
+                    <option value="AGENT_OPERATOR">Agent Operators</option>
+                    <option value="MANAGER">Managers</option>
                   </select>
                 </div>
               </div>
@@ -1160,6 +1163,9 @@ export default function AdminDashboard() {
                       <option value="CUSTOMER">CUSTOMER (Shipper)</option>
                       <option value="BROKER">BROKER (Rate Adjuster)</option>
                       <option value="ADMIN">ADMIN (System Owner)</option>
+                      <option value="CUSTOMS_OFFICER">CUSTOMS_OFFICER (Customs Officer)</option>
+                      <option value="AGENT_OPERATOR">AGENT_OPERATOR (AI Agent Operator)</option>
+                      <option value="MANAGER">MANAGER (Analytics Manager)</option>
                     </select>
                   </div>
                 </div>
@@ -1265,6 +1271,9 @@ export default function AdminDashboard() {
                       <option value="CUSTOMER">CUSTOMER (Shipper)</option>
                       <option value="BROKER">BROKER (Rate Adjuster)</option>
                       <option value="ADMIN">ADMIN (System Owner)</option>
+                      <option value="CUSTOMS_OFFICER">CUSTOMS_OFFICER (Customs Officer)</option>
+                      <option value="AGENT_OPERATOR">AGENT_OPERATOR (AI Agent Operator)</option>
+                      <option value="MANAGER">MANAGER (Analytics Manager)</option>
                     </select>
                   </div>
                   <div>
