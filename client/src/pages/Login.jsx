@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   Rocket,
   User,
@@ -355,7 +355,16 @@ export default function LoginPage() {
               </button>
             </form>
 
-
+            {/* Register link */}
+            <div className="text-center mt-5">
+              <span className="text-xs text-slate-500">Don't have an account? </span>
+              <Link
+                to="/register"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+              >
+                Register here
+              </Link>
+            </div>
 
           </div>
         </div>
