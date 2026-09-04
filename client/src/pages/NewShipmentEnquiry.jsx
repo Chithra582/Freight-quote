@@ -38,7 +38,7 @@ import {
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
-import InstantQuoteCalculator, { ORIGIN_PORTS, DESTINATION_PORTS, CONTAINER_TYPES } from '../components/InstantQuoteCalculator'
+import { ORIGIN_PORTS, DESTINATION_PORTS } from '../components/InstantQuoteCalculator'
 import { API_BASE_URL } from '../config/api'
 import { downloadQuotePDF } from '../utils/exportUtils'
 
@@ -62,7 +62,6 @@ export default function NewShipmentEnquiry() {
   const navigate = useNavigate()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [activeModeTab, setActiveModeTab] = useState('agents') // 'agents' | 'calculator'
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -193,8 +192,24 @@ export default function NewShipmentEnquiry() {
       carbonFootprint: `${(weightNum * 0.00008).toFixed(2)} Tons CO2`
     })
 
-    // Reset verified state on significant input changes so user can re-verify
-    setVerifiedResult(null)
+    // Dynamically update verifiedResult if live agent verification is active
+    setVerifiedResult(prev => {
+      if (!prev) return null
+      const finalSellNum = calculatedCost
+      const baseBuyNum = Math.round(finalSellNum / 1.15)
+      const marginNum = finalSellNum - baseBuyNum
+      return {
+        ...prev,
+        totalPriceFormatted: `₹ ${finalSellNum.toLocaleString('en-IN')}`,
+        totalPriceRaw: finalSellNum,
+        baseBuyCost: `₹ ${baseBuyNum.toLocaleString('en-IN')}`,
+        brokerMargin: `₹ ${marginNum.toLocaleString('en-IN')}`,
+        pricingBreakdown: {
+          ...prev.pricingBreakdown,
+          baseLinehaul: `₹ ${baseBuyNum.toLocaleString('en-IN')}`
+        }
+      }
+    })
   }, [formData.serviceMode, formData.weight, formData.origin, formData.destination])
 
   const handleInputChange = (e) => {
@@ -208,32 +223,46 @@ export default function NewShipmentEnquiry() {
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items]
     newItems[index] = { ...newItems[index], [field]: value }
-    setFormData(prev => ({ ...prev, items: newItems }))
+    
+    // Recalculate aggregate weight across all container item lines
+    const totalWeight = newItems.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0)
+
+    setFormData(prev => ({ 
+      ...prev, 
+      items: newItems,
+      weight: totalWeight > 0 ? String(totalWeight) : (field === 'weight' ? value : prev.weight)
+    }))
   }
 
   const handleAddItem = () => {
+    const newItem = {
+      id: Date.now(),
+      packageType: 'container',
+      containerType: '40hc',
+      unitCount: '1',
+      weight: '18400',
+      commodity: formData.commodity || 'Commercial Export Goods',
+      hsCode: '8708.29.00'
+    }
+    const newItems = [...formData.items, newItem]
+    const totalWeight = newItems.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0)
+
     setFormData(prev => ({
       ...prev,
-      items: [
-        ...prev.items,
-        {
-          id: Date.now(),
-          packageType: 'container',
-          containerType: '40hc',
-          unitCount: '1',
-          weight: '18400',
-          commodity: 'General Merchandise',
-          hsCode: '8471.30.10'
-        }
-      ]
+      items: newItems,
+      weight: totalWeight > 0 ? String(totalWeight) : prev.weight
     }))
   }
 
   const handleRemoveItem = (index) => {
     if (formData.items.length <= 1) return
+    const newItems = formData.items.filter((_, i) => i !== index)
+    const totalWeight = newItems.reduce((sum, item) => sum + (parseFloat(item.weight) || 0), 0)
+
     setFormData(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: newItems,
+      weight: totalWeight > 0 ? String(totalWeight) : prev.weight
     }))
   }
 
@@ -362,6 +391,7 @@ export default function NewShipmentEnquiry() {
       highRisk: false,
       ownerEmail: formData.contactEmail || 'customer@apexgl.com',
       trackingStep: 1,
+      weight: `${(formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 36800).toLocaleString()} kg`,
       auditHistory: [
         { action: '5-Agent Multi-Verification Complete', time: 'Just now', user: 'AI Orchestrator', note: 'Corridor, Pricing, Weather, Customs, and Margin agents verified and approved quote request.' }
       ]
@@ -377,6 +407,7 @@ export default function NewShipmentEnquiry() {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       shippingMethod: formData.containerLoad || 'FCL',
       items: formData.items,
+      weight: `${(formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 36800).toLocaleString()} kg`,
       declaredValue: formData.declaredValue || '3500000',
       currency: formData.currency || 'INR',
       specialInstructions: formData.specialInstructions || 'Standard freight handling required.'
@@ -429,63 +460,30 @@ export default function NewShipmentEnquiry() {
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
 
-          {/* Navigation Bar & Mode Toggle */}
+          {/* Navigation Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-3.5 py-2 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl flex items-center gap-1.5 text-xs font-bold cursor-pointer shadow-sm"
+                className="px-3.5 py-2 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl flex items-center gap-1.5 text-xs font-bold cursor-pointer shadow-sm hover:shadow transition-all"
               >
                 <ArrowLeft className="w-4 h-4" /> Back to Dashboard
               </button>
 
-              <div className="flex items-center bg-slate-200/80 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setActiveModeTab('calculator')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeModeTab === 'calculator'
-                      ? 'bg-white text-blue-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Calculator className="w-3.5 h-3.5 text-blue-600" />
-                  <span>⚡ Instant Quote Calculator</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveModeTab('agents')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeModeTab === 'agents'
-                      ? 'bg-white text-indigo-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Cpu className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>🤖 5-Agent Multi-Verification</span>
-                </button>
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold">
+                <Cpu className="w-4 h-4 text-indigo-600" />
+                <span>5-Agent Multi-Verification Workflow</span>
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Deterministic M2 Calculation Ready</span>
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Real-Time AI Corridor & Margin Governance</span>
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* TAB 1: DIRECT INSTANT QUOTE CALCULATOR (MATCHING USER SPEC EXACTLY) */}
-          {/* ========================================================================= */}
-          {activeModeTab === 'calculator' && (
-            <InstantQuoteCalculator onSaveToDashboard={() => navigate('/dashboard')} />
-          )}
-
-          {/* ========================================================================= */}
-          {/* TAB 2: 5-AGENT MULTI-VERIFICATION WORKFLOW */}
-          {/* ========================================================================= */}
-          {activeModeTab === 'agents' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* 5-AGENT MULTI-VERIFICATION WORKFLOW */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
               {/* Form Wizard */}
               <div className="lg:col-span-7 space-y-6">
@@ -914,7 +912,9 @@ export default function NewShipmentEnquiry() {
                     </div>
                     <div className="flex justify-between text-slate-300">
                       <span>Weight & Commodity:</span>
-                      <strong className="text-white">{parseFloat(formData.weight || 36800).toLocaleString()} kg · {formData.commodity}</strong>
+                      <strong className="text-white">
+                        {(formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 36800).toLocaleString()} kg · {formData.commodity}
+                      </strong>
                     </div>
                   </div>
 
@@ -1042,7 +1042,6 @@ export default function NewShipmentEnquiry() {
               </div>
 
             </div>
-          )}
 
           {/* Success Dialog */}
           <AnimatePresence>

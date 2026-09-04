@@ -24,8 +24,8 @@ function App() {
         
         {/* Unified Smart Dashboard Router (Redirects to authenticated role's isolated dashboard) */}
         <Route path="/dashboard" element={<DashboardRouter />} />
-        <Route path="/dashboard/calculator" element={<QuoteCalculatorPage />} />
-        <Route path="/calculator" element={<Navigate to="/dashboard/calculator" replace />} />
+        <Route path="/dashboard/calculator" element={<Navigate to="/dashboard/new-shipment" replace />} />
+        <Route path="/calculator" element={<Navigate to="/dashboard/new-shipment" replace />} />
         
         {/* 4 Isolated Portal Routes with Strict Role-Based Access Guards */}
         {/* 1. Customer Portal */}

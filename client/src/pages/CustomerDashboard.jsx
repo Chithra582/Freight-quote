@@ -35,7 +35,6 @@ import {
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
-import InstantQuoteCalculator from '../components/InstantQuoteCalculator'
 import { downloadQuotePDF } from '../utils/exportUtils'
 
 // Page 9 Test Shipment Data seeded directly into customer quotes
@@ -333,11 +332,11 @@ export default function CustomerDashboard() {
 
             <div className="relative z-10 flex flex-wrap gap-2.5">
               <Link
-                to="/dashboard/calculator"
-                className="px-4 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs shadow flex items-center gap-2 transition-all"
+                to="/dashboard/new-shipment"
+                className="px-4 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer"
               >
-                <Calculator className="w-3.5 h-3.5" />
-                <span>Request Quote</span>
+                <PlusCircle className="w-3.5 h-3.5 text-blue-600" />
+                <span>Request Quote (5-Agent AI)</span>
               </Link>
               <Link
                 to="/dashboard/shipments"
