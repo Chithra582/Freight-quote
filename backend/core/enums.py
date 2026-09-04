@@ -2,7 +2,9 @@ from django.db import models
 
 
 class UserRole(models.TextChoices):
-    CUSTOMER = 'CUSTOMER', 'Customer / User'
+    CUSTOMER = 'CUSTOMER', 'Customer / Shipper'
+    FREIGHT_AGENT = 'FREIGHT_AGENT', 'Freight Agent / Operations'
+    CUSTOMS_OFFICER = 'CUSTOMS_OFFICER', 'Customs Officer'
     BROKER = 'BROKER', 'Freight Broker'
     SENIOR_BROKER = 'SENIOR_BROKER', 'Senior Broker'
     PRICING_MANAGER = 'PRICING_MANAGER', 'Pricing Manager'

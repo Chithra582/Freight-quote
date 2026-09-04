@@ -133,10 +133,10 @@ export default function RegisterPage() {
         localStorage.setItem('selectedAccessRole', userRole)
 
         // Route to correct role dashboard
-        let dest = '/dashboard'
-        if (userRole === 'customer') dest = '/user/dashboard'
-        else if (userRole === 'admin') dest = '/admin/dashboard'
-        else if (userRole === 'broker') dest = '/dashboard'
+        let dest = '/user/dashboard'
+        if (userRole === 'admin') dest = '/admin/dashboard'
+        else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
+        else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
         navigate(dest)
       } else {
         // Extract server-side field error messages
@@ -175,9 +175,10 @@ export default function RegisterPage() {
       localStorage.setItem('selectedAccessRole', userRole)
 
       setIsSuccess(true)
-      let dest = '/dashboard'
-      if (userRole === 'customer') dest = '/user/dashboard'
-      else if (userRole === 'admin') dest = '/admin/dashboard'
+      let dest = '/user/dashboard'
+      if (userRole === 'admin') dest = '/admin/dashboard'
+      else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
+      else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
       navigate(dest)
     } finally {
       setIsLoading(false)
@@ -272,12 +273,12 @@ export default function RegisterPage() {
               Register your organization to access intelligence and quotation tools.
             </p>
 
-            {/* Role Switcher Tabs */}
+            {/* Role Switcher Tabs (4 Roles) */}
             <div className="mb-5">
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                 SELECT ACCOUNT ROLE:
               </label>
-              <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                 <button
                   type="button"
                   onClick={() => setSelectedRole('CUSTOMER')}
@@ -288,20 +289,33 @@ export default function RegisterPage() {
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>User</span>
+                  <span>1. Customer</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setSelectedRole('BROKER')}
+                  onClick={() => setSelectedRole('FREIGHT_AGENT')}
                   className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    selectedRole === 'BROKER'
+                    selectedRole === 'FREIGHT_AGENT'
                       ? 'bg-white text-amber-600 shadow-sm border border-slate-200/80'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" />
-                  <span>Broker</span>
+                  <span>2. Freight Agent</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('CUSTOMS_OFFICER')}
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    selectedRole === 'CUSTOMS_OFFICER'
+                      ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/80'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>3. Customs Officer</span>
                 </button>
 
                 <button
@@ -314,7 +328,7 @@ export default function RegisterPage() {
                   }`}
                 >
                   <Shield className="w-3.5 h-3.5" />
-                  <span>Admin</span>
+                  <span>4. System Admin</span>
                 </button>
               </div>
             </div>

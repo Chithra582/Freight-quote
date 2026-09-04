@@ -245,38 +245,39 @@ export default function CustomsDashboard() {
           </div>
 
           {/* Metric KPIs */}
+          {/* Page 7 Required KPI Cards: Pending Reviews, Missing Documents, High Risk Cargo, Completed Today */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <DashboardCard
-              title="ACTIVE COMPLIANCE CASES"
-              value={cases.length.toString()}
-              change={`${pendingCount} requiring officer sign-off`}
-              isPositive={true}
+              title="PENDING REVIEWS"
+              value={pendingCount.toString()}
+              change="Requiring officer review"
+              isPositive={false}
               icon={FileSearch}
-              color="indigo"
+              color="amber"
             />
             <DashboardCard
-              title="AVG VERIFICATION TIME"
-              value="4.2 Mins"
-              change="AI pre-screen: 12 seconds"
-              isPositive={true}
-              icon={Clock}
-              color="blue"
-            />
-            <DashboardCard
-              title="DOC ACCURACY RATE"
-              value="96.8%"
-              change="ICEGATE & ASEAN FTA verified"
-              isPositive={true}
-              icon={ShieldCheck}
-              color="emerald"
-            />
-            <DashboardCard
-              title="HOLD / BLOCKED QUOTES"
-              value={cases.filter(c => c.status === 'NEEDS_DOCUMENTS' || c.status === 'REJECTED').length.toString()}
-              change="Guaranteed statutory protection"
+              title="MISSING DOCUMENTS"
+              value={cases.filter(c => c.status === 'NEEDS_DOCUMENTS' || c.documents?.some(d => d.mandatory && d.status !== 'VERIFIED')).length.toString()}
+              change="Scenario 7 Customs Action Req."
               isPositive={false}
               icon={AlertCircle}
               color="rose"
+            />
+            <DashboardCard
+              title="HIGH RISK CARGO"
+              value={cases.filter(c => c.priority === 'Critical' || c.riskScore > 0.4).length.toString()}
+              change="HazMat / Dual-Use / Sanctions"
+              isPositive={false}
+              icon={AlertTriangle}
+              color="indigo"
+            />
+            <DashboardCard
+              title="COMPLETED TODAY"
+              value={cases.filter(c => c.status === 'APPROVED').length.toString()}
+              change="Unlocked for quotation"
+              isPositive={true}
+              icon={ShieldCheck}
+              color="emerald"
             />
           </div>
 

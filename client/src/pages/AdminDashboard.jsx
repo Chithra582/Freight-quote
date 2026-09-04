@@ -43,7 +43,9 @@ import {
   ShieldAlert,
   ListChecks,
   Check,
-  Plus
+  Plus,
+  Cpu,
+  Terminal
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -456,7 +458,7 @@ export default function AdminDashboard() {
 
             <div className="relative z-10 flex flex-wrap gap-2.5">
               <Link
-                to="/dashboard"
+                to="/admin/dashboard"
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
                   currentTab === 'overview' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
                 }`}
@@ -465,40 +467,49 @@ export default function AdminDashboard() {
                 <span>Overview</span>
               </Link>
               <Link
-                to="/dashboard?tab=users"
+                to="/admin/dashboard?tab=users"
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
                   currentTab === 'users' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>User Management ({users.length})</span>
+                <span>Users ({users.length})</span>
               </Link>
               <Link
-                to="/dashboard?tab=margin-policy"
+                to="/admin/dashboard?tab=ai-agent-monitor"
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'ai-agent-monitor' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>AI Agent Monitor</span>
+              </Link>
+              <Link
+                to="/admin/dashboard?tab=margin-policy"
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
                   currentTab === 'margin-policy' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <Percent className="w-3.5 h-3.5" />
-                <span>Margin Policies (5 Scopes)</span>
+                <span>Pricing Rules</span>
               </Link>
               <Link
-                to="/dashboard?tab=approval-rules"
+                to="/admin/dashboard?tab=approval-rules"
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
                   currentTab === 'approval-rules' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <ListChecks className="w-3.5 h-3.5" />
-                <span>Approval Rules (6 Rules)</span>
+                <span>Approval Rules</span>
               </Link>
               <Link
-                to="/dashboard?tab=feedback"
+                to="/admin/dashboard?tab=audit-logs"
                 className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'feedback' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                  currentTab === 'audit-logs' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Feedback ({feedbacks.length})</span>
+                <span>Audit Logs</span>
               </Link>
               <Link
                 to="/dashboard/master-data"
@@ -512,39 +523,63 @@ export default function AdminDashboard() {
             <div className="absolute -right-10 -top-20 w-64 h-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
           </div>
 
-          {/* System KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Section 6 (Page 7) Required KPI Cards: Total Users, Shipments, Quotes, Pending Reviews, High Risk Alerts, AI Predictions, Analytics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             <DashboardCard
-              title="SYSTEM USERS"
-              value={`${users.length} Active`}
-              change={`${users.filter(u => u.role === 'BROKER').length} Brokers · ${users.filter(u => u.role === 'CUSTOMER').length} Customers`}
+              title="TOTAL USERS"
+              value={`${users.length}`}
+              change="Customers & Agents"
               isPositive={true}
               icon={Users}
               color="indigo"
             />
             <DashboardCard
-              title="GLOBAL GATEWAYS"
-              value="27 Hubs"
-              change="16 Ports · 11 Airports"
+              title="SHIPMENTS"
+              value="32 Total"
+              change="Sea & Air Loops"
               isPositive={true}
-              icon={Globe}
+              icon={Truck}
               color="blue"
             />
             <DashboardCard
-              title="MARGIN POLICY SCOPES"
-              value="5 Levels"
-              change="Priority: Cust-Lane → Tier → Lane → Global"
+              title="QUOTES"
+              value="24 Active"
+              change="Draft to Booked"
               isPositive={true}
-              icon={Percent}
+              icon={Layers}
               color="purple"
             />
             <DashboardCard
-              title="APPROVAL RULES"
-              value="6 Active Rules"
-              change="Floor Breach & High Value Routing"
-              isPositive={true}
-              icon={ListChecks}
+              title="PENDING REVIEWS"
+              value="4 Pending"
+              change="Agent validation"
+              isPositive={false}
+              icon={Clock}
               color="amber"
+            />
+            <DashboardCard
+              title="HIGH RISK ALERTS"
+              value="2 Alerts"
+              change="Weather & HazMat"
+              isPositive={false}
+              icon={ShieldAlert}
+              color="rose"
+            />
+            <DashboardCard
+              title="AI PREDICTIONS"
+              value="28,490"
+              change="LightGBM ML Regression"
+              isPositive={true}
+              icon={Cpu}
+              color="emerald"
+            />
+            <DashboardCard
+              title="ANALYTICS"
+              value="99.2%"
+              change="SLA On-Time Yield"
+              isPositive={true}
+              icon={TrendingUp}
+              color="sky"
             />
           </div>
 
@@ -915,6 +950,126 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: AI AGENT MONITOR (PAGE 6 SPECIFICATION) */}
+          {/* ========================================================================= */}
+          {currentTab === 'ai-agent-monitor' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-base sm:text-lg font-black text-slate-900">
+                      Backend AI Intelligence Services Monitor
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Section 5 & 6 Architecture: Dashboards are for human users. AI Agents are backend intelligence services.
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
+                  All 6 AI Agents Operational
+                </span>
+              </div>
+
+              {/* Agent Flow Diagram (Page 6) */}
+              <div className="p-4 bg-slate-900 rounded-2xl text-white">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold block mb-2">
+                  PAGE 6 AGENT FLOW PIPELINE:
+                </span>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold">
+                  <span className="px-2.5 py-1 bg-blue-600/40 border border-blue-400/50 rounded-lg text-blue-300">AI ORCHESTRATOR</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2.5 py-1 bg-sky-600/40 border border-sky-400/50 rounded-lg text-sky-300">ROUTE AGENT</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2.5 py-1 bg-indigo-600/40 border border-indigo-400/50 rounded-lg text-indigo-300">PRICING AGENT</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2.5 py-1 bg-amber-600/40 border border-amber-400/50 rounded-lg text-amber-300">WEATHER AGENT + CUSTOMS AGENT</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2.5 py-1 bg-rose-600/40 border border-rose-400/50 rounded-lg text-rose-300">RISK AGENT</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2.5 py-1 bg-emerald-600/40 border border-emerald-400/50 rounded-lg text-emerald-300">QUOTE ENGINE</span>
+                </div>
+              </div>
+
+              {/* 6 AI Agents Grid (Page 6 Table) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { name: 'AI Orchestrator', resp: 'Controls workflow and calls required agents', output: 'Combined analysis state', status: 'Healthy', latency: '65ms' },
+                  { name: 'Route Agent', resp: 'Route options, distance and ETA', output: 'Recommended route', status: 'Healthy', latency: '142ms' },
+                  { name: 'Pricing Agent', resp: 'Rule price + ML prediction comparison', output: 'Recommended price', status: 'Healthy', latency: '84ms' },
+                  { name: 'Weather Agent', resp: 'Weather and delay analysis', output: 'Weather risk score', status: 'Healthy', latency: '310ms' },
+                  { name: 'Customs Agent', resp: 'Documents and customs requirements', output: 'Customs risk score', status: 'Healthy', latency: '190ms' },
+                  { name: 'Risk Agent', resp: 'Combines all risk signals', output: 'Overall composite risk + recommendation', status: 'Healthy', latency: '95ms' }
+                ].map((agent, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-black text-slate-900">{agent.name}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
+                          {agent.status}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mb-1">
+                        <strong className="text-slate-700">Responsibility:</strong> {agent.resp}
+                      </div>
+                      <div className="text-[11px] text-slate-600">
+                        <strong className="text-slate-700">Output:</strong> <span className="font-mono text-indigo-600">{agent.output}</span>
+                      </div>
+                    </div>
+                    <div className="pt-3 mt-3 border-t border-slate-200/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                      <span>Latency: {agent.latency}</span>
+                      <span className="text-emerald-600 font-bold">99.9% uptime</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: AUDIT LOGS CONSOLE */}
+          {/* ========================================================================= */}
+          {currentTab === 'audit-logs' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">
+                    System Audit Trail & Security Logs
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Immutable activity records including Scenario 9 agent price modifications, sign-offs, and auth events.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { action: 'Price Modification (Scenario 9)', detail: 'Quote QT-2026-1001 modified by Sarah Jenkins. Reason: Volume discount on Chennai-Rotterdam lane.', time: '12m ago', user: 'Freight Agent', status: 'Audited' },
+                  { action: 'Customs Officer Case Approved', detail: 'Case CASE-2026-081 signed off by Officer Verma. Document verification confirmed.', time: '35m ago', user: 'Customs Officer', status: 'Success' },
+                  { action: 'Quote Generated (M1-M3)', detail: 'AI Orchestrator synthesized Quote Engine outputs for SHP-1001 (₹86,000).', time: '45m ago', user: 'AI Orchestrator', status: 'Success' },
+                  { action: 'Master Data Sync', detail: 'Synchronized 16 Sea Ports & 11 Cargo Gateways with tariff base rates.', time: '2h ago', user: 'Admin John', status: 'Success' }
+                ].map((log, i) => (
+                  <div key={i} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-800">{log.action}</span>
+                        <span className="px-2 py-0.2 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[9.5px] font-bold">
+                          {log.user}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">{log.detail}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-slate-400 block">{log.time}</span>
+                      <span className="text-[10px] font-bold text-emerald-600">{log.status}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

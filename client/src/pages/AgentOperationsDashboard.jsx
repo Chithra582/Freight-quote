@@ -1,140 +1,271 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Cpu, 
-  Activity, 
+  Briefcase, 
+  Truck, 
+  FileText, 
   CheckCircle2, 
   AlertTriangle, 
   Clock, 
-  Server, 
-  Navigation, 
   DollarSign, 
-  CloudRain, 
   ShieldCheck, 
   TrendingUp, 
-  RefreshCw, 
-  Terminal, 
+  Users, 
+  Send, 
+  Edit3, 
+  X, 
+  Check, 
+  Eye, 
+  FileSearch, 
+  Bell, 
+  User, 
+  Filter, 
+  Search, 
   Layers, 
-  Sliders, 
-  Zap, 
-  AlertOctagon,
-  FileCode,
-  RotateCcw
+  Percent, 
+  Sparkles,
+  Scale,
+  Calendar,
+  Download
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
+import { downloadQuotePDF } from '../utils/exportUtils'
 
-const AGENTS_METRICS = [
+// Initial quote queue for Freight Agent review (includes Page 9 test data)
+const INITIAL_AGENT_QUOTES = [
   {
-    id: 'route',
-    name: '1. Route Intelligence Agent',
-    icon: Navigation,
-    color: 'sky',
-    status: 'HEALTHY',
-    version: 'v2.4-dijkstra-multi-modal',
-    latencyMs: 142,
-    successRate: '99.8%',
-    totalExecutions: '14,820',
-    fallbackRate: '0.2%',
-    description: 'Calculates multi-modal graph corridors, port turn times, and maritime transshipment loops.',
-    lastExecution: '12s ago',
-    activeProvider: 'Global Marine Route Graph API (Primary)'
+    id: 'QT-2026-1001',
+    shipmentId: 'SHP-1001',
+    customer: 'ABC Electronics Pvt Ltd',
+    customerEmail: 'customer@apexgl.com',
+    origin: 'Chennai, India (INMAA)',
+    destination: 'Rotterdam, Netherlands (NLRTM)',
+    mode: 'Sea',
+    container: '40FT',
+    cargo: 'Electronics (5,000 KG · 12 CBM)',
+    distanceKm: 8950,
+    transitDays: '24 Days',
+    rulePrice: 87000,
+    aiPrice: 85500,
+    recommendedPrice: 86000,
+    finalPrice: 86000,
+    weatherRisk: '30/100 — Moderate',
+    customsRisk: '40/100 — Medium',
+    routeRisk: '20/100 — Low',
+    overallRisk: 'MEDIUM',
+    status: 'PENDING_REVIEW', // Waiting for agent review (Page 9)
+    validUntil: 'Sep 18, 2026',
+    carrier: 'Maersk Line Direct Service',
+    highRisk: false,
+    auditHistory: [
+      { action: 'AI Orchestrator Execution', time: '10m ago', user: 'AI Orchestrator', note: 'Combined rule price, ML prediction, and composite risk' }
+    ]
   },
   {
-    id: 'pricing',
-    name: '2. Pricing Engine Agent',
-    icon: DollarSign,
-    color: 'blue',
-    status: 'HEALTHY',
-    version: 'v3.1-deterministic-10step',
-    latencyMs: 84,
-    successRate: '100.0%',
-    totalExecutions: '28,490',
-    fallbackRate: '0.0%',
-    description: 'Deterministic 10-step cost build-up, Incoterm responsibility, and air lower-break rules.',
-    lastExecution: '4s ago',
-    activeProvider: 'FreightIQ Master Tariff & Rate Card Engine'
+    id: 'QT-2026-00940',
+    shipmentId: 'SHP-1005',
+    customer: 'Zenith Chemical Corp',
+    customerEmail: 'ops@zenithchem.com',
+    origin: 'Nhava Sheva (INNSA)',
+    destination: 'Antwerp (BEANR)',
+    mode: 'Sea',
+    container: '20OT',
+    cargo: 'Industrial Solvents (Class 3 Flammable, 14,000 KG)',
+    distanceKm: 9200,
+    transitDays: '26 Days',
+    rulePrice: 245000,
+    aiPrice: 260000,
+    recommendedPrice: 255000,
+    finalPrice: 255000,
+    weatherRisk: '65/100 — High Alert',
+    customsRisk: '80/100 — Critical Flag',
+    routeRisk: '45/100 — Moderate',
+    overallRisk: 'HIGH',
+    status: 'PENDING_REVIEW',
+    validUntil: 'Aug 30, 2026',
+    carrier: 'Hapag-Lloyd Express',
+    highRisk: true,
+    auditHistory: [
+      { action: 'High Risk Alert Triggered', time: '20m ago', user: 'Risk Agent M3', note: 'HazMat IMO Class 3 documentation required' }
+    ]
   },
   {
-    id: 'weather',
-    name: '3. Marine Meteorology Agent',
-    icon: CloudRain,
-    color: 'amber',
-    status: 'HEALTHY',
-    version: 'v1.8-noaa-gfs-radar',
-    latencyMs: 310,
-    successRate: '98.9%',
-    totalExecutions: '9,210',
-    fallbackRate: '1.1%',
-    description: 'Scans oceanic wave heights, tropical storm tracks, and voyage delay probabilities.',
-    lastExecution: '45s ago',
-    activeProvider: 'NOAA GFS Global Oceanic Wave Radar API'
-  },
-  {
-    id: 'customs',
-    name: '4. Customs & Regulatory Agent',
-    icon: ShieldCheck,
-    color: 'indigo',
-    status: 'HEALTHY',
-    version: 'v2.2-icegate-tariff-engine',
-    latencyMs: 195,
-    successRate: '99.4%',
-    totalExecutions: '12,650',
-    fallbackRate: '0.6%',
-    description: 'Validates HS codes, generates document checklists, and cross-references statutory tariffs.',
-    lastExecution: '18s ago',
-    activeProvider: 'WCO Harmonized Tariff & National Customs Feeds'
-  },
-  {
-    id: 'risk',
-    name: '5. Composite Risk Engine',
-    icon: TrendingUp,
-    color: 'emerald',
-    status: 'HEALTHY',
-    version: 'v2.0-multi-factor-scoring',
-    latencyMs: 65,
-    successRate: '100.0%',
-    totalExecutions: '21,340',
-    fallbackRate: '0.0%',
-    description: 'Synthesizes route, pricing volatility, weather delay, and customs friction into composite score.',
-    lastExecution: '4s ago',
-    activeProvider: 'FreightIQ Composite Risk Analytics Model'
+    id: 'QT-2026-00933',
+    shipmentId: 'SHP-1006',
+    customer: 'Nordic Imports AB',
+    customerEmail: 'contact@nordicimp.se',
+    origin: 'Nhava Sheva (INNSA)',
+    destination: 'Rotterdam (NLRTM)',
+    mode: 'Sea',
+    container: '40HC',
+    cargo: 'Automotive Assemblies (12,500 KG)',
+    distanceKm: 8950,
+    transitDays: '25 Days',
+    rulePrice: 215000,
+    aiPrice: 210000,
+    recommendedPrice: 212000,
+    finalPrice: 212000,
+    weatherRisk: '20/100 — Low',
+    customsRisk: '15/100 — Low',
+    routeRisk: '15/100 — Low',
+    overallRisk: 'LOW',
+    status: 'SENT',
+    validUntil: 'Sep 05, 2026',
+    carrier: 'MSC Mediterranean Shipping',
+    highRisk: false,
+    auditHistory: [
+      { action: 'Quote Approved & Sent', time: '1h ago', user: 'Sarah Jenkins (Agent)', note: 'Commercially approved without revision' }
+    ]
   }
-]
-
-const SAMPLE_EXECUTION_LOGS = [
-  { id: 'EX-9804', agent: 'Pricing Agent', trigger: 'Quote Calculation QT-2026-00934', status: 'SUCCESS', latency: '78ms', provider: 'Primary Rate Card', time: 'Just now' },
-  { id: 'EX-9803', agent: 'Route Agent', trigger: 'Corridor Search Chennai -> Singapore', status: 'SUCCESS', latency: '135ms', provider: 'Primary Graph', time: '12s ago' },
-  { id: 'EX-9802', agent: 'Weather Agent', trigger: 'Radar Scan Malacca Strait', status: 'SUCCESS', latency: '298ms', provider: 'NOAA GFS Radar', time: '45s ago' },
-  { id: 'EX-9801', agent: 'Weather Agent', trigger: 'Radar Scan North Sea Route', status: 'FALLBACK_CACHED', latency: '410ms', provider: 'Cached Telemetry', time: '2 mins ago' },
-  { id: 'EX-9800', agent: 'Customs Agent', trigger: 'HS Code 5208.11 Verification', status: 'SUCCESS', latency: '184ms', provider: 'ICEGATE EDI Engine', time: '5 mins ago' }
 ]
 
 export default function AgentOperationsDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [agents, setAgents] = useState(AGENTS_METRICS)
-  const [logs, setLogs] = useState(SAMPLE_EXECUTION_LOGS)
-  const [selectedAgentTab, setSelectedAgentTab] = useState('all') // 'all' | 'route' | 'pricing' | 'weather' | 'customs' | 'risk'
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [quotes, setQuotes] = useState(() => {
+    const stored = localStorage.getItem('agentQuotesQueue')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      } catch {}
+    }
+    return INITIAL_AGENT_QUOTES
+  })
 
-  const handleRefreshAgents = () => {
-    setIsRefreshing(true)
-    setTimeout(() => {
-      setIsRefreshing(false)
-      alert('All 5 AI Agent pipelines pinged and validated. Status: 100% Operational.')
-    }, 800)
+  const [userName, setUserName] = useState('Sarah Jenkins')
+  const [selectedQuote, setSelectedQuote] = useState(null)
+  const [isModifyModalOpen, setIsModifyModalOpen] = useState(false)
+  const [modifyForm, setModifyForm] = useState({
+    newPrice: '',
+    reason: ''
+  })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
+
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const activeTab = searchParams.get('tab') || 'overview'
+
+  useEffect(() => {
+    const name = localStorage.getItem('userName') || 'Sarah Jenkins'
+    setUserName(name)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('agentQuotesQueue', JSON.stringify(quotes))
+  }, [quotes])
+
+  const showToast = (msg) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(''), 4000)
   }
 
-  const filteredAgents = selectedAgentTab === 'all' 
-    ? agents 
-    : agents.filter(a => a.id === selectedAgentTab)
+  // Open modify price modal (Scenario 9)
+  const handleOpenModify = (q) => {
+    setSelectedQuote(q)
+    setModifyForm({
+      newPrice: q.finalPrice || q.recommendedPrice,
+      reason: ''
+    })
+    setIsModifyModalOpen(true)
+  }
+
+  // Save modified price with reason & audit record (Scenario 9)
+  const handleSavePriceModification = (e) => {
+    e.preventDefault()
+    if (!modifyForm.newPrice || !modifyForm.reason.trim()) {
+      alert('Please provide both the new price and an operational audit reason.')
+      return
+    }
+
+    const updatedPrice = parseFloat(modifyForm.newPrice)
+    const auditRecord = {
+      action: 'Price Modified by Agent',
+      user: `${userName} (Freight Agent)`,
+      time: 'Just now',
+      note: `Revised from ₹${selectedQuote.finalPrice?.toLocaleString()} to ₹${updatedPrice.toLocaleString()}. Reason: ${modifyForm.reason}`
+    }
+
+    const updatedQuotes = quotes.map(q => {
+      if (q.id === selectedQuote.id) {
+        return {
+          ...q,
+          finalPrice: updatedPrice,
+          auditHistory: [auditRecord, ...(q.auditHistory || [])]
+        }
+      }
+      return q
+    })
+
+    setQuotes(updatedQuotes)
+    setIsModifyModalOpen(false)
+    showToast(`Quote ${selectedQuote.id} price updated to ₹${updatedPrice.toLocaleString()} with audit record logged.`)
+  }
+
+  // Approve quote and send to customer (Scenario 10)
+  const handleApproveAndSend = (quoteId) => {
+    const auditRecord = {
+      action: 'Final Quote Dispatched',
+      user: `${userName} (Freight Agent)`,
+      time: 'Just now',
+      note: 'Commercial validation complete. Approved and sent to customer.'
+    }
+
+    const updated = quotes.map(q => {
+      if (q.id === quoteId) {
+        return {
+          ...q,
+          status: 'SENT',
+          auditHistory: [auditRecord, ...(q.auditHistory || [])]
+        }
+      }
+      return q
+    })
+
+    setQuotes(updated)
+
+    // Sync to Customer quotes in localStorage so customer sees it immediately
+    try {
+      const storedCustomer = localStorage.getItem('customerQuotes')
+      if (storedCustomer) {
+        const parsedCust = JSON.parse(storedCustomer)
+        const updatedCust = parsedCust.map(cq => {
+          if (cq.id === quoteId) {
+            return { ...cq, status: 'SENT' }
+          }
+          return cq
+        })
+        localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+      }
+    } catch {}
+
+    showToast(`Quotation ${quoteId} has been APPROVED and sent to customer!`)
+  }
+
+  // Dashboard KPI Cards matching Page 7: New Requests, Pending Reviews, High Risk Shipments, Quotes Sent Today
+  const newRequestsCount = quotes.filter(q => q.status === 'DRAFT' || q.status === 'SUBMITTED' || q.status === 'PENDING_REVIEW').length
+  const pendingReviewsCount = quotes.filter(q => q.status === 'PENDING_REVIEW').length
+  const highRiskCount = quotes.filter(q => q.overallRisk === 'HIGH' || q.highRisk).length
+  const quotesSentTodayCount = quotes.filter(q => q.status === 'SENT' || q.status === 'ACCEPTED').length
+
+  const filteredQuotes = quotes.filter(q => {
+    if (!searchQuery) return true
+    const qStr = searchQuery.toLowerCase()
+    return (
+      q.id.toLowerCase().includes(qStr) ||
+      (q.shipmentId && q.shipmentId.toLowerCase().includes(qStr)) ||
+      q.customer.toLowerCase().includes(qStr) ||
+      q.origin.toLowerCase().includes(qStr) ||
+      q.destination.toLowerCase().includes(qStr)
+    )
+  })
 
   return (
     <div className="flex h-screen bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden">
-      
       <Sidebar 
         isCollapsed={isCollapsed} 
         setIsCollapsed={setIsCollapsed} 
@@ -144,203 +275,481 @@ export default function AgentOperationsDashboard() {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-          
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
+
+          {/* Toast Notification */}
+          {toastMessage && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 bg-emerald-600 text-white rounded-2xl shadow-lg flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2 text-sm font-bold">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>{toastMessage}</span>
+              </div>
+              <button onClick={() => setToastMessage('')} className="p-1 hover:bg-emerald-700 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* Scenario 9: Price Modification Modal */}
+          {isModifyModalOpen && selectedQuote && (
+            <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900">
+                      Modify Quote Price
+                    </h3>
+                    <span className="text-xs font-mono text-slate-500">
+                      {selectedQuote.id} · {selectedQuote.shipmentId}
+                    </span>
+                  </div>
+                  <button onClick={() => setIsModifyModalOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs mb-4 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Rule-Based Price (M1):</span>
+                    <span className="font-mono font-bold">₹{selectedQuote.rulePrice?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">AI ML Predicted (M2):</span>
+                    <span className="font-mono font-bold text-indigo-600">₹{selectedQuote.aiPrice?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">AI Recommended:</span>
+                    <span className="font-mono font-bold text-emerald-600">₹{selectedQuote.recommendedPrice?.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSavePriceModification} className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      NEW QUOTED AMOUNT (INR ₹)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={modifyForm.newPrice}
+                      onChange={(e) => setModifyForm({ ...modifyForm, newPrice: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      OPERATIONAL MODIFICATION REASON (SCENARIO 9 AUDIT RECORD)
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="e.g. Volume discount for long-term customer lane, fuel surcharge adjustment"
+                      value={modifyForm.reason}
+                      onChange={(e) => setModifyForm({ ...modifyForm, reason: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsModifyModalOpen(false)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all"
+                    >
+                      Save & Log Audit Record
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Freight Agent Header Banner */}
+          <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-3">
-                <Cpu className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Centralized Multi-Agent Operations Center</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/30 text-xs font-semibold text-amber-300 mb-3">
+                <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+                <span>Freight Agent / Operations Portal</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                AI Agent Operations Command Desk
+                Commercial Quote Review Desk
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                Section 6: Real-time telemetry, execution latency, provider fallbacks, and health metrics for the 5 Autonomous Maritime Agents.
+                Reviews shipment requests and AI analysis, validates commercial margins, modifies when required with audit logging, and approves final quotes for clients.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleRefreshAgents}
-                disabled={isRefreshing}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Link
+                to="/dashboard/calculator"
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow flex items-center gap-2 transition-all cursor-pointer"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>{isRefreshing ? 'Pinging Services...' : 'Ping All 5 Agents'}</span>
-              </button>
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>Calculate New Quote</span>
+              </Link>
+              <Link
+                to="/dashboard/shipments"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>All Shipments</span>
+              </Link>
             </div>
           </div>
 
-          {/* KPI Metrics */}
+          {/* Page 7 Required KPI Cards: New Requests, Pending Reviews, High Risk Shipments, Quotes Sent Today */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <DashboardCard
-              title="ACTIVE AI AGENTS"
-              value="5 / 5 Online"
-              change="Zero degraded pipelines"
+              title="NEW REQUESTS"
+              value={newRequestsCount.toString()}
+              change="+2 incoming inquiries"
               isPositive={true}
-              icon={Server}
-              color="emerald"
-            />
-            <DashboardCard
-              title="AVG LATENCY"
-              value="159 ms"
-              change="Parallel execution pipeline"
-              isPositive={true}
-              icon={Zap}
+              icon={Clock}
               color="blue"
             />
             <DashboardCard
-              title="TOTAL EXECUTIONS"
-              value="86,510"
-              change="99.7% Success SLA"
-              isPositive={true}
-              icon={Activity}
-              color="indigo"
+              title="PENDING REVIEWS"
+              value={pendingReviewsCount.toString()}
+              change="Requires agent sign-off"
+              isPositive={false}
+              icon={FileText}
+              color="amber"
             />
             <DashboardCard
-              title="PROVIDER FALLBACKS"
-              value="0.38%"
-              change="Cached telemetry safety net"
+              title="HIGH RISK SHIPMENTS"
+              value={highRiskCount.toString()}
+              change="HazMat / Extreme Weather"
+              isPositive={false}
+              icon={AlertTriangle}
+              color="rose"
+            />
+            <DashboardCard
+              title="QUOTES SENT TODAY"
+              value={quotesSentTodayCount.toString()}
+              change="Dispatched to customers"
               isPositive={true}
-              icon={ShieldCheck}
-              color="purple"
+              icon={CheckCircle2}
+              color="emerald"
             />
           </div>
 
-          {/* Agent Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {[
-              { id: 'all', label: 'All 5 Agents' },
-              { id: 'route', label: '1. Route Agent' },
-              { id: 'pricing', label: '2. Pricing Agent' },
-              { id: 'weather', label: '3. Weather Agent' },
-              { id: 'customs', label: '4. Customs Agent' },
-              { id: 'risk', label: '5. Risk Engine' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedAgentTab(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedAgentTab === tab.id
-                    ? 'bg-indigo-600 text-white shadow'
-                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+          {/* Search & Navigation Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <Link
+                to="/agents/dashboard"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  activeTab === 'overview' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                {tab.label}
-              </button>
-            ))}
+                Quote Review Desk ({quotes.length})
+              </Link>
+              <Link
+                to="/agents/dashboard?tab=shipment-requests"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  activeTab === 'shipment-requests' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                Shipment Requests
+              </Link>
+              <Link
+                to="/agents/dashboard?tab=pricing-analysis"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  activeTab === 'pricing-analysis' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                AI Pricing Analysis (M2)
+              </Link>
+              <Link
+                to="/agents/dashboard?tab=risk-analysis"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  activeTab === 'risk-analysis' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                Risk Analysis (M3)
+              </Link>
+            </div>
+
+            <div className="relative w-72">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search shipment, shipper, lane..."
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-500"
+              />
+            </div>
           </div>
 
-          {/* 5-Agent Detail Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredAgents.map(ag => {
-              const IconComp = ag.icon
-              return (
-                <div key={ag.id} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
-                          <IconComp className="w-5 h-5" />
+          {/* Tab: AI Pricing Analysis (M2) */}
+          {activeTab === 'pricing-analysis' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">M2 · AI/ML Pricing Intelligence Comparison</h3>
+                  <p className="text-xs text-slate-500">Historical pattern regression vs deterministic rule pricing.</p>
+                </div>
+                <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-xs font-bold rounded-full">
+                  LightGBM v3.2 Model Active
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Shipment</th>
+                      <th className="p-3">Route</th>
+                      <th className="p-3">Rule Price (M1)</th>
+                      <th className="p-3">AI ML Predicted (M2)</th>
+                      <th className="p-3">Recommended</th>
+                      <th className="p-3">Variance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {quotes.map(q => {
+                      const diff = (q.aiPrice || 0) - (q.rulePrice || 0)
+                      return (
+                        <tr key={q.id}>
+                          <td className="p-3 font-bold">{q.id} ({q.shipmentId})</td>
+                          <td className="p-3">{q.origin} → {q.destination}</td>
+                          <td className="p-3 font-mono font-bold">₹{q.rulePrice?.toLocaleString()}</td>
+                          <td className="p-3 font-mono font-bold text-indigo-600">₹{q.aiPrice?.toLocaleString()}</td>
+                          <td className="p-3 font-mono font-bold text-emerald-600">₹{q.recommendedPrice?.toLocaleString()}</td>
+                          <td className="p-3 font-mono font-bold">
+                            <span className={diff < 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                              {diff < 0 ? '-' : '+'}₹{Math.abs(diff).toLocaleString()}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Risk Analysis (M3) */}
+          {activeTab === 'risk-analysis' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+              <div>
+                <h3 className="text-base font-black text-slate-900">M3 · Composite Risk Intelligence Engine</h3>
+                <p className="text-xs text-slate-500">Weather radar, customs document verification, and maritime corridor congestion.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-sky-600 uppercase">Weather Intelligence Agent</span>
+                  <div className="text-xl font-black text-sky-950 mt-1">NOAA Radar Active</div>
+                  <p className="text-xs text-sky-800 mt-1">Monitors tropical depressions, wave heights & typhoons across key trade loops.</p>
+                </div>
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase">Customs Intelligence Agent</span>
+                  <div className="text-xl font-black text-emerald-950 mt-1">HS Code Matching</div>
+                  <p className="text-xs text-emerald-800 mt-1">Cross-references tariff regulations, dual-use restrictions & export clearances.</p>
+                </div>
+                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-indigo-600 uppercase">Route Risk Agent</span>
+                  <div className="text-xl font-black text-indigo-950 mt-1">Chokepoint Telemetry</div>
+                  <p className="text-xs text-indigo-800 mt-1">Real-time Suez/Bab-el-Mandeb & Malacca strait transit latency evaluation.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main Review Desk (Overview & Tab Default) */}
+          {(activeTab === 'overview' || activeTab === 'shipment-requests') && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Shipment Requests & Quote Validation Queue
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Human review step (Page 4 Step 10). Modify prices with audit justification and dispatch finalized quotes.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-slate-500 font-mono">
+                  {filteredQuotes.length} Enquiries in Queue
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {filteredQuotes.map((q) => {
+                  const isSent = q.status === 'SENT' || q.status === 'ACCEPTED'
+                  const isPending = q.status === 'PENDING_REVIEW'
+
+                  return (
+                    <div
+                      key={q.id}
+                      className={`bg-white border rounded-3xl p-5 sm:p-6 shadow-sm transition-all ${
+                        q.shipmentId === 'SHP-1001' ? 'border-amber-300 ring-2 ring-amber-500/10' : 'border-slate-200'
+                      }`}
+                    >
+                      {/* Top Row */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-black text-xs border border-amber-200">
+                            <Truck className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-slate-900">{q.id}</span>
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[10px] font-mono font-bold">
+                                {q.shipmentId}
+                              </span>
+                              {q.shipmentId === 'SHP-1001' && (
+                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold">
+                                  Page 9 Test Shipment
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-slate-500">
+                              Customer: <strong className="text-slate-800">{q.customer}</strong> ({q.customerEmail})
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+                            isSent
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {q.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Route & Cargo Specs */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-4 text-xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ROUTE CORRIDOR</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{q.origin}</span>
+                          <span className="text-slate-500 text-[11px]">→ {q.destination}</span>
                         </div>
                         <div>
-                          <h3 className="font-black text-slate-900 text-xs sm:text-sm">{ag.name}</h3>
-                          <span className="text-[10px] font-mono text-slate-400">{ag.version}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">COMMODITY & CONTAINER</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{q.cargo}</span>
+                          <span className="text-slate-500 text-[11px]">{q.container} · {q.mode}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">DISTANCE & ETA</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{q.distanceKm?.toLocaleString()} KM</span>
+                          <span className="text-slate-500 text-[11px]">{q.transitDays}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">FINAL APPROVED PRICE</span>
+                          <span className="text-lg font-black text-slate-900 block mt-0.5">
+                            ₹{q.finalPrice?.toLocaleString()}
+                          </span>
+                          <span className="text-slate-400 text-[10px]">{q.carrier}</span>
                         </div>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {ag.status}
-                      </span>
-                    </div>
 
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {ag.description}
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center font-mono">
-                      <div>
-                        <span className="text-[9.5px] font-bold text-slate-400 uppercase">Latency</span>
-                        <div className="font-black text-slate-900 text-xs mt-0.5">{ag.latencyMs} ms</div>
+                      {/* AI Pricing & Risk Breakdown Matrix (Page 9 Output Alignment) */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 mb-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                        <div>
+                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Rule-Based Price (M1)</span>
+                          <span className="font-mono font-bold text-slate-700">₹{q.rulePrice?.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">AI ML Predicted (M2)</span>
+                          <span className="font-mono font-bold text-indigo-600">₹{q.aiPrice?.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Recommended Rate</span>
+                          <span className="font-mono font-bold text-emerald-600">₹{q.recommendedPrice?.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Weather & Customs</span>
+                          <span className="text-slate-700 font-semibold">{q.weatherRisk}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Composite Risk (M3)</span>
+                          <span className={`font-bold font-mono ${
+                            q.overallRisk === 'HIGH' ? 'text-rose-600' : q.overallRisk === 'MEDIUM' ? 'text-amber-600' : 'text-emerald-600'
+                          }`}>
+                            {q.overallRisk}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[9.5px] font-bold text-slate-400 uppercase">Success</span>
-                        <div className="font-black text-emerald-600 text-xs mt-0.5">{ag.successRate}</div>
+
+                      {/* Audit History (Scenario 9 Audit Trail) */}
+                      {q.auditHistory && q.auditHistory.length > 0 && (
+                        <div className="mb-4 p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl text-[11px] space-y-1">
+                          <span className="font-bold text-amber-900 block text-[10px] uppercase tracking-wider">Audit Trail (Scenario 9):</span>
+                          {q.auditHistory.map((ah, i) => (
+                            <div key={i} className="flex items-center justify-between text-slate-600">
+                              <span><strong>{ah.action}</strong>: {ah.note}</span>
+                              <span className="font-mono text-[10px] text-slate-400 ml-2">{ah.time}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Agent Action Buttons (Scenario 9 & 10) */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <div className="text-xs text-slate-500">
+                          {isSent ? (
+                            <span className="text-emerald-700 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-4 h-4" /> Quote approved and delivered to client portal.
+                            </span>
+                          ) : (
+                            <span className="text-amber-700 font-medium">
+                              Pending human approval. You may modify the pricing or dispatch immediately.
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleOpenModify(q)}
+                            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Modify Price (Scenario 9)</span>
+                          </button>
+
+                          {isPending && (
+                            <button
+                              onClick={() => handleApproveAndSend(q.id)}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Approve & Send Quote (Scenario 10)</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => downloadQuotePDF(q)}
+                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>PDF</span>
+                          </button>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[9.5px] font-bold text-slate-400 uppercase">Executions</span>
-                        <div className="font-black text-slate-900 text-xs mt-0.5">{ag.totalExecutions}</div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="pt-3 border-t border-slate-100 space-y-1 text-[11px] font-mono text-slate-500">
-                    <div className="flex justify-between">
-                      <span>Provider:</span>
-                      <span className="text-slate-800 font-bold truncate max-w-[170px]">{ag.activeProvider}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Last Ping:</span>
-                      <span className="text-slate-800 font-bold">{ag.lastExecution}</span>
-                    </div>
-                  </div>
-
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Execution History Table (Section 6 Spec) */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-base font-black text-slate-900">Live Agent Pipeline Execution History</h3>
+                  )
+                })}
               </div>
-              <span className="text-xs font-mono text-slate-400">Section 14: Degraded state & fallback logging</span>
             </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="w-full text-xs text-slate-700">
-                <thead className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3">Exec ID</th>
-                    <th className="px-4 py-3">Agent Service</th>
-                    <th className="px-4 py-3">Trigger / Context</th>
-                    <th className="px-4 py-3">Latency</th>
-                    <th className="px-4 py-3">Active Provider</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white font-mono">
-                  {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-slate-50/60">
-                      <td className="px-4 py-3 font-bold text-indigo-600">{log.id}</td>
-                      <td className="px-4 py-3 font-bold text-slate-900 font-sans">{log.agent}</td>
-                      <td className="px-4 py-3 text-slate-600 font-sans">{log.trigger}</td>
-                      <td className="px-4 py-3 text-slate-800 font-bold">{log.latency}</td>
-                      <td className="px-4 py-3 text-slate-500 font-sans">{log.provider}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          log.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                          'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}>
-                          {log.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-400 text-[11px]">{log.time}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
 
         </main>
       </div>
-
     </div>
   )
 }

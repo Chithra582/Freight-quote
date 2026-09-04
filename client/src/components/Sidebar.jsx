@@ -25,17 +25,25 @@ import {
   Cpu,
   TrendingUp,
   UserCheck,
-  Briefcase
+  Briefcase,
+  Bell,
+  User as UserIcon,
+  FileSearch,
+  Layers,
+  ShieldAlert,
+  FolderCheck,
+  DollarSign,
+  AlertTriangle
 } from 'lucide-react'
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const activePath = location.pathname
+  const activePath = location.pathname + location.search
 
   const [userEmail, setUserEmail] = useState('alex@apexgl.com')
   const [userName, setUserName] = useState('Alex Shipper')
-  const [userRole, setUserRole] = useState('user')
+  const [userRole, setUserRole] = useState('customer')
 
   useEffect(() => {
     const email = localStorage.getItem('userEmail') || 'alex@apexgl.com'
@@ -45,111 +53,133 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
     setUserName(name)
 
     const currentRole = (
-      localStorage.getItem('selectedAccessRole') ||
       localStorage.getItem('userRole') ||
-      'user'
+      localStorage.getItem('selectedAccessRole') ||
+      'customer'
     ).toLowerCase()
     setUserRole(currentRole)
-  }, [location.pathname])
+  }, [location.pathname, location.search])
 
-  const handleRoleSwitch = (newRole) => {
-    setUserRole(newRole.toLowerCase())
-    localStorage.setItem('selectedAccessRole', newRole.toLowerCase())
-    localStorage.setItem('userRole', newRole.toLowerCase())
+  const normalizedRole = userRole.toLowerCase()
 
-    let dest = '/dashboard'
-    if (newRole === 'user' || newRole === 'customer') dest = '/user/dashboard'
-    else if (newRole === 'admin') dest = '/admin/dashboard'
-    else if (newRole === 'customs_officer') dest = '/customs/dashboard'
-    else if (newRole === 'agent_operator') dest = '/agents/dashboard'
-    else if (newRole === 'manager') dest = '/analytics/dashboard'
-    else if (newRole === 'broker') dest = '/dashboard'
-
-    navigate(dest)
-  }
-
+  // Define side navigation strictly according to Section 6 (Dashboard Architecture) of the specification
   let sections = []
-  if (userRole === 'user' || userRole === 'customer') {
+
+  if (normalizedRole === 'customer' || normalizedRole === 'user') {
+    // 1. Customer Portal:
+    // Side Navigation: Dashboard • My Shipments • Request Quote • My Quotes • Documents • Notifications • Profile
     sections = [
       {
-        title: 'USER WORKSPACE',
+        title: 'CUSTOMER PORTAL',
         items: [
-          { name: 'User Dashboard', path: '/user/dashboard', icon: LayoutDashboard },
-          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator },
-          { name: 'Create Shipment', path: '/dashboard/new-shipment', icon: PlusCircle },
-          { name: 'My Shipments & Tracking', path: '/dashboard/shipments', icon: BarChart3 }
+          { name: 'Dashboard', path: '/user/dashboard', icon: LayoutDashboard },
+          { name: 'My Shipments', path: '/dashboard/shipments', icon: Truck },
+          { name: 'Request Quote', path: '/dashboard/calculator', icon: Calculator },
+          { name: 'My Quotes', path: '/user/dashboard?tab=quotes', icon: FileText },
+          { name: 'Documents', path: '/user/dashboard?tab=documents', icon: FileSearch },
+          { name: 'Notifications', path: '/user/dashboard?tab=notifications', icon: Bell },
+          { name: 'Profile', path: '/user/dashboard?tab=profile', icon: UserIcon }
         ]
       }
     ]
-  } else if (userRole === 'admin') {
+  } else if (
+    normalizedRole === 'freight_agent' || 
+    normalizedRole === 'agent' || 
+    normalizedRole === 'agent_operator' || 
+    normalizedRole === 'broker'
+  ) {
+    // 2. Freight Agent Portal:
+    // Side Navigation: Dashboard • Shipment Requests • All Shipments • Quote Requests • Quote Review • Generated Quotes • AI Pricing Analysis • Risk Analysis • Customers • Documents • Notifications • Profile
     sections = [
       {
-        title: 'ADMIN WORKSPACE',
+        title: 'FREIGHT AGENT PORTAL',
         items: [
-          { name: 'Admin Console', path: '/admin/dashboard', icon: LayoutDashboard },
-          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator },
-          { name: 'User Management', path: '/admin/dashboard?tab=users', icon: Users },
-          { name: 'Margin Policies', path: '/admin/dashboard?tab=margin-policy', icon: Percent },
-          { name: 'Approval Rules', path: '/admin/dashboard?tab=approval-rules', icon: ListChecks },
-          { name: 'Master Data & Ports', path: '/dashboard/master-data', icon: Database },
-          { name: 'Customer Feedback', path: '/admin/dashboard?tab=feedback', icon: MessageSquare }
+          { name: 'Dashboard', path: '/agents/dashboard', icon: LayoutDashboard },
+          { name: 'Shipment Requests', path: '/agents/dashboard?tab=shipment-requests', icon: PlusCircle },
+          { name: 'All Shipments', path: '/dashboard/shipments', icon: Truck },
+          { name: 'Quote Requests', path: '/agents/dashboard?tab=quote-requests', icon: FileText },
+          { name: 'Quote Review', path: '/agents/dashboard?tab=quote-review', icon: ShieldCheck },
+          { name: 'Generated Quotes', path: '/agents/dashboard?tab=generated-quotes', icon: Layers },
+          { name: 'AI Pricing Analysis', path: '/agents/dashboard?tab=pricing-analysis', icon: DollarSign },
+          { name: 'Risk Analysis', path: '/agents/dashboard?tab=risk-analysis', icon: AlertTriangle },
+          { name: 'Customers', path: '/agents/dashboard?tab=customers', icon: Users },
+          { name: 'Documents', path: '/agents/dashboard?tab=documents', icon: FileSearch },
+          { name: 'Notifications', path: '/agents/dashboard?tab=notifications', icon: Bell },
+          { name: 'Profile', path: '/agents/dashboard?tab=profile', icon: UserIcon }
         ]
       }
     ]
-  } else if (userRole === 'customs_officer' || userRole === 'customs') {
+  } else if (normalizedRole === 'customs_officer' || normalizedRole === 'customs') {
+    // 3. Customs Officer Portal:
+    // Side Navigation: Dashboard • Pending Reviews • Assigned Shipments • Document Verification • Customs Risk Flags • Completed Reviews • Notifications • Profile
     sections = [
       {
-        title: 'CUSTOMS COMPLIANCE',
+        title: 'CUSTOMS OFFICER PORTAL',
         items: [
-          { name: 'Customs Workspace', path: '/customs/dashboard', icon: Scale },
-          { name: 'Pending Reviews', path: '/customs/dashboard', icon: ShieldCheck },
-          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator }
-        ]
-      }
-    ]
-  } else if (userRole === 'agent_operator' || userRole === 'agents' || userRole === 'agent_op') {
-    sections = [
-      {
-        title: 'AI AGENT OPERATIONS',
-        items: [
-          { name: 'Agent Operations Center', path: '/agents/dashboard', icon: Cpu },
-          { name: 'Route Intelligence', path: '/dashboard/routes', icon: MapPin },
-          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator }
-        ]
-      }
-    ]
-  } else if (userRole === 'manager' || userRole === 'analytics') {
-    sections = [
-      {
-        title: 'ANALYTICS & MANAGEMENT',
-        items: [
-          { name: 'Analytics Command Center', path: '/analytics/dashboard', icon: TrendingUp },
-          { name: 'Margin Yield & Telemetry', path: '/analytics/dashboard', icon: BarChart3 },
-          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator }
+          { name: 'Dashboard', path: '/customs/dashboard', icon: Scale },
+          { name: 'Pending Reviews', path: '/customs/dashboard?tab=pending-reviews', icon: ShieldAlert },
+          { name: 'Assigned Shipments', path: '/customs/dashboard?tab=assigned-shipments', icon: Truck },
+          { name: 'Document Verification', path: '/customs/dashboard?tab=document-verification', icon: FileCheckIcon },
+          { name: 'Customs Risk Flags', path: '/customs/dashboard?tab=customs-risk-flags', icon: AlertTriangle },
+          { name: 'Completed Reviews', path: '/customs/dashboard?tab=completed-reviews', icon: FolderCheck },
+          { name: 'Notifications', path: '/customs/dashboard?tab=notifications', icon: Bell },
+          { name: 'Profile', path: '/customs/dashboard?tab=profile', icon: UserIcon }
         ]
       }
     ]
   } else {
-    // Broker Control Desk
+    // 4. Admin Portal:
+    // Side Navigation: Dashboard • Users • Customers • Freight Agents • Customs Officers • Roles & Permissions • All Shipments • All Quotes • AI Pricing Monitor • AI Agent Monitor • Risk Intelligence • Locations • Routes • Carriers • Container Types • Cargo Categories • Pricing Rules • Reports • Notifications • Settings • Audit Logs
     sections = [
       {
-        title: 'BROKER WORKBENCH',
+        title: 'ADMIN PORTAL',
         items: [
-          { name: 'Broker Dashboard', path: '/dashboard', icon: LayoutDashboard },
-          { name: '⚡ Quote Calculator', path: '/dashboard/calculator', icon: Calculator },
-          { name: 'Approvals Queue', path: '/dashboard?tab=approvals', icon: ShieldCheck },
-          { name: 'Shipments', path: '/dashboard/shipments', icon: BarChart3 },
-          { name: 'Routes Intelligence', path: '/dashboard/routes', icon: MapPin }
+          { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+          { name: 'Users', path: '/admin/dashboard?tab=users', icon: Users },
+          { name: 'Customers', path: '/admin/dashboard?tab=customers', icon: UserCheck },
+          { name: 'Freight Agents', path: '/admin/dashboard?tab=freight-agents', icon: Briefcase },
+          { name: 'Customs Officers', path: '/admin/dashboard?tab=customs-officers', icon: Scale },
+          { name: 'Roles & Permissions', path: '/admin/dashboard?tab=roles-permissions', icon: ShieldCheck },
+          { name: 'All Shipments', path: '/dashboard/shipments', icon: Truck },
+          { name: 'All Quotes', path: '/admin/dashboard?tab=all-quotes', icon: FileText },
+          { name: 'AI Pricing Monitor', path: '/admin/dashboard?tab=ai-pricing-monitor', icon: DollarSign },
+          { name: 'AI Agent Monitor', path: '/admin/dashboard?tab=ai-agent-monitor', icon: Cpu },
+          { name: 'Risk Intelligence', path: '/dashboard/routes', icon: MapPin },
+          { name: 'Locations & Ports', path: '/dashboard/master-data?tab=ports', icon: Anchor },
+          { name: 'Routes', path: '/dashboard/routes', icon: Activity },
+          { name: 'Carriers', path: '/dashboard/master-data?tab=carriers', icon: Database },
+          { name: 'Container Types', path: '/dashboard/master-data?tab=containers', icon: Layers },
+          { name: 'Cargo Categories', path: '/dashboard/master-data?tab=cargo', icon: ListChecks },
+          { name: 'Pricing Rules', path: '/admin/dashboard?tab=margin-policy', icon: Percent },
+          { name: 'Reports', path: '/admin/dashboard?tab=reports', icon: BarChart3 },
+          { name: 'Notifications', path: '/admin/dashboard?tab=notifications', icon: Bell },
+          { name: 'Settings', path: '/admin/dashboard?tab=settings', icon: Settings },
+          { name: 'Audit Logs', path: '/admin/dashboard?tab=audit-logs', icon: MessageSquare }
         ]
       }
     ]
   }
 
+  function FileCheckIcon(props) {
+    return <FileSearch {...props} />
+  }
+
+  const getPortalLabel = () => {
+    if (normalizedRole === 'customer' || normalizedRole === 'user') return 'Customer Workspace'
+    if (normalizedRole === 'freight_agent' || normalizedRole === 'agent' || normalizedRole === 'agent_operator' || normalizedRole === 'broker') return 'Freight Agent Desk'
+    if (normalizedRole === 'customs_officer' || normalizedRole === 'customs') return 'Customs Officer Portal'
+    if (normalizedRole === 'admin') return 'Admin System Console'
+    return 'FreightIQ Workspace'
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('userEmail')
     localStorage.removeItem('userName')
-    navigate('/')
+    localStorage.removeItem('userRole')
+    localStorage.removeItem('selectedAccessRole')
+    navigate('/login')
   }
 
   return (
@@ -170,7 +200,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
       >
         {/* Brand Header */}
         <div className="flex items-center justify-between h-20 px-5 border-b border-slate-100">
-          <Link to="/dashboard" className="flex items-center gap-3 overflow-hidden">
+          <Link to={sections[0]?.items[0]?.path || '/dashboard'} className="flex items-center gap-3 overflow-hidden">
             <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-blue-500 text-white shadow-lg shadow-blue-500/25 shrink-0">
               <Truck className="w-5 h-5" />
             </div>
@@ -183,8 +213,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
                 <span className="text-lg font-black tracking-tight text-slate-900 flex items-center gap-1">
                   Freight<span className="text-blue-600">IQ</span>
                 </span>
-                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                  5-Workspace Engine
+                <span className="text-[9.5px] font-extrabold text-blue-600 tracking-wider uppercase truncate max-w-[140px]">
+                  {getPortalLabel()}
                 </span>
               </motion.div>
             )}
@@ -199,29 +229,25 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
           </button>
         </div>
 
-        {/* Quick Role / Workspace Switcher */}
+        {/* Current Active Portal Indicator - Strictly Read-Only Isolated Workspace (No RBAC Switcher) */}
         {!isCollapsed && (
-          <div className="px-4 pt-3 pb-1">
-            <label className="block text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
-              Active Workspace Role (RBAC)
-            </label>
-            <select
-              value={userRole}
-              onChange={(e) => handleRoleSwitch(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer shadow-inner"
-            >
-              <option value="user">1. USER (Customer / Shipper)</option>
-              <option value="admin">2. ADMIN (System Owner)</option>
-              <option value="customs_officer">3. CUSTOMS (Compliance)</option>
-              <option value="agent_operator">4. AGENT OP (AI Ops Center)</option>
-              <option value="manager">5. MANAGER (Analytics / Mgmt)</option>
-              <option value="broker">6. BROKER (Commercial Desk)</option>
-            </select>
+          <div className="px-4 pt-3.5 pb-2">
+            <div className="px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                  Current Portal
+                </span>
+                <span className="text-xs font-bold text-slate-800 truncate">
+                  {sections[0]?.title || 'WORKSPACE'}
+                </span>
+              </div>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" title="Connected & Authorized" />
+            </div>
           </div>
         )}
 
         {/* Navigation Sections */}
-        <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 px-3 py-3 space-y-4 overflow-y-auto custom-scrollbar">
           {sections.map((section, idx) => (
             <div key={idx} className="space-y-1">
               {!isCollapsed && section.title && (
@@ -231,14 +257,17 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
               )}
               {section.items.map((item, itemIdx) => {
                 const IconComponent = item.icon
-                const isSelected = activePath === item.path || (item.path.includes('?') && location.search.includes(item.path.split('?')[1]))
+                const currentUrl = location.pathname + location.search
+                const isSelected = currentUrl === item.path || 
+                  (item.path.includes('?') && currentUrl.includes(item.path)) ||
+                  (!item.path.includes('?') && location.pathname === item.path && !location.search)
 
                 return (
                   <Link
                     key={itemIdx}
                     to={item.path}
                     onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all relative group cursor-pointer ${
+                    className={`flex items-center gap-3 px-3.5 py-2 rounded-2xl font-bold text-xs transition-all relative group cursor-pointer ${
                       isSelected
                         ? 'bg-blue-50 text-blue-700 font-extrabold shadow-sm'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -278,7 +307,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-bold text-slate-800 truncate">{userName}</span>
-                  <span className="text-[10px] text-indigo-600 truncate uppercase font-extrabold">{userRole.replace('_', ' ')}</span>
+                  <span className="text-[10px] text-blue-600 truncate uppercase font-extrabold">{userRole.replace('_', ' ')}</span>
                 </div>
               )}
             </div>
