@@ -12,17 +12,34 @@ export function downloadQuotePDF(quote) {
     format: 'a4'
   })
 
+  // Helper to safely extract numeric value and format cleanly in INR without broken unicode
+  const parseAmount = (val) => {
+    if (typeof val === 'number') return val
+    if (!val) return 0
+    const cleaned = String(val).replace(/[^0-9.-]/g, '')
+    const num = parseFloat(cleaned)
+    return isNaN(num) ? 0 : num
+  }
+
+  const formatINR = (val) => {
+    const num = typeof val === 'number' ? val : parseAmount(val)
+    return `INR ${Math.round(num).toLocaleString('en-IN')}`
+  }
+
   const quoteId = quote.id || `QT-2026-${Math.floor(1000 + Math.random() * 9000)}`
   const customer = quote.customer || quote.companyName || 'Valued Customer'
   const origin = quote.origin || quote.originName || 'Nhava Sheva (INNSA)'
   const destination = quote.destination || quote.destName || 'Jebel Ali (AEJEA)'
-  const mode = quote.mode || 'Ocean FCL'
-  const totalCost = quote.cost || quote.sellPrice || '₹ 3,84,500'
-  const basis = quote.basis || '2 × 40HC'
+  const mode = quote.mode || quote.serviceMode || 'Ocean FCL'
+  const basis = quote.basis || quote.containerLoad || '2 x 40HC'
   const weight = quote.weight || '18,400 kg'
-  const transit = quote.transit || quote.transitDays || '6–10 Days'
+  const transit = quote.transit || quote.transitDays || '6-10 Days'
   const issueDate = quote.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
   const validUntil = quote.validUntil || '7 Days from Issue'
+
+  const rawCost = quote.cost || quote.sellPrice || quote.finalPrice || quote.totalCost || 384500
+  const totalNum = parseAmount(rawCost) || 384500
+  const formattedTotal = formatINR(totalNum)
 
   // Header Banner
   doc.setFillColor(10, 22, 40) // Navy-900
@@ -144,19 +161,27 @@ export function downloadQuotePDF(quote) {
   doc.setFillColor(11, 47, 86) // Navy-800
   doc.rect(15, y, 180, 8, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
   doc.text('LINE ITEM DESCRIPTION', 20, y + 5.5)
   doc.text('BASIS / UNITS', 120, y + 5.5)
   doc.text('SUBTOTAL (INR)', 190, y + 5.5, { align: 'right' })
 
   y += 8
 
+  // Proportional breakdown where items dynamically sum to the exact total quotation cost
+  const baseFreight = Math.round(totalNum * 0.64)
+  const thc = Math.round(totalNum * 0.12)
+  const baf = Math.round(totalNum * 0.09)
+  const docFee = Math.round(totalNum * 0.04)
+  const drayage = totalNum - (baseFreight + thc + baf + docFee) // Exact remainder ensuring perfect sum match
+
   const items = [
-    { desc: 'Base Ocean / Air Main Leg Freight', basis: basis, amount: '₹ 2,45,000' },
-    { desc: 'Terminal Handling Charges (THC Origin & Dest)', basis: '2 Units', amount: '₹ 48,500' },
-    { desc: 'Bunker Adjustment Factor (BAF / Fuel Index)', basis: '8.5% Index', amount: '₹ 32,800' },
-    { desc: 'Carrier Security & Documentation (ISPS/BL Fee)', basis: 'Per Booking', amount: '₹ 14,200' },
-    { desc: 'Origin Road Drayage & Gate In', basis: '34 km pickup', amount: '₹ 44,000' }
+    { desc: 'Base Ocean / Air Main Leg Freight', basis: basis, amount: formatINR(baseFreight) },
+    { desc: 'Terminal Handling Charges (THC Origin & Dest)', basis: '2 Units', amount: formatINR(thc) },
+    { desc: 'Bunker Adjustment Factor (BAF / Fuel Index)', basis: '8.5% Fuel Index', amount: formatINR(baf) },
+    { desc: 'Carrier Security & Documentation (ISPS/BL Fee)', basis: 'Per Booking', amount: formatINR(docFee) },
+    { desc: 'Origin Road Drayage & Gate In', basis: '34 km pickup', amount: formatINR(drayage) }
   ]
 
   items.forEach((row, idx) => {
@@ -166,23 +191,25 @@ export function downloadQuotePDF(quote) {
     }
     doc.setTextColor(51, 65, 85)
     doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
     doc.text(row.desc, 20, y + 5)
     doc.text(row.basis, 120, y + 5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(15, 23, 42)
+    doc.setFontSize(9)
     doc.text(row.amount, 190, y + 5, { align: 'right' })
     y += 7.5
   })
 
   // Total Summary Row
-  doc.setFillColor(234, 88, 12) // Orange
+  doc.setFillColor(234, 88, 12) // Orange accent
   doc.rect(15, y + 2, 180, 10, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.text('TOTAL GUARANTEED QUOTATION RATE', 20, y + 8.5)
-  doc.setFontSize(13)
-  doc.text(totalCost, 190, y + 8.5, { align: 'right' })
+  doc.setFontSize(10)
+  doc.text('TOTAL GUARANTEED QUOTATION RATE', 20, y + 8)
+  doc.setFontSize(10)
+  doc.text(formattedTotal, 190, y + 8, { align: 'right' })
 
   // Terms & Conditions
   y += 24

@@ -478,25 +478,25 @@ export default function AdminDashboard() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
 
           {/* Admin Hero Header */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden border border-slate-800">
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-3">
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative overflow-hidden border border-slate-800">
+            <div className="relative z-10 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-2.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
                 <span>System Administration & Commercial Governance</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 Admin Control Center
               </h1>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
                 Configure tariff rate parameters, govern hierarchical margin policies across 5 scopes, oversee multi-tier approval rules, and provision user credentials.
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-wrap gap-2.5">
+            <div className="relative z-10 flex flex-wrap items-center gap-2">
               <Link
                 to="/admin/dashboard"
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'overview' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'overview' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -504,8 +504,8 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 to="/admin/dashboard?tab=users"
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'users' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'users' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
@@ -513,8 +513,8 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 to="/admin/dashboard?tab=ai-agent-monitor"
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'ai-agent-monitor' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'ai-agent-monitor' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <Cpu className="w-3.5 h-3.5" />
@@ -522,8 +522,8 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 to="/admin/dashboard?tab=margin-policy"
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'margin-policy' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'margin-policy' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <Percent className="w-3.5 h-3.5" />
@@ -531,8 +531,8 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 to="/admin/dashboard?tab=approval-rules"
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'approval-rules' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'approval-rules' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <ListChecks className="w-3.5 h-3.5" />
@@ -540,8 +540,8 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 to="/admin/dashboard?tab=audit-logs"
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
-                  currentTab === 'audit-logs' ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'audit-logs' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -549,7 +549,7 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 to="/dashboard/master-data"
-                className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Database className="w-3.5 h-3.5" />
                 <span>Master Data</span>
@@ -560,7 +560,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Section 6 (Page 7) Required KPI Cards: Total Users, Shipments, Quotes, Pending Reviews, High Risk Alerts, AI Predictions, Analytics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-3.5">
             <DashboardCard
               title="TOTAL USERS"
               value={`${users.length}`}
@@ -604,7 +604,7 @@ export default function AdminDashboard() {
             <DashboardCard
               title="AI PREDICTIONS"
               value="28,490"
-              change="LightGBM ML Regression"
+              change="LightGBM ML"
               isPositive={true}
               icon={Cpu}
               color="emerald"
@@ -612,7 +612,7 @@ export default function AdminDashboard() {
             <DashboardCard
               title="ANALYTICS"
               value="99.2%"
-              change="SLA On-Time Yield"
+              change="SLA On-Time"
               isPositive={true}
               icon={TrendingUp}
               color="sky"
