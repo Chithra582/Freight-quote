@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   Rocket,
   User,
@@ -18,83 +18,54 @@ import {
 } from 'lucide-react'
 import { API_BASE_URL } from '../config/api'
 
-const DEMO_PERSONAS = [
-  {
-    role: 'customer',
-    label: '1. Customer',
-    name: 'Alex Shipper',
-    email: 'customer@apexgl.com',
-    company: 'ABC Electronics Pvt Ltd',
-    icon: User,
-    color: 'text-blue-600',
-    dest: '/user/dashboard',
-    desc: 'Requests quotes, views status & accepts final quotes'
-  },
-  {
-    role: 'freight_agent',
-    label: '2. Freight Agent',
-    name: 'Sarah Jenkins',
-    email: 'agent@freightiq.com',
-    company: 'FreightIQ Global Forwarding',
-    icon: Briefcase,
-    color: 'text-amber-600',
-    dest: '/agents/dashboard',
-    desc: 'Reviews AI analysis, modifies prices, and sends quotes'
-  },
-  {
-    role: 'customs_officer',
-    label: '3. Customs Officer',
-    name: 'Officer R. Verma',
-    email: 'customs@icegate.gov.in',
-    company: 'Customs & Border Compliance',
-    icon: Scale,
-    color: 'text-emerald-600',
-    dest: '/customs/dashboard',
-    desc: 'Inspects documents, assigns risk flags, verifies HS codes'
-  },
-  {
-    role: 'admin',
-    label: '4. System Admin',
-    name: 'John Administrator',
-    email: 'admin@freightiq.com',
-    company: 'FreightIQ Enterprise Hub',
-    icon: Shield,
-    color: 'text-indigo-600',
-    dest: '/admin/dashboard',
-    desc: 'Monitors AI agents, pricing rules, carriers and audit logs'
-  }
+// Initial seed accounts if systemUsers has not been populated yet
+const DEFAULT_SYSTEM_USERS = [
+  { id: 'USR-101', fullName: 'Alex Shipper', email: 'customer@apexgl.com', role: 'CUSTOMER', password: 'password123', companyName: 'ABC Electronics Pvt Ltd', phone: '+91 98765 43210', status: 'Active', created: 'Aug 10, 2026' },
+  { id: 'USR-102', fullName: 'Sarah Jenkins', email: 'agent@freightiq.com', role: 'FREIGHT_AGENT', password: 'password123', companyName: 'FreightIQ Global Forwarding', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
+  { id: 'USR-103', fullName: 'Officer R. Verma', email: 'customs@icegate.gov.in', role: 'CUSTOMS_OFFICER', password: 'password123', companyName: 'Customs & Border Compliance', phone: '+91 98222 33445', status: 'Active', created: 'Aug 05, 2026' },
+  { id: 'USR-104', fullName: 'System Administrator', email: 'admin@freightiq.com', role: 'ADMIN', password: 'password123', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
 ]
 
 export default function LoginPage() {
-  const [selectedRole, setSelectedRole] = useState('customer')
+  const [selectedRole, setSelectedRole] = useState('customer') // 'customer', 'freight_agent', 'customs_officer', 'admin'
   const [formData, setFormData] = useState({
-    usernameOrEmail: 'customer@apexgl.com',
-    password: 'password123'
+    usernameOrEmail: '',
+    password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Ensure systemUsers exists in localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('systemUsers')
+      if (!stored) {
+        localStorage.setItem('systemUsers', JSON.stringify(DEFAULT_SYSTEM_USERS))
+      }
+    } catch {}
+
+    // Check if navigated from Register page with registered email/role
+    if (location.state?.registeredEmail) {
+      setFormData(prev => ({
+        ...prev,
+        usernameOrEmail: location.state.registeredEmail,
+        password: ''
+      }))
+      if (location.state.registeredRole) {
+        setSelectedRole(location.state.registeredRole)
+      }
+      setInfoMessage(`Account created successfully! Please enter your password to sign in.`)
+    }
+  }, [location.state])
 
   const handleRoleChange = (roleKey) => {
     setSelectedRole(roleKey)
     setErrorMessage('')
-    const persona = DEMO_PERSONAS.find(p => p.role === roleKey)
-    if (persona) {
-      setFormData({
-        usernameOrEmail: persona.email,
-        password: 'password123'
-      })
-    }
-  }
-
-  const handleQuickPersonaSelect = (persona) => {
-    setSelectedRole(persona.role)
-    setFormData({
-      usernameOrEmail: persona.email,
-      password: 'password123'
-    })
-    executeLogin(persona.role, persona.email, persona.name, persona.company, persona.dest)
+    setInfoMessage('')
   }
 
   const handleInputChange = (e) => {
@@ -104,87 +75,127 @@ export default function LoginPage() {
       [name]: value,
     }))
     if (errorMessage) setErrorMessage('')
-  }
-
-  const executeLogin = (role, email, name, company, dest) => {
-    const token = 'jwt-session-' + Date.now()
-    localStorage.setItem('token', token)
-    localStorage.setItem('userRole', role)
-    localStorage.setItem('selectedAccessRole', role)
-    localStorage.setItem('userEmail', email)
-    localStorage.setItem('userName', name)
-    if (company) localStorage.setItem('userCompany', company)
-    navigate(dest)
+    if (infoMessage) setInfoMessage('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.usernameOrEmail || !formData.password) {
+    if (!formData.usernameOrEmail.trim() || !formData.password) {
       setErrorMessage('Please enter both your registered email/username and password.')
       return
     }
 
     setIsLoading(true)
     setErrorMessage('')
+    setInfoMessage('')
 
-    const persona = DEMO_PERSONAS.find(p => p.role === selectedRole) || DEMO_PERSONAS[0]
+    const inputId = formData.usernameOrEmail.trim().toLowerCase()
+    const inputPassword = formData.password
+    const inputRole = selectedRole.toLowerCase()
 
-    // 1. Check if user matches in local systemUsers (created in Admin User Management)
+    // 1. Authenticate strictly against registered accounts in systemUsers
+    let sysUsers = DEFAULT_SYSTEM_USERS
     try {
       const stored = localStorage.getItem('systemUsers')
       if (stored) {
-        const sysUsers = JSON.parse(stored)
-        const inputId = formData.usernameOrEmail.trim().toLowerCase()
-        const matched = sysUsers.find(u => 
-          u.email?.toLowerCase() === inputId || u.fullName?.toLowerCase() === inputId
-        )
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          sysUsers = parsed
+        }
+      }
+    } catch {}
 
-        if (matched) {
-          const userRole = (matched.role || selectedRole).toLowerCase()
+    // Find all users matching this email or name
+    const emailMatches = sysUsers.filter(u =>
+      u.email?.toLowerCase() === inputId || u.fullName?.toLowerCase() === inputId
+    )
+
+    if (emailMatches.length === 0) {
+      // Also try calling Django backend login if available
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: inputId,
+            password: inputPassword,
+            role: selectedRole
+          })
+        })
+        const data = await response.json()
+        if (response.ok && data.access) {
+          const userRole = (data.user?.role || selectedRole).toLowerCase()
+          localStorage.setItem('token', data.access)
+          localStorage.setItem('refreshToken', data.refresh)
+          localStorage.setItem('userRole', userRole)
+          localStorage.setItem('selectedAccessRole', userRole)
+          localStorage.setItem('userEmail', data.user?.email || inputId)
+          localStorage.setItem('userName', data.user?.full_name || 'Authorized User')
+          if (data.user?.company_name) localStorage.setItem('userCompany', data.user.company_name)
+
           let dest = '/user/dashboard'
           if (userRole === 'admin') dest = '/admin/dashboard'
           else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
-          else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker' || userRole === 'agent_operator') dest = '/agents/dashboard'
+          else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
 
-          executeLogin(userRole, matched.email, matched.fullName || matched.name, matched.companyName, dest)
-          setIsLoading(false)
+          navigate(dest)
           return
         }
-      }
-    } catch (err) {
-      console.log('Local check err', err)
+      } catch {}
+
+      setErrorMessage('No registered account found with this email. Please register first.')
+      setIsLoading(false)
+      return
     }
 
-    // 2. Try Django backend login or direct fallback
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.usernameOrEmail.trim(),
-          password: formData.password,
-          role: selectedRole
-        })
-      })
+    // Check if role matches
+    const matchedAccount = emailMatches.find(u => {
+      const uRole = (u.role || '').toLowerCase()
+      if (inputRole === 'customer') return uRole === 'customer' || uRole === 'user'
+      if (inputRole === 'freight_agent') return uRole === 'freight_agent' || uRole === 'agent' || uRole === 'broker' || uRole === 'operations'
+      if (inputRole === 'customs_officer') return uRole === 'customs_officer' || uRole === 'customs' || uRole === 'compliance_officer'
+      if (inputRole === 'admin') return uRole === 'admin'
+      return uRole === inputRole
+    })
 
-      const data = await response.json()
-      if (response.ok && data.access) {
-        const userRole = (data.user?.role || selectedRole).toLowerCase()
-        let dest = '/user/dashboard'
-        if (userRole === 'admin') dest = '/admin/dashboard'
-        else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
-        else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker' || userRole === 'agent_operator') dest = '/agents/dashboard'
-
-        executeLogin(userRole, data.user?.email || formData.usernameOrEmail, data.user?.full_name || persona.name, data.user?.company_name || persona.company, dest)
-        return
-      }
-    } catch (err) {
-      // Offline / demo fallback
+    if (!matchedAccount) {
+      const existingRoles = emailMatches.map(u => u.role).join(', ')
+      setErrorMessage(
+        `This email is registered under the "${existingRoles}" role, not "${selectedRole.replace('_', ' ').toUpperCase()}". Please select the correct role tab.`
+      )
+      setIsLoading(false)
+      return
     }
 
-    // Direct login with selected persona credentials
-    executeLogin(selectedRole, formData.usernameOrEmail, persona.name, persona.company, persona.dest)
-    setIsLoading(false)
+    if (matchedAccount.status === 'Suspended') {
+      setErrorMessage('This user account has been suspended by the administrator.')
+      setIsLoading(false)
+      return
+    }
+
+    // Verify Password
+    if (matchedAccount.password && matchedAccount.password !== inputPassword) {
+      setErrorMessage('Incorrect password. Please verify your credentials and try again.')
+      setIsLoading(false)
+      return
+    }
+
+    // Authentication Success! Issue session token and navigate to authorized portal
+    const userRole = (matchedAccount.role || selectedRole).toLowerCase()
+    const token = 'jwt-user-' + (matchedAccount.id || Date.now())
+    localStorage.setItem('token', token)
+    localStorage.setItem('userRole', userRole)
+    localStorage.setItem('selectedAccessRole', userRole)
+    localStorage.setItem('userEmail', matchedAccount.email)
+    localStorage.setItem('userName', matchedAccount.fullName)
+    if (matchedAccount.companyName) localStorage.setItem('userCompany', matchedAccount.companyName)
+
+    let dest = '/user/dashboard'
+    if (userRole === 'admin') dest = '/admin/dashboard'
+    else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
+    else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
+
+    navigate(dest)
   }
 
   return (
@@ -205,7 +216,7 @@ export default function LoginPage() {
                   FREIGHT IQ
                 </h2>
                 <p className="text-[10px] tracking-widest text-blue-400 font-bold uppercase">
-                  M1–M3 Intelligent Freight Architecture
+                  M1–M3 Intelligent Logistics Platform
                 </p>
               </div>
             </div>
@@ -214,42 +225,52 @@ export default function LoginPage() {
             <div className="bg-[#162340] border border-blue-500/20 rounded-2xl p-5 mb-6">
               <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider mb-1.5">
                 <Zap className="w-4 h-4 fill-amber-400" />
-                <span>4 Strict User Roles & Responsibilities</span>
+                <span>Isolated Multi-Role Architecture</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Clean architectural separation between human user dashboards and backend AI intelligence services (Route, Pricing, Weather, Customs, and Risk Agents).
+                Users must register an account first. Once registered, log in to access your designated workspace portal.
               </p>
             </div>
 
-            {/* Feature Bullets */}
-            <div className="space-y-4">
-              <div className="flex items-start gap-3.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-950/80 border border-blue-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Calculator className="w-4 h-4 text-blue-400" />
+            {/* Role List */}
+            <div className="space-y-3.5">
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-blue-950/80 border border-blue-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <User className="w-3.5 h-3.5 text-blue-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">M1 · Core Quote Foundation</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Shipment creation, route distance & rule-based pricing</p>
+                  <h4 className="text-xs font-bold text-white">Customer Portal</h4>
+                  <p className="text-[11px] text-slate-400">Request quotes, inspect pricing breakdowns & accept quotes</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Cpu className="w-4 h-4 text-amber-400" />
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-amber-950/80 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Briefcase className="w-3.5 h-3.5 text-amber-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">M2 · AI/ML Pricing Intelligence</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Predicts ML price from historical patterns & recommends rates</p>
+                  <h4 className="text-xs font-bold text-white">Freight Agent Portal</h4>
+                  <p className="text-[11px] text-slate-400">Review AI pricing, modify prices with audit log & dispatch quotes</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Scale className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Scale className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">M3 · Composite Risk Intelligence</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Weather radar, customs document verification & route delays</p>
+                  <h4 className="text-xs font-bold text-white">Customs Officer Portal</h4>
+                  <p className="text-[11px] text-slate-400">Verify documents, assign risk flags & approve compliance cases</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Shield className="w-3.5 h-3.5 text-indigo-400" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Admin System Portal</h4>
+                  <p className="text-[11px] text-slate-400">Govern users, tariff rules & monitor backend AI agents</p>
                 </div>
               </div>
             </div>
@@ -259,7 +280,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-between pt-8 border-t border-slate-700/50 mt-8 text-[11px] text-slate-400">
             <span>© FreightIQ 2026</span>
             <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[10px]">
-              Strict Portal Isolation Active
+              Verified Credentials Only
             </span>
           </div>
         </div>
@@ -271,63 +292,49 @@ export default function LoginPage() {
               Sign In to Your Workspace
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-5">
-              Select your role to access your dedicated dashboard. Users are restricted to their authorized portal.
+              Select your role and enter your registered email and password.
             </p>
 
-            {/* 4 Standardized Roles Grid */}
+            {/* 4 Standardized Roles Tabs */}
             <div className="mb-4">
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                 SELECT YOUR ROLE:
               </label>
               <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-                {DEMO_PERSONAS.map(p => {
-                  const IconComp = p.icon
-                  const isSelected = selectedRole === p.role
+                {[
+                  { id: 'customer', label: '1. Customer', icon: User, color: 'text-blue-600' },
+                  { id: 'freight_agent', label: '2. Freight Agent', icon: Briefcase, color: 'text-amber-600' },
+                  { id: 'customs_officer', label: '3. Customs Officer', icon: Scale, color: 'text-emerald-600' },
+                  { id: 'admin', label: '4. System Admin', icon: Shield, color: 'text-indigo-600' }
+                ].map(r => {
+                  const IconComp = r.icon
+                  const isSelected = selectedRole === r.id
                   return (
                     <button
-                      key={p.role}
+                      key={r.id}
                       type="button"
-                      onClick={() => handleRoleChange(p.role)}
+                      onClick={() => handleRoleChange(r.id)}
                       className={`flex items-center gap-2 p-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-left ${
                         isSelected
-                          ? 'bg-white shadow-sm border border-slate-200/80 ' + p.color
+                          ? 'bg-white shadow-sm border border-slate-200/80 ' + r.color
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                       }`}
                     >
                       <IconComp className="w-4 h-4 shrink-0" />
-                      <div className="truncate">
-                        <div className="leading-none">{p.label}</div>
-                      </div>
+                      <span className="truncate">{r.label}</span>
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Quick 1-Click Persona Sign-In */}
-            <div className="mb-5 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
-                <span>Quick Persona Login:</span>
-                <span className="text-[9px] text-blue-600 font-bold font-mono">1-CLICK SIGN IN</span>
+            {/* Success Info Message */}
+            {infoMessage && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2 text-blue-700 text-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{infoMessage}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {DEMO_PERSONAS.map(p => (
-                  <button
-                    key={p.role}
-                    type="button"
-                    onClick={() => handleQuickPersonaSelect(p)}
-                    className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-left transition-all group cursor-pointer shadow-2xs"
-                  >
-                    <div className="text-xs font-black text-slate-800 group-hover:text-blue-700 truncate">
-                      {p.name}
-                    </div>
-                    <div className="text-[10px] text-slate-500 truncate">
-                      {p.label.split('. ')[1]}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Error message alert */}
             {errorMessage && (
@@ -341,7 +348,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-[10.5px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  EMAIL OR USERNAME
+                  REGISTERED EMAIL OR USERNAME
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
@@ -349,10 +356,10 @@ export default function LoginPage() {
                     type="text"
                     name="usernameOrEmail"
                     required
-                    placeholder="Enter email or username"
+                    placeholder="Enter registered email"
                     value={formData.usernameOrEmail}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -367,15 +374,15 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     required
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white"
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white placeholder:text-slate-400"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -385,21 +392,21 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
               >
-                <span>{isLoading ? 'Authenticating...' : `Enter ${selectedRole.replace('_', ' ').toUpperCase()} Portal`}</span>
+                <span>{isLoading ? 'Verifying Account...' : `Sign In to ${selectedRole.replace('_', ' ').toUpperCase()} Portal`}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
 
             {/* Register link */}
-            <div className="text-center mt-5">
-              <span className="text-xs text-slate-500">Need a new account? </span>
+            <div className="text-center mt-5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+              <span className="text-xs text-slate-600">Don't have an account yet? </span>
               <Link
                 to="/register"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors ml-1"
               >
-                Register here
+                Register as User, Agent or Admin →
               </Link>
             </div>
 

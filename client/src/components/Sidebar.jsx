@@ -74,7 +74,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         items: [
           { name: 'Dashboard', path: '/user/dashboard', icon: LayoutDashboard },
           { name: 'My Shipments', path: '/dashboard/shipments', icon: Truck },
-          { name: 'Request Quote', path: '/dashboard/calculator', icon: Calculator },
+          { name: 'Request Quote', path: '/dashboard/new-shipment', icon: PlusCircle },
           { name: 'My Quotes', path: '/user/dashboard?tab=quotes', icon: FileText },
           { name: 'Documents', path: '/user/dashboard?tab=documents', icon: FileSearch },
           { name: 'Notifications', path: '/user/dashboard?tab=notifications', icon: Bell },

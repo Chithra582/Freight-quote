@@ -192,6 +192,29 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
       shipList.unshift(newShipment)
       localStorage.setItem('allShipments', JSON.stringify(shipList))
 
+      const storedAgent = localStorage.getItem('agentQuotesQueue')
+      let agentList = storedAgent ? JSON.parse(storedAgent) : []
+      agentList.unshift({
+        ...newQuote,
+        customer: 'ABC Electronics Pvt Ltd',
+        customerEmail: 'customer@apexgl.com',
+        finalPrice: calculationResult.sellPrice,
+        recommendedPrice: calculationResult.sellPrice,
+        rulePrice: calculationResult.totalCost,
+        aiPrice: calculationResult.sellPrice,
+        overallRisk: 'LOW',
+        status: 'PENDING_REVIEW',
+        auditHistory: [
+          { action: 'Instant Calculation Saved', time: 'Just now', user: 'Customer', note: 'Quote computed via Deterministic Tariff Calculator' }
+        ]
+      })
+      localStorage.setItem('agentQuotesQueue', JSON.stringify(agentList))
+
+      const storedAdmin = localStorage.getItem('adminAllQuotes')
+      let adminList = storedAdmin ? JSON.parse(storedAdmin) : []
+      adminList.unshift(newQuote)
+      localStorage.setItem('adminAllQuotes', JSON.stringify(adminList))
+
       if (onSaveToDashboard) {
         onSaveToDashboard(newQuote)
       }

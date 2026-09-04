@@ -45,7 +45,15 @@ import {
   Check,
   Plus,
   Cpu,
-  Terminal
+  Terminal,
+  BarChart3,
+  Bell,
+  Settings,
+  DollarSign,
+  Truck,
+  FileText,
+  Download,
+  Scale
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -90,11 +98,10 @@ const SAMPLE_FEEDBACKS = [
 ]
 
 const INITIAL_USERS = [
-  { id: 'USR-101', fullName: 'Alex Shipper', email: 'user@freighthub.com', role: 'CUSTOMER', companyName: 'Apex Global Logistics', phone: '+91 98765 43210', status: 'Active', created: 'Aug 10, 2026' },
-  { id: 'USR-102', fullName: 'Rajesh Exports', email: 'rajesh@texport.in', role: 'CUSTOMER', companyName: 'Rajesh Textiles Exports', phone: '+91 98234 56789', status: 'Active', created: 'Aug 12, 2026' },
-  { id: 'USR-103', fullName: 'Freight Broker Pro', email: 'broker@freighthub.com', role: 'BROKER', companyName: 'FreightIQ Maritime Brokerage', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
-  { id: 'USR-104', fullName: 'Vikram Mehta', email: 'vikram.broker@oceanroutes.com', role: 'BROKER', companyName: 'Ocean Routes Intl', phone: '+91 97222 33445', status: 'Active', created: 'Aug 05, 2026' },
-  { id: 'USR-105', fullName: 'System Administrator', email: 'admin@freighthub.com', role: 'ADMIN', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
+  { id: 'USR-101', fullName: 'Alex Shipper', email: 'customer@apexgl.com', role: 'CUSTOMER', password: 'password123', companyName: 'ABC Electronics Pvt Ltd', phone: '+91 98765 43210', status: 'Active', created: 'Aug 10, 2026' },
+  { id: 'USR-102', fullName: 'Sarah Jenkins', email: 'agent@freightiq.com', role: 'FREIGHT_AGENT', password: 'password123', companyName: 'FreightIQ Global Forwarding', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
+  { id: 'USR-103', fullName: 'Officer R. Verma', email: 'customs@icegate.gov.in', role: 'CUSTOMS_OFFICER', password: 'password123', companyName: 'Customs & Border Compliance', phone: '+91 98222 33445', status: 'Active', created: 'Aug 05, 2026' },
+  { id: 'USR-104', fullName: 'John Administrator', email: 'admin@freightiq.com', role: 'ADMIN', password: 'password123', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
 ]
 
 const INITIAL_MARGIN_POLICIES = [
@@ -153,6 +160,35 @@ export default function AdminDashboard() {
 
   // Approval Rules State
   const [approvalRules, setApprovalRules] = useState(INITIAL_APPROVAL_RULES)
+
+  // System Quotes State
+  const [allQuotes, setAllQuotes] = useState(() => {
+    const stored = localStorage.getItem('adminAllQuotes')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const seeds = [
+            { id: 'QT-2026-1001', shp: 'SHP-1001', lane: 'INNSA (Mumbai) → AEJEA (Jebel Ali)', customer: 'ABC Electronics Pvt Ltd', base: '₹82,400', final: '₹86,000', margin: '14.2%', status: 'SENT_TO_CUSTOMER', badge: 'bg-indigo-100 text-indigo-800' },
+            { id: 'QT-2026-1002', shp: 'SHP-1002', lane: 'INMAA (Chennai) → NLRTM (Rotterdam)', customer: 'Apex Global Logistics', base: '₹1,24,000', final: '₹1,18,000', margin: '11.5%', status: 'APPROVED', badge: 'bg-emerald-100 text-emerald-800' },
+            { id: 'QT-2026-1003', shp: 'SHP-1003', lane: 'DEL (Delhi) → LHR (London Heathrow)', customer: 'Zenith Pharma Exports', base: '₹2,45,000', final: '₹2,55,000', margin: '16.8%', status: 'BOOKED', badge: 'bg-sky-100 text-sky-800' },
+            { id: 'QT-2026-1004', shp: 'SHP-1004', lane: 'INMUN (Mundra) → SGSIN (Singapore)', customer: 'Reliance Chem International', base: '₹95,000', final: '₹98,500', margin: '15.0%', status: 'DRAFT', badge: 'bg-amber-100 text-amber-800' },
+            { id: 'QT-2026-1005', shp: 'SHP-1005', lane: 'INCOK (Cochin) → USNYC (New York)', customer: 'Malabar Spices Traders', base: '₹3,10,000', final: '₹3,25,000', margin: '18.4%', status: 'PENDING_APPROVAL', badge: 'bg-purple-100 text-purple-800' }
+          ]
+          const existingIds = new Set(parsed.map(q => q.id))
+          const remainingSeeds = seeds.filter(s => !existingIds.has(s.id))
+          return [...parsed, ...remainingSeeds]
+        }
+      } catch {}
+    }
+    return [
+      { id: 'QT-2026-1001', shp: 'SHP-1001', lane: 'INNSA (Mumbai) → AEJEA (Jebel Ali)', customer: 'ABC Electronics Pvt Ltd', base: '₹82,400', final: '₹86,000', margin: '14.2%', status: 'SENT_TO_CUSTOMER', badge: 'bg-indigo-100 text-indigo-800' },
+      { id: 'QT-2026-1002', shp: 'SHP-1002', lane: 'INMAA (Chennai) → NLRTM (Rotterdam)', customer: 'Apex Global Logistics', base: '₹1,24,000', final: '₹1,18,000', margin: '11.5%', status: 'APPROVED', badge: 'bg-emerald-100 text-emerald-800' },
+      { id: 'QT-2026-1003', shp: 'SHP-1003', lane: 'DEL (Delhi) → LHR (London Heathrow)', customer: 'Zenith Pharma Exports', base: '₹2,45,000', final: '₹2,55,000', margin: '16.8%', status: 'BOOKED', badge: 'bg-sky-100 text-sky-800' },
+      { id: 'QT-2026-1004', shp: 'SHP-1004', lane: 'INMUN (Mundra) → SGSIN (Singapore)', customer: 'Reliance Chem International', base: '₹95,000', final: '₹98,500', margin: '15.0%', status: 'DRAFT', badge: 'bg-amber-100 text-amber-800' },
+      { id: 'QT-2026-1005', shp: 'SHP-1005', lane: 'INCOK (Cochin) → USNYC (New York)', customer: 'Malabar Spices Traders', base: '₹3,10,000', final: '₹3,25,000', margin: '18.4%', status: 'PENDING_APPROVAL', badge: 'bg-purple-100 text-purple-800' }
+    ]
+  })
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -1075,9 +1111,488 @@ export default function AdminDashboard() {
           )}
 
           {/* ========================================================================= */}
+          {/* TAB: CUSTOMERS DIRECTORY */}
+          {/* ========================================================================= */}
+          {currentTab === 'customers' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">Registered Customer Accounts</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Directory of shippers and commercial corporate customers.</p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs">
+                  {users.filter(u => (u.role || '').toUpperCase() === 'CUSTOMER' || (u.role || '').toUpperCase() === 'USER').length} Customers
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Customer / Contact</th>
+                      <th className="px-4 py-3">Company Name</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Phone</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.filter(u => (u.role || '').toUpperCase() === 'CUSTOMER' || (u.role || '').toUpperCase() === 'USER').map((u, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-bold text-slate-900">{u.fullName}</td>
+                        <td className="px-4 py-3 font-medium">{u.companyName || 'N/A'}</td>
+                        <td className="px-4 py-3 text-slate-500 font-mono">{u.email}</td>
+                        <td className="px-4 py-3 text-slate-500">{u.phone || 'N/A'}</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">
+                            {u.status || 'Active'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: FREIGHT AGENTS DIRECTORY */}
+          {/* ========================================================================= */}
+          {currentTab === 'freight-agents' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">Freight Agent & Operations Desk</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Licensed commercial agents responsible for quote review and margin adjustments.</p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 font-bold text-xs">
+                  {users.filter(u => ['FREIGHT_AGENT', 'BROKER', 'AGENT', 'OPERATIONS'].includes((u.role || '').toUpperCase())).length} Agents
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Agent Name</th>
+                      <th className="px-4 py-3">Organization</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Desk Role</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.filter(u => ['FREIGHT_AGENT', 'BROKER', 'AGENT', 'OPERATIONS'].includes((u.role || '').toUpperCase())).map((u, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-bold text-slate-900">{u.fullName}</td>
+                        <td className="px-4 py-3 font-medium">{u.companyName || 'FreightIQ Operations'}</td>
+                        <td className="px-4 py-3 text-slate-500 font-mono">{u.email}</td>
+                        <td className="px-4 py-3 text-slate-600 font-bold">Commercial Quote Reviewer</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">
+                            {u.status || 'Active'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: CUSTOMS OFFICERS DIRECTORY */}
+          {/* ========================================================================= */}
+          {currentTab === 'customs-officers' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">Customs Compliance Officers</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Regulatory officers verifying HS classification, dangerous goods, and tariff documents.</p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs">
+                  {users.filter(u => ['CUSTOMS_OFFICER', 'COMPLIANCE_OFFICER', 'CUSTOMS'].includes((u.role || '').toUpperCase())).length} Officers
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Officer Name</th>
+                      <th className="px-4 py-3">Agency / Authority</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Clearance Jurisdiction</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.filter(u => ['CUSTOMS_OFFICER', 'COMPLIANCE_OFFICER', 'CUSTOMS'].includes((u.role || '').toUpperCase())).map((u, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-bold text-slate-900">{u.fullName}</td>
+                        <td className="px-4 py-3 font-medium">{u.companyName || 'Border & Tariff Authority'}</td>
+                        <td className="px-4 py-3 text-slate-500 font-mono">{u.email}</td>
+                        <td className="px-4 py-3 text-slate-600">All Gateways (Sea/Air)</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">
+                            {u.status || 'Active'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: ROLES & PERMISSIONS GOVERNANCE */}
+          {/* ========================================================================= */}
+          {currentTab === 'roles-permissions' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-slate-900">Role-Based Access Control (RBAC) Governance</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Strict access boundaries established for the 4 platform user roles.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { role: 'Customer', desc: 'Can submit quote requests, track shipments, view issued quotes, accept/reject final proposals.', perms: ['Create Shipment', 'View Own Quotes', 'Accept/Decline Quote', 'Upload Documents'] },
+                  { role: 'Freight Agent', desc: 'Reviews AI analysis, modifies prices with required audit logging, and approves quotes for dispatch.', perms: ['Review AI Rates', 'Modify Pricing', 'Audit Logging', 'Send Quotes to Client'] },
+                  { role: 'Customs Officer', desc: 'Reviews HS classification, verifies required trade documentation, and flags customs risk.', perms: ['Inspect Documents', 'Add Customs Flags', 'Assign Risk Rating', 'Compliance Sign-Off'] },
+                  { role: 'Admin', desc: 'Full authority over users, pricing rules, carrier rate cards, system configuration & AI agents.', perms: ['Manage Users', 'Configure Tariffs', 'Monitor AI Pipeline', 'Access Audit Logs'] }
+                ].map((r, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <div className="font-black text-sm text-slate-900 mb-1">{r.role}</div>
+                      <p className="text-xs text-slate-600 mb-3">{r.desc}</p>
+                      <div className="space-y-1">
+                        {r.perms.map((p, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-700 font-medium">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{p}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: ALL QUOTES */}
+          {/* ========================================================================= */}
+          {currentTab === 'all-quotes' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">All System Quotations</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Platform-wide quote registry across Sea, Air, Road, and Rail corridors.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-200">
+                    {allQuotes.length} Quotes in System
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Quote ID</th>
+                      <th className="px-4 py-3">Shipment Ref</th>
+                      <th className="px-4 py-3">Lane Corridor</th>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Final / Price</th>
+                      <th className="px-4 py-3">Margin %</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {allQuotes.map((q, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-mono font-bold text-indigo-600">{q.id}</td>
+                        <td className="px-4 py-3 font-mono text-slate-800">{q.shp || q.shipmentId || 'SHP-AUTO'}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{q.lane || `${q.origin} → ${q.destination}`}</td>
+                        <td className="px-4 py-3 text-slate-600">{q.customer || 'ABC Electronics Pvt Ltd'}</td>
+                        <td className="px-4 py-3 font-mono">
+                          {q.base && <span className="text-slate-400 line-through mr-1.5">{q.base}</span>}
+                          <span className="font-bold text-slate-900">{q.final || q.sellPrice || (q.finalPrice ? `₹${q.finalPrice.toLocaleString()}` : '₹86,000')}</span>
+                        </td>
+                        <td className="px-4 py-3 font-bold text-emerald-600">{q.margin || (q.marginPct ? `${q.marginPct}%` : '15.0%')}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                            q.status === 'APPROVED' || q.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' :
+                            q.status === 'SENT_TO_CUSTOMER' || q.status === 'SENT' ? 'bg-indigo-100 text-indigo-800' :
+                            q.status === 'BOOKED' ? 'bg-sky-100 text-sky-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {q.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: AI PRICING MONITOR */}
+          {/* ========================================================================= */}
+          {currentTab === 'ai-pricing-monitor' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black text-slate-900">Stage 2 AI Dynamic Pricing Engine Monitor</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">Telemetry, LightGBM regression weights, inference latency and residual analysis.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Model Status: ONLINE
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Model Architecture</span>
+                    <div className="text-base font-black text-slate-900 mt-1">LightGBM Regressor</div>
+                    <span className="text-[10px] text-indigo-600 font-bold mt-1 block">Trained on 100k Lane Tariffs</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">R² Goodness of Fit</span>
+                    <div className="text-base font-black text-emerald-600 mt-1">{mlMetrics.r2_score}</div>
+                    <span className="text-[10px] text-slate-500 font-bold mt-1 block">Threshold: &gt;= 0.95 (PASSED)</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Root Mean Sq. Error</span>
+                    <div className="text-base font-black text-slate-900 mt-1">₹{mlMetrics.rmse?.toFixed(1)}</div>
+                    <span className="text-[10px] text-slate-500 font-bold mt-1 block">Deviation: &lt; 2.4% baseline</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg Inference Latency</span>
+                    <div className="text-base font-black text-indigo-600 mt-1">84 ms</div>
+                    <span className="text-[10px] text-emerald-600 font-bold mt-1 block">99.98% within SLA (&lt;300ms)</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                  <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase text-indigo-300">Feature Importance Weights</span>
+                      <span className="text-[10px] font-mono text-slate-400">SHAP values</span>
+                    </div>
+                    <div className="space-y-2.5">
+                      {[
+                        { feature: 'Haulage Distance (km)', weight: 34 },
+                        { feature: 'Container Type / CBM Volume', weight: 26 },
+                        { feature: 'Bunker Fuel Index (BAF)', weight: 18 },
+                        { feature: 'Port Congestion Factor', weight: 12 },
+                        { feature: 'Dangerous Goods Class Multiplier', weight: 10 }
+                      ].map((item, idx) => (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-slate-300">{item.feature}</span>
+                            <span className="text-emerald-400 font-mono">{item.weight}%</span>
+                          </div>
+                          <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${item.weight * 2.5}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                    <span className="text-xs font-black uppercase text-slate-700">Autonomous Retraining Pipeline</span>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Models continuously ingest audited quote acceptances and spot market carrier indices. Retraining runs nightly or immediately on manual dispatch.
+                    </p>
+                    <button
+                      onClick={handleRetrainML}
+                      disabled={isRetraining}
+                      className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Cpu className="w-4 h-4" />
+                      {isRetraining ? 'Retraining LightGBM & Gradient Boosters...' : 'Trigger Model Retraining Now'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: REPORTS & ANALYTICS */}
+          {/* ========================================================================= */}
+          {currentTab === 'reports' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">Platform Analytics & SLA Reports</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Performance tracking, quote conversion yields, and operational SLAs.</p>
+                </div>
+                <button
+                  onClick={() => alert('Exporting platform SLA report PDF...')}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download SLA Audit (PDF)</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-xs font-bold text-slate-500">Quote Conversion Rate</span>
+                  <div className="text-2xl font-black text-slate-900 mt-1">74.6%</div>
+                  <span className="text-[10px] text-emerald-600 font-bold mt-1 block">↑ 4.2% from previous month</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-xs font-bold text-slate-500">Average Turnaround Time</span>
+                  <div className="text-2xl font-black text-slate-900 mt-1">1.8 mins</div>
+                  <span className="text-[10px] text-emerald-600 font-bold mt-1 block">98.5% automated generation</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-xs font-bold text-slate-500">Agent Discretion Audit Ratio</span>
+                  <div className="text-2xl font-black text-indigo-600 mt-1">100%</div>
+                  <span className="text-[10px] text-slate-500 font-bold mt-1 block">Zero unaudited modifications</span>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-3">Lane Volume & Profitability Yield</h3>
+                <div className="space-y-3">
+                  {[
+                    { lane: 'INNSA (Nhava Sheva) → AEJEA (Jebel Ali)', volume: '42%', revenue: '₹48,20,000', margin: '14.8%' },
+                    { lane: 'INMAA (Chennai) → NLRTM (Rotterdam)', volume: '28%', revenue: '₹34,10,000', margin: '12.4%' },
+                    { lane: 'DEL (Delhi) → LHR (London Heathrow Air)', volume: '18%', revenue: '₹22,90,000', margin: '17.1%' },
+                    { lane: 'INMUN (Mundra) → SGSIN (Singapore)', volume: '12%', revenue: '₹14,50,000', margin: '15.6%' }
+                  ].map((row, i) => (
+                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white rounded-xl border border-slate-200 gap-2">
+                      <span className="text-xs font-bold text-slate-900">{row.lane}</span>
+                      <div className="flex items-center gap-4 text-xs font-mono">
+                        <span className="text-slate-500">Share: {row.volume}</span>
+                        <span className="text-slate-800 font-bold">{row.revenue}</span>
+                        <span className="text-emerald-600 font-bold">{row.margin} margin</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: SYSTEM NOTIFICATIONS CENTER */}
+          {/* ========================================================================= */}
+          {currentTab === 'notifications' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">System Broadcasts & Alerts</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Platform alerts, gateway notifications, and automated compliance triggers.</p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs">
+                  4 Unread Broadcasts
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { title: 'Carrier Fuel Surcharge Adjustment Notice', desc: 'Bunker fuel prices updated +1.2% across Indian Ocean shipping lanes.', time: '10m ago', type: 'info', icon: Bell },
+                  { title: 'Customs ICEGATE System Maintenance', desc: 'Planned maintenance on national customs filing gateway scheduled Sunday 02:00-04:00 IST.', time: '1h ago', type: 'warning', icon: AlertTriangle },
+                  { title: 'LightGBM Nightly Pipeline Re-training Complete', desc: 'Evaluated 4,200 new rate records. Overall model accuracy reached 98.32% R².', time: '4h ago', type: 'success', icon: CheckCircle2 },
+                  { title: 'High Risk Cargo Alert: SHP-1005 HazMat', desc: 'Flammable solids shipment flagged for secondary customs inspection at JNPT.', time: 'Yesterday', type: 'danger', icon: ShieldAlert }
+                ].map((n, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                    <div className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 shrink-0">
+                      <n.icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-black text-slate-900">{n.title}</h4>
+                        <span className="text-[10px] font-mono text-slate-400">{n.time}</span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">{n.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: SYSTEM SETTINGS */}
+          {/* ========================================================================= */}
+          {currentTab === 'settings' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">Platform System Configuration</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">System defaults, currency baseline, and automated workflow parameters.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">Default Pricing Currency</label>
+                  <select defaultValue="INR" className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                    <option value="INR">INR (₹) - Indian Rupee</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="EUR">EUR (€) - Euro</option>
+                  </select>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">Tariff Refresh Interval</label>
+                  <select defaultValue="daily" className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                    <option value="realtime">Real-time Stream</option>
+                    <option value="hourly">Hourly Sync</option>
+                    <option value="daily">Daily Midnight Batch</option>
+                  </select>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">Quote Validity Window</label>
+                  <select defaultValue="7" className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                    <option value="3">3 Days</option>
+                    <option value="7">7 Days (Standard)</option>
+                    <option value="14">14 Days</option>
+                    <option value="30">30 Days</option>
+                  </select>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">Strict RBAC Enforcement</label>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs text-slate-600 font-medium">Enforce 403 route blocking across portals</span>
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">ENABLED</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => alert('Platform settings updated successfully.')}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow"
+                >
+                  Save Platform Settings
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
           {/* TAB 5: OVERVIEW (TARIFF RULES & ML PERFORMANCE) */}
           {/* ========================================================================= */}
-          {currentTab === 'overview' && (
+          {(currentTab === 'overview' || !['users', 'customers', 'freight-agents', 'customs-officers', 'roles-permissions', 'all-quotes', 'ai-pricing-monitor', 'ai-agent-monitor', 'margin-policy', 'approval-rules', 'reports', 'notifications', 'settings', 'audit-logs', 'feedback'].includes(currentTab)) && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">

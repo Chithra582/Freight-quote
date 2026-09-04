@@ -17,14 +17,21 @@ import {
   CheckCircle2,
   Zap,
   Calculator,
-  Sliders,
-  Globe
+  Scale,
+  Cpu
 } from 'lucide-react'
 import { API_BASE_URL } from '../config/api'
 
-export default function RegisterPage() {
+// Initial seed accounts if systemUsers has not been populated yet
+const DEFAULT_SYSTEM_USERS = [
+  { id: 'USR-101', fullName: 'Alex Shipper', email: 'customer@apexgl.com', role: 'CUSTOMER', password: 'password123', companyName: 'ABC Electronics Pvt Ltd', phone: '+91 98765 43210', status: 'Active', created: 'Aug 10, 2026' },
+  { id: 'USR-102', fullName: 'Sarah Jenkins', email: 'agent@freightiq.com', role: 'FREIGHT_AGENT', password: 'password123', companyName: 'FreightIQ Global Forwarding', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
+  { id: 'USR-103', fullName: 'Officer R. Verma', email: 'customs@icegate.gov.in', role: 'CUSTOMS_OFFICER', password: 'password123', companyName: 'Customs & Border Compliance', phone: '+91 98222 33445', status: 'Active', created: 'Aug 05, 2026' },
+  { id: 'USR-104', fullName: 'System Administrator', email: 'admin@freightiq.com', role: 'ADMIN', password: 'password123', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
+]
 
-  const [selectedRole, setSelectedRole] = useState('CUSTOMER') // 'CUSTOMER', 'BROKER', 'ADMIN'
+export default function RegisterPage() {
+  const [selectedRole, setSelectedRole] = useState('CUSTOMER') // 'CUSTOMER', 'FREIGHT_AGENT', 'CUSTOMS_OFFICER', 'ADMIN'
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -39,6 +46,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
+  const [successInfo, setSuccessInfo] = useState(null)
   const navigate = useNavigate()
 
   const handleInputChange = (e) => {
@@ -51,8 +59,8 @@ export default function RegisterPage() {
     e.preventDefault()
     setErrorMessage('')
     
-    // Basic frontend validations
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.companyName || !formData.password || !formData.confirmPassword) {
+    // 1. Basic frontend validations
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.companyName.trim() || !formData.password || !formData.confirmPassword) {
       setErrorMessage('Please fill out all mandatory registration fields.')
       return
     }
@@ -67,124 +75,96 @@ export default function RegisterPage() {
       return
     }
 
-    // Check if same email + same role already registered locally
+    setIsLoading(true)
+
+    const inputEmail = formData.email.trim().toLowerCase()
+    const inputRole = (selectedRole || 'CUSTOMER').toUpperCase()
+
+    // 2. Load existing systemUsers or seed default users
+    let currentUsers = DEFAULT_SYSTEM_USERS
     try {
       const storedUsers = localStorage.getItem('systemUsers')
-      const currentUsers = storedUsers ? JSON.parse(storedUsers) : []
-      const inputEmail = formData.email.trim().toLowerCase()
-      const inputRole = (selectedRole || 'CUSTOMER').toUpperCase()
-      const alreadyExists = currentUsers.find(
-        u => u.email?.toLowerCase() === inputEmail && u.role?.toUpperCase() === inputRole
-      )
-      if (alreadyExists) {
-        setErrorMessage(
-          `An account with this email already exists for the ${inputRole} role. Please log in instead, or register with a different role.`
-        )
-        return
+      if (storedUsers) {
+        const parsed = JSON.parse(storedUsers)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          currentUsers = parsed
+        }
       }
     } catch {}
 
-    setIsLoading(true)
+    // Check if email is already registered for this role
+    const alreadyExists = currentUsers.find(
+      u => u.email?.toLowerCase() === inputEmail && (
+        u.role?.toUpperCase() === inputRole ||
+        (inputRole === 'CUSTOMER' && u.role?.toUpperCase() === 'USER') ||
+        (inputRole === 'FREIGHT_AGENT' && (u.role?.toUpperCase() === 'AGENT' || u.role?.toUpperCase() === 'BROKER'))
+      )
+    )
 
+    if (alreadyExists) {
+      setErrorMessage(
+        `An account with email "${inputEmail}" is already registered under the ${inputRole} role. Please sign in instead, or use a different email.`
+      )
+      setIsLoading(false)
+      return
+    }
+
+    // 3. Create the new user record
+    const newRegisteredUser = {
+      id: `USR-${Math.floor(1000 + Math.random() * 9000)}`,
+      fullName: formData.fullName.trim(),
+      email: inputEmail,
+      password: formData.password,
+      role: inputRole,
+      companyName: formData.companyName.trim(),
+      phone: formData.phone.trim(),
+      status: 'Active',
+      created: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    }
+
+    // 4. Save immediately to localStorage
     try {
-      // Call Django REST Framework backend JWT register endpoint
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
+      const updatedUsers = [newRegisteredUser, ...currentUsers.filter(u => u.id !== newRegisteredUser.id)]
+      localStorage.setItem('systemUsers', JSON.stringify(updatedUsers))
+    } catch (err) {
+      console.error('Failed to store systemUsers:', err)
+    }
+
+    // 5. Fire non-blocking backend registration call if reachable
+    try {
+      fetch(`${API_BASE_URL}/api/v1/auth/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
+          email: inputEmail,
           password: formData.password,
           confirm_password: formData.confirmPassword,
-          full_name: formData.fullName,
-          phone: formData.phone,
-          company_name: formData.companyName,
-          role: (selectedRole || 'CUSTOMER').toUpperCase()
+          full_name: formData.fullName.trim(),
+          phone: formData.phone.trim(),
+          company_name: formData.companyName.trim(),
+          role: inputRole
         })
-      })
+      }).catch(() => {})
+    } catch {}
 
-      const data = await response.json()
+    setIsLoading(false)
+    setIsSuccess(true)
+    setSuccessInfo({
+      email: inputEmail,
+      role: selectedRole.toLowerCase(),
+      name: formData.fullName.trim()
+    })
 
-      if (response.ok && data.access) {
-        // Save new user locally in systemUsers
-        const newRegisteredUser = {
-          id: `USR-${Math.floor(100 + Math.random() * 900)}`,
-          fullName: formData.fullName.trim(),
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password,
-          role: (selectedRole || 'CUSTOMER').toUpperCase(),
-          companyName: formData.companyName.trim() || 'Global Freight Client',
-          phone: formData.phone.trim() || '+91 98000 00000',
-          status: 'Active',
-          created: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    // 6. After brief delay, redirect to login page so they can sign in
+    setTimeout(() => {
+      navigate('/login', {
+        state: {
+          registeredEmail: inputEmail,
+          registeredRole: selectedRole.toLowerCase()
         }
-        try {
-          const storedUsers = localStorage.getItem('systemUsers')
-          const currentUsers = storedUsers ? JSON.parse(storedUsers) : []
-          localStorage.setItem('systemUsers', JSON.stringify([newRegisteredUser, ...currentUsers]))
-        } catch {}
-
-        setIsSuccess(true)
-        localStorage.setItem('token', data.access)
-        localStorage.setItem('refreshToken', data.refresh)
-        const userRole = (data.user?.role || selectedRole || 'CUSTOMER').toLowerCase()
-        localStorage.setItem('userRole', userRole)
-        localStorage.setItem('userEmail', data.user?.email || formData.email)
-        localStorage.setItem('userName', data.user?.full_name || formData.fullName)
-        localStorage.setItem('selectedAccessRole', userRole)
-
-        // Route to correct role dashboard
-        let dest = '/user/dashboard'
-        if (userRole === 'admin') dest = '/admin/dashboard'
-        else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
-        else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
-        navigate(dest)
-      } else {
-        // Extract server-side field error messages
-        const errorMsg = data.email?.[0] || 
-                         data.detail || 
-                         data.password?.[0] || 
-                         data.confirm_password?.[0] || 
-                         data.non_field_errors?.[0] || 
-                         'Registration failed. Please check your information.'
-        setErrorMessage(errorMsg)
-      }
-    } catch (err) {
-      // Backend unreachable — save locally and log in
-      const newRegisteredUser = {
-        id: `USR-${Math.floor(100 + Math.random() * 900)}`,
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-        role: (selectedRole || 'CUSTOMER').toUpperCase(),
-        companyName: formData.companyName.trim() || 'Global Freight Client',
-        phone: formData.phone.trim() || '+91 98000 00000',
-        status: 'Active',
-        created: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
-      }
-      try {
-        const storedUsers = localStorage.getItem('systemUsers')
-        const currentUsers = storedUsers ? JSON.parse(storedUsers) : []
-        localStorage.setItem('systemUsers', JSON.stringify([newRegisteredUser, ...currentUsers]))
-      } catch {}
-
-      const userRole = (selectedRole || 'CUSTOMER').toLowerCase()
-      localStorage.setItem('token', 'local-jwt-' + Date.now())
-      localStorage.setItem('userRole', userRole)
-      localStorage.setItem('userEmail', formData.email)
-      localStorage.setItem('userName', formData.fullName)
-      localStorage.setItem('selectedAccessRole', userRole)
-
-      setIsSuccess(true)
-      let dest = '/user/dashboard'
-      if (userRole === 'admin') dest = '/admin/dashboard'
-      else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
-      else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
-      navigate(dest)
-    } finally {
-      setIsLoading(false)
-    }
+      })
+    }, 1800)
   }
-
 
   return (
     <div className="min-h-screen bg-[#0d1424] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
@@ -201,10 +181,10 @@ export default function RegisterPage() {
               </div>
               <div>
                 <h2 className="text-xl font-black tracking-wider text-white uppercase">
-                  FREIGHT HUB
+                  FREIGHT IQ
                 </h2>
                 <p className="text-[10px] tracking-widest text-blue-400 font-bold uppercase">
-                  ENTERPRISE LOGISTICS
+                  M1–M3 Logistics Platform
                 </p>
               </div>
             </div>
@@ -213,10 +193,10 @@ export default function RegisterPage() {
             <div className="bg-[#162340] border border-blue-500/20 rounded-2xl p-5 mb-6 relative overflow-hidden">
               <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-1.5">
                 <Zap className="w-4 h-4 fill-amber-400" />
-                <span>Secure JWT Authentication</span>
+                <span>Account Provisioning & Security</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Create your enterprise profile with role-based access control, cryptographic tokens, and automated workspace provisioning.
+                Register as a Customer, Freight Agent, Customs Officer, or Admin. Each account is strictly assigned to its authorized workspace portal.
               </p>
             </div>
 
@@ -224,31 +204,41 @@ export default function RegisterPage() {
             <div className="space-y-4">
               <div className="flex items-start gap-3.5">
                 <div className="w-8 h-8 rounded-lg bg-blue-950/80 border border-blue-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Calculator className="w-4 h-4 text-blue-400" />
+                  <User className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">Multi-Modal Tariffs</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Instant ocean container & air cargo rates</p>
+                  <h4 className="text-xs font-bold text-white">1. Customer Workspace</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Submit quotes, track active shipments & accept quotes</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Sliders className="w-4 h-4 text-indigo-400" />
+                <div className="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Briefcase className="w-4 h-4 text-amber-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">Commercial Governance</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Margin rules, approval thresholds & audit logs</p>
+                  <h4 className="text-xs font-bold text-white">2. Freight Agent Desk</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Review AI rates, modify prices with audit logs & send quotes</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3.5">
                 <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <Globe className="w-4 h-4 text-emerald-400" />
+                  <Scale className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">Global Gateway Matrix</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">27 Global Ports & Cargo Terminals connected</p>
+                  <h4 className="text-xs font-bold text-white">3. Customs Officer Desk</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Verify shipping documents & flag customs risk</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Shield className="w-4 h-4 text-indigo-400" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">4. System Administration</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Govern pricing rules, master data & AI intelligence agents</p>
                 </div>
               </div>
             </div>
@@ -256,33 +246,33 @@ export default function RegisterPage() {
 
           {/* Footer badge */}
           <div className="flex items-center justify-between pt-8 border-t border-slate-700/50 mt-8 text-[11px] text-slate-400">
-            <span>© FreightHub Portal 2026</span>
+            <span>© FreightIQ 2026</span>
             <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[10px]">
-              JWT Auth v2.4
+              Strict RBAC Portal
             </span>
           </div>
         </div>
 
         {/* Right Side: Clean White Registration Form Panel */}
-        <div className="w-full lg:w-7/12 bg-white p-8 sm:p-12 flex flex-col justify-center">
+        <div className="w-full lg:w-7/12 bg-white p-8 sm:p-10 flex flex-col justify-center">
           <div className="max-w-md mx-auto w-full">
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               Create New Account
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-6">
-              Register your organization to access intelligence and quotation tools.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-5">
+              Register your account. After registration, you will log in with your credentials to access your portal.
             </p>
 
             {/* Role Switcher Tabs (4 Roles) */}
-            <div className="mb-5">
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            <div className="mb-4">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                 SELECT ACCOUNT ROLE:
               </label>
               <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setSelectedRole('CUSTOMER')}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  onClick={() => { setSelectedRole('CUSTOMER'); setErrorMessage('') }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedRole === 'CUSTOMER'
                       ? 'bg-white text-blue-600 shadow-sm border border-slate-200/80'
                       : 'text-slate-600 hover:text-slate-900'
@@ -294,8 +284,8 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
-                  onClick={() => setSelectedRole('FREIGHT_AGENT')}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  onClick={() => { setSelectedRole('FREIGHT_AGENT'); setErrorMessage('') }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedRole === 'FREIGHT_AGENT'
                       ? 'bg-white text-amber-600 shadow-sm border border-slate-200/80'
                       : 'text-slate-600 hover:text-slate-900'
@@ -307,8 +297,8 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
-                  onClick={() => setSelectedRole('CUSTOMS_OFFICER')}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  onClick={() => { setSelectedRole('CUSTOMS_OFFICER'); setErrorMessage('') }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedRole === 'CUSTOMS_OFFICER'
                       ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/80'
                       : 'text-slate-600 hover:text-slate-900'
@@ -320,8 +310,8 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
-                  onClick={() => setSelectedRole('ADMIN')}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  onClick={() => { setSelectedRole('ADMIN'); setErrorMessage('') }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedRole === 'ADMIN'
                       ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
                       : 'text-slate-600 hover:text-slate-900'
@@ -343,9 +333,21 @@ export default function RegisterPage() {
 
             {/* Success Message Alert */}
             {isSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-700 text-xs font-bold">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Account registered successfully! Redirecting to dashboard...</span>
+              <div className="mb-4 p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex flex-col gap-1.5 text-emerald-800 text-xs">
+                <div className="flex items-center gap-2 font-black text-sm text-emerald-700">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <span>Account Registered Successfully!</span>
+                </div>
+                <p className="text-emerald-700">
+                  Account created for <strong>{successInfo?.name}</strong> under role <strong>[{successInfo?.role.toUpperCase()}]</strong>. Redirecting to Sign In...
+                </p>
+                <Link
+                  to="/login"
+                  state={{ registeredEmail: successInfo?.email, registeredRole: successInfo?.role }}
+                  className="mt-1 text-xs font-bold underline text-emerald-900"
+                >
+                  Click here if not redirected automatically →
+                </Link>
               </div>
             )}
 
@@ -372,7 +374,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    COMPANY NAME
+                    COMPANY / ORG NAME
                   </label>
                   <div className="relative">
                     <Building className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -380,7 +382,7 @@ export default function RegisterPage() {
                       type="text"
                       name="companyName"
                       required
-                      placeholder="e.g. Apex Global"
+                      placeholder="e.g. ABC Logistics"
                       value={formData.companyName}
                       onChange={handleInputChange}
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400"
@@ -483,13 +485,13 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-3 py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide uppercase shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full mt-3 py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
-                  <span>REGISTERING ACCOUNT & ISSUING JWT...</span>
+                  <span>Registering Account...</span>
                 ) : (
                   <>
-                    <span>REGISTER AS {selectedRole}</span>
+                    <span>Register as {selectedRole.replace('_', ' ')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -498,13 +500,15 @@ export default function RegisterPage() {
 
             {/* Back to Login link */}
             <div className="text-center mt-5">
+              <span className="text-xs text-slate-500">Already registered? </span>
               <Link
                 to="/login"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-750 hover:underline transition-colors"
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
               >
-                Already registered? Click here to sign in with your credentials
+                Sign in to your account
               </Link>
             </div>
+
           </div>
         </div>
 

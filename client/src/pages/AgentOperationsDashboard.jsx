@@ -567,8 +567,176 @@ export default function AgentOperationsDashboard() {
             </div>
           )}
 
+          {/* Tab: Generated / Dispatched Quotes */}
+          {activeTab === 'generated-quotes' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Commercial Generated Quotes & Dispatches</h3>
+                  <p className="text-xs text-slate-500">Quotes commercially cleared, priced, and issued to customer portals.</p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
+                  {quotes.filter(q => q.status === 'SENT' || q.status === 'ACCEPTED').length} Quotes Dispatched
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Quote Ref</th>
+                      <th className="p-3">Customer</th>
+                      <th className="p-3">Corridor</th>
+                      <th className="p-3">Final Dispatched Price</th>
+                      <th className="p-3">Client Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {quotes.filter(q => q.status === 'SENT' || q.status === 'ACCEPTED').map(q => (
+                      <tr key={q.id} className="hover:bg-slate-50">
+                        <td className="p-3 font-mono font-bold text-amber-700">{q.id}</td>
+                        <td className="p-3 font-bold text-slate-900">{q.customer}</td>
+                        <td className="p-3">{q.origin} → {q.destination}</td>
+                        <td className="p-3 font-mono font-bold text-slate-900">₹{q.finalPrice?.toLocaleString()}</td>
+                        <td className="p-3">
+                          <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                            q.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'
+                          }`}>
+                            {q.status === 'ACCEPTED' ? 'BOOKED BY SHIPPER' : 'SENT TO CLIENT'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Customer Directory */}
+          {activeTab === 'customers' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Freight Agent Shipper Directory</h3>
+                  <p className="text-xs text-slate-500">Assigned commercial shippers, tier status, and credit profile.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { name: 'ABC Electronics Pvt Ltd', contact: 'Alex Shipper', email: 'customer@apexgl.com', volume: '14 TEU / month', tier: 'TIER 1 STRATEGIC' },
+                  { name: 'Zenith Chemical Corp', contact: 'Vikram Mehta', email: 'ops@zenithchem.com', volume: '22 TEU / month', tier: 'HAZMAT VERIFIED' },
+                  { name: 'Nordic Imports AB', contact: 'Lars Lindqvist', email: 'contact@nordicimp.se', volume: '8 TEU / month', tier: 'STANDARD CORPORATE' }
+                ].map((c, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-900">{c.name}</span>
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded">
+                        {c.tier}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600">Contact: {c.contact} ({c.email})</div>
+                    <div className="text-[11px] font-mono text-slate-500">Booking Volume: {c.volume}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Documents Review Desk */}
+          {activeTab === 'documents' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Commercial Shipping Documents Desk</h3>
+                  <p className="text-xs text-slate-500">Bills of Lading, Commercial Invoices & Carrier contracts under review.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { name: 'Commercial Invoice — SHP-1001', customer: 'ABC Electronics Pvt Ltd', status: 'Approved for Carriage', time: '15m ago' },
+                  { name: 'Packing List — SHP-1002', customer: 'Apex Global Logistics', status: 'Approved for Carriage', time: '1h ago' },
+                  { name: 'Dangerous Goods MSDS — SHP-1005', customer: 'Zenith Chemical Corp', status: 'Customs Officer Verification Required', time: '2h ago' }
+                ].map((d, i) => (
+                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">{d.name}</span>
+                      <span className="text-[11px] text-slate-500">Shipper: {d.customer} · {d.time}</span>
+                    </div>
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-bold">
+                      {d.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Agent Operational Notifications */}
+          {activeTab === 'notifications' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Operational Desk Broadcasts</h3>
+                  <p className="text-xs text-slate-500">Live system events and dispatch confirmations.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { title: 'New Quote Request Submitted: SHP-1001', time: 'Just now', note: '5-Agent multi-verification complete. Awaiting commercial sign-off.' },
+                  { title: 'Carrier Bunker Surcharge Update', time: '1h ago', note: 'Maersk BAF adjusted +1.5% across Asia-Europe routes.' },
+                  { title: 'Quote QT-2026-00930 Accepted by Shipper', time: '3h ago', note: 'ABC Electronics accepted quote terms. Shipment status set to Confirmed.' }
+                ].map((n, i) => (
+                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-start justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">{n.title}</span>
+                      <span className="text-[11px] text-slate-600 mt-0.5">{n.note}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">{n.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Agent Profile */}
+          {activeTab === 'profile' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Freight Agent Desk Profile</h3>
+                  <p className="text-xs text-slate-500">Commercial agent license details and margin discretionary limits.</p>
+                </div>
+                <span className="px-3 py-1 bg-amber-50 text-amber-800 font-bold text-xs rounded-full border border-amber-200">
+                  Licensed Freight Broker
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Broker Full Name</span>
+                  <div className="text-sm font-black text-slate-900">{userName}</div>
+                  <span className="text-xs text-slate-500">Senior Commercial Quote Reviewer</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">License / ID</span>
+                  <div className="text-sm font-black font-mono text-slate-900">FMC-OTI-029481 / MTO-IND-492</div>
+                  <span className="text-xs text-emerald-600 font-semibold">Authorized Signatory</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Discretionary Price Limit</span>
+                  <div className="text-sm font-black text-slate-900">Up to ₹50,00,000 per Quotation</div>
+                  <span className="text-xs text-slate-500">Audit Logging Required for all modifications</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned Hub Operations</span>
+                  <div className="text-sm font-black text-slate-900">JNPT (INNSA), Chennai (INMAA), Mundra (INMUN)</div>
+                  <span className="text-xs text-slate-500">Indian Subcontinent & Global Outbound</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Main Review Desk (Overview & Tab Default) */}
-          {(activeTab === 'overview' || activeTab === 'shipment-requests') && (
+          {(activeTab === 'overview' || activeTab === 'shipment-requests' || activeTab === 'quote-requests' || activeTab === 'quote-review' || !['pricing-analysis', 'risk-analysis', 'generated-quotes', 'customers', 'documents', 'notifications', 'profile'].includes(activeTab)) && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>

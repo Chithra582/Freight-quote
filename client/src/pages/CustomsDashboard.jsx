@@ -281,112 +281,293 @@ export default function CustomsDashboard() {
             />
           </div>
 
-          {/* Compliance Review Cases Table */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <Scale className="w-5 h-5 text-indigo-600" />
-                  <span>Pending Customs & Regulatory Cases</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Section 5 & 10: If mandatory customs approval is not completed, quote remains in HOLD/BLOCKED state.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    placeholder="Case ID, HS code, commodity..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500"
-                  />
+          {/* Tab 1: Pending Reviews / Default Cases Desk */}
+          {(currentTab === 'reviews' || currentTab === 'pending-reviews' || !['assigned-shipments', 'document-verification', 'customs-risk-flags', 'completed-reviews', 'notifications', 'profile'].includes(currentTab)) && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-indigo-600" />
+                    <span>Pending Customs & Regulatory Cases</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Section 5 & 10: If mandatory customs approval is not completed, quote remains in HOLD/BLOCKED state.
+                  </p>
                 </div>
 
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="PENDING_REVIEW">Pending Review</option>
-                  <option value="NEEDS_DOCUMENTS">Needs Documents</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="REJECTED">Rejected</option>
-                </select>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-64">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Case ID, HS code, commodity..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <select
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="PENDING_REVIEW">Pending Review</option>
+                    <option value="NEEDS_DOCUMENTS">Needs Documents</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Case / Quote</th>
+                      <th className="px-4 py-3">Shipper & Corridor</th>
+                      <th className="px-4 py-3">HS Code & Cargo</th>
+                      <th className="px-4 py-3">Valuation</th>
+                      <th className="px-4 py-3">Compliance Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {filteredCases.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-4 py-3.5 font-mono">
+                          <div className="font-black text-indigo-700">{c.id}</div>
+                          <div className="text-[10.5px] text-slate-400">{c.quoteId}</div>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <div className="font-bold text-slate-900">{c.customer}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">{c.origin} ➔ {c.destination}</div>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <div className="font-mono font-bold text-slate-900 flex items-center gap-1.5">
+                            <Tag className="w-3 h-3 text-indigo-500" />
+                            <span>{c.hsCode}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 truncate max-w-xs">{c.commodity}</div>
+                        </td>
+
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-800">
+                          {c.declaredValue}
+                          <span className="text-[10px] text-slate-400 block font-sans">{c.incoterm}</span>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold inline-flex items-center gap-1 ${
+                            c.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                            c.status === 'NEEDS_DOCUMENTS' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                            c.status === 'REJECTED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                            'bg-indigo-100 text-indigo-800 border border-indigo-300 animate-pulse'
+                          }`}>
+                            {c.status === 'APPROVED' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                            <span>{c.status.replace('_', ' ')}</span>
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            onClick={() => handleOpenCase(c)}
+                            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1 ml-auto"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Open Review Case</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
+          )}
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="w-full text-xs text-slate-700">
-                <thead className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3">Case / Quote</th>
-                    <th className="px-4 py-3">Shipper & Corridor</th>
-                    <th className="px-4 py-3">HS Code & Cargo</th>
-                    <th className="px-4 py-3">Valuation</th>
-                    <th className="px-4 py-3">Compliance Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {filteredCases.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-4 py-3.5 font-mono">
-                        <div className="font-black text-indigo-700">{c.id}</div>
-                        <div className="text-[10.5px] text-slate-400">{c.quoteId}</div>
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <div className="font-bold text-slate-900">{c.customer}</div>
-                        <div className="text-[11px] text-slate-500 font-mono">{c.origin} ➔ {c.destination}</div>
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <div className="font-mono font-bold text-slate-900 flex items-center gap-1.5">
-                          <Tag className="w-3 h-3 text-indigo-500" />
-                          <span>{c.hsCode}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 truncate max-w-xs">{c.commodity}</div>
-                      </td>
-
-                      <td className="px-4 py-3.5 font-mono font-bold text-slate-800">
-                        {c.declaredValue}
-                        <span className="text-[10px] text-slate-400 block font-sans">{c.incoterm}</span>
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold inline-flex items-center gap-1 ${
-                          c.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                          c.status === 'NEEDS_DOCUMENTS' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                          c.status === 'REJECTED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                          'bg-indigo-100 text-indigo-800 border border-indigo-300 animate-pulse'
-                        }`}>
-                          {c.status === 'APPROVED' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                          <span>{c.status.replace('_', ' ')}</span>
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3.5 text-right">
-                        <button
-                          onClick={() => handleOpenCase(c)}
-                          className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1 ml-auto"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Open Review Case</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Tab 2: Assigned Shipments Manifest */}
+          {currentTab === 'assigned-shipments' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Assigned Cargo Manifest & Inbound Vessels</h3>
+                  <p className="text-xs text-slate-500">Commercial container manifests under your regulatory jurisdiction.</p>
+                </div>
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-full border border-indigo-200">
+                  Gate Jurisdiction: All Indian Ports
+                </span>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { ref: 'SHP-1001', vessel: 'MSC Gülsün · Voy 26A', origin: 'Chennai (INMAA)', dest: 'Rotterdam (NLRTM)', cargo: '5,000 KG Electronics', status: 'Inbound EDI Filed' },
+                  { ref: 'SHP-1002', vessel: 'Maersk Mc-Kinney Møller', origin: 'Nhava Sheva (INNSA)', dest: 'Jebel Ali (AEJEA)', cargo: '18,400 KG Telecom Gears', status: 'Customs Cleared' },
+                  { ref: 'SHP-1005', vessel: 'CMA CGM Palais Royal', origin: 'Nhava Sheva (INNSA)', dest: 'Antwerp (BEANR)', cargo: '14,000 KG Class 3 Flammable', status: 'Secondary Physical Inspection' }
+                ].map((s, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-indigo-700 text-xs">{s.ref}</span>
+                        <span className="text-xs font-bold text-slate-900">{s.vessel}</span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">{s.origin} ➔ {s.dest} · {s.cargo}</div>
+                    </div>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-bold text-[10px] self-start sm:self-auto">
+                      {s.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
+          )}
 
-          </div>
+          {/* Tab 3: Document Verification (Scenario 7) */}
+          {currentTab === 'document-verification' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Customs Document Verification & Audit Desk</h3>
+                  <p className="text-xs text-slate-500">Cross-reference commercial invoices, packing lists, and mandatory certificates.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { name: 'Commercial Invoice (Signed)', caseId: 'CASE-2026-081', status: 'VERIFIED', type: 'Mandatory' },
+                  { name: 'Packing List with Gross Weights', caseId: 'CASE-2026-081', status: 'VERIFIED', type: 'Mandatory' },
+                  { name: 'Certificate of Origin (Form AIFTA)', caseId: 'CASE-2026-081', status: 'VERIFIED', type: 'Preferential Tariff' },
+                  { name: 'Dangerous Goods Material Safety Data Sheet', caseId: 'CASE-2026-082', status: 'MISSING (ACTION REQ)', type: 'Mandatory HazMat' },
+                  { name: 'TDRA Equipment Registration Certificate', caseId: 'CASE-2026-083', status: 'VERIFIED', type: 'Type Approval' }
+                ].map((doc, i) => (
+                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">{doc.name}</span>
+                      <span className="text-[11px] text-slate-500">Case: {doc.caseId} · Category: {doc.type}</span>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
+                      doc.status.includes('MISSING') ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {doc.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4: Customs Risk Flags (HazMat, Dual-Use, SCOMET) */}
+          {currentTab === 'customs-risk-flags' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Customs Risk Intelligence & Alerts</h3>
+                  <p className="text-xs text-slate-500">Automated screening against DGFT SCOMET lists, dual-use items, and sanctions.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { tag: 'CRITICAL ALERT · HAZMAT CLASS 3', desc: 'Case CASE-2026-082: Flammable liquids declared without IMO segregation certificate.', level: 'bg-rose-50 text-rose-800 border-rose-200' },
+                  { tag: 'DUAL-USE REVIEW CLEARED', desc: 'Case CASE-2026-083: Telecommunications transceivers verified non-SCOMET Category 8 standard goods.', level: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+                  { tag: 'VALUATION SCRUTINY NOTICE', desc: 'Declared unit price for lithium cells is 35% below international baseline index.', level: 'bg-amber-50 text-amber-800 border-amber-200' }
+                ].map((alert, i) => (
+                  <div key={i} className={`p-4 rounded-2xl border ${alert.level} space-y-1`}>
+                    <span className="text-[10px] font-black tracking-wider uppercase block">{alert.tag}</span>
+                    <p className="text-xs">{alert.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 5: Completed Reviews */}
+          {currentTab === 'completed-reviews' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Completed Customs Regulatory Clearances</h3>
+                  <p className="text-xs text-slate-500">Immutable ledger of stamped clearance sign-offs.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {cases.filter(c => c.status === 'APPROVED').map((c, i) => (
+                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">{c.id} · {c.quoteId}</span>
+                      <span className="text-[11px] text-slate-500">{c.customer} · {c.commodity} ({c.hsCode})</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-emerald-600 block">CLEARED & UNLOCKED</span>
+                      <span className="text-[9px] text-slate-400 font-mono">Reviewed by {userName}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 6: Customs Notifications */}
+          {currentTab === 'notifications' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Customs Gateway Broadcasts</h3>
+                  <p className="text-xs text-slate-500">ICEGATE EDI gateway alerts and regulatory bulletins.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { title: 'ICEGATE EDI Gateway Operational', time: '10m ago', note: 'National customs EDI server operating at 99.9% uptime. Average turnaround: 42 seconds.' },
+                  { title: 'DGFT Tariff Notification #48/2026', time: '2h ago', note: 'Updated preferential duty schedules for ASEAN-India Comprehensive Economic Cooperation Agreement.' }
+                ].map((n, i) => (
+                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-start justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">{n.title}</span>
+                      <span className="text-[11px] text-slate-600 mt-0.5">{n.note}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">{n.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 7: Customs Officer Profile */}
+          {currentTab === 'profile' && (
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Customs Officer Credential Profile</h3>
+                  <p className="text-xs text-slate-500">Government customs authority authorization & digital signature stamp.</p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-800 font-bold text-xs rounded-full border border-emerald-200">
+                  Active Customs Inspector
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Officer Name</span>
+                  <div className="text-sm font-black text-slate-900">{userName}</div>
+                  <span className="text-xs text-slate-500">Appraiser / Customs Regulatory Inspector</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Customs Jurisdiction</span>
+                  <div className="text-sm font-black text-slate-900">JNPT, Chennai Port, Delhi IGI Airport</div>
+                  <span className="text-xs text-slate-500">Central Board of Indirect Taxes & Customs (CBIC)</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Digital Signature Token</span>
+                  <div className="text-sm font-black font-mono text-slate-900">DSC-CLASS-3-GOV-91024</div>
+                  <span className="text-xs text-emerald-600 font-semibold">Valid & Online (ICEGATE Verified)</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Regulatory Powers</span>
+                  <div className="text-sm font-black text-slate-900">Customs Tariff Act (1975) Section 17 & 18</div>
+                  <span className="text-xs text-slate-500">Assessment, Examination & Hold Authority</span>
+                </div>
+              </div>
+            </div>
+          )}
 
         </main>
       </div>

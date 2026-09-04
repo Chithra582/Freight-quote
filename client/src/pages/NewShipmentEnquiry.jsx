@@ -62,7 +62,7 @@ export default function NewShipmentEnquiry() {
   const navigate = useNavigate()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [activeModeTab, setActiveModeTab] = useState('calculator') // 'calculator' | 'agents'
+  const [activeModeTab, setActiveModeTab] = useState('agents') // 'agents' | 'calculator'
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -336,16 +336,35 @@ export default function NewShipmentEnquiry() {
     const newQuote = {
       id: quoteId,
       shipmentId: shipmentId,
+      customer: formData.companyName || 'ABC Electronics Pvt Ltd',
+      customerEmail: formData.contactEmail || 'customer@apexgl.com',
       origin: `${formData.origin} Port`,
       destination: `${formData.destination} Port`,
       mode: formData.serviceMode,
       service: `${formData.serviceMode} Direct Verified Express`,
-      sellPrice: finalPrice,
-      status: 'Issued',
-      validUntil: 'Aug 28, 2026',
-      transitDays: estimate.transitTime,
+      container: formData.containerType || '40HC',
       cargo: `${formData.items.length} Package(s) (${formData.commodity})`,
-      trackingStep: 2
+      distanceKm: estimate.distance || 1750,
+      transitDays: estimate.transitTime || '5 – 6 Days',
+      rulePrice: Math.round(estimate.cost * 0.98),
+      aiPrice: Math.round(estimate.cost * 0.96),
+      recommendedPrice: estimate.cost,
+      finalPrice: estimate.cost,
+      sellPrice: finalPrice,
+      weatherRisk: '15/100 — Low',
+      customsRisk: '20/100 — Low',
+      routeRisk: '12/100 — Low',
+      overallRisk: 'LOW',
+      compositeRisk: 'LOW',
+      status: 'PENDING_REVIEW',
+      validUntil: 'Sep 30, 2026',
+      carrier: `${formData.serviceMode === 'Air' ? 'Lufthansa Cargo Priority' : 'Maersk Line Direct Service'}`,
+      highRisk: false,
+      ownerEmail: formData.contactEmail || 'customer@apexgl.com',
+      trackingStep: 1,
+      auditHistory: [
+        { action: '5-Agent Multi-Verification Complete', time: 'Just now', user: 'AI Orchestrator', note: 'Corridor, Pricing, Weather, Customs, and Margin agents verified and approved quote request.' }
+      ]
     }
 
     const newShipment = {
@@ -354,7 +373,7 @@ export default function NewShipmentEnquiry() {
       origin: formData.origin,
       destination: formData.destination,
       mode: formData.serviceMode,
-      status: 'In Transit',
+      status: 'Pending Review',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       shippingMethod: formData.containerLoad || 'FCL',
       items: formData.items,
@@ -364,7 +383,7 @@ export default function NewShipmentEnquiry() {
     }
 
     try {
-      // 1. Save to customer quotes list (appears in User Dashboard Active Quotes)
+      // 1. Save to customer quotes list (appears in User Dashboard Active Quotes & My Quotes)
       const stored = localStorage.getItem('customerQuotes')
       let list = stored ? JSON.parse(stored) : []
       list.unshift(newQuote)
@@ -375,8 +394,20 @@ export default function NewShipmentEnquiry() {
       let shipList = storedShips ? JSON.parse(storedShips) : []
       shipList.unshift(newShipment)
       localStorage.setItem('allShipments', JSON.stringify(shipList))
+
+      // 3. Save to agentQuotesQueue (appears in Freight Agent Dashboard for human modification & sign-off)
+      const storedAgent = localStorage.getItem('agentQuotesQueue')
+      let agentList = storedAgent ? JSON.parse(storedAgent) : []
+      agentList.unshift(newQuote)
+      localStorage.setItem('agentQuotesQueue', JSON.stringify(agentList))
+
+      // 4. Save to adminAllQuotes (appears in Admin Dashboard All Quotes registry)
+      const storedAdmin = localStorage.getItem('adminAllQuotes')
+      let adminList = storedAdmin ? JSON.parse(storedAdmin) : []
+      adminList.unshift(newQuote)
+      localStorage.setItem('adminAllQuotes', JSON.stringify(adminList))
     } catch (err) {
-      console.error(err)
+      console.error('Error saving synchronized quote:', err)
     }
 
     setTimeout(() => {
