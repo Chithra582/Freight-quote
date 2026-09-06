@@ -58,13 +58,18 @@ export default function QuotationDetailsPage() {
       console.error('Error fetching quote:', err)
     }
 
-    // If not found in storage (direct URL entry), provide standard default quote matching screenshots
+    // If not found in storage (direct URL entry), provide standard default quote matching user account
     if (!foundQuote) {
+      const loggedName = localStorage.getItem('userName') || 'Chithu'
+      const loggedEmail = localStorage.getItem('userEmail') || 'chithu67@gmail.com'
+      const loggedCompany = localStorage.getItem('userCompany') || 'Apex Global Logistics'
+
       foundQuote = {
         id: targetId,
         shipmentId: 'SHP-1001',
-        customer: 'Sharma Textiles',
-        phone: '+91 6769897899',
+        customer: loggedCompany || loggedName,
+        customerEmail: loggedEmail,
+        phone: '+91 98765 43210',
         origin: 'Chennai (INMAA)',
         originCode: 'INMAA',
         originName: 'Chennai',
@@ -238,61 +243,6 @@ export default function QuotationDetailsPage() {
 
   return (
     <div className="min-h-screen bg-[#f3f6f9] text-slate-800 font-sans antialiased flex flex-col">
-
-      {/* ========================================================================= */}
-      {/* 1. TOP BRANDED NAVIGATION BAR (Matching Reference Screenshots) */}
-      {/* ========================================================================= */}
-      <header className="bg-[#0b1b2d] text-white border-b border-slate-800 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          
-          {/* Logo & Platform Name */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold shadow-md shadow-orange-600/30">
-              <Box className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs sm:text-sm font-black tracking-tight text-white leading-tight">
-                Agentic AI for Maritime Freight Pricing and Route Optimization
-              </div>
-              <div className="text-[9.5px] font-mono tracking-widest text-orange-400 font-bold uppercase">
-                PORTLINE FREIGHTIQ
-              </div>
-            </div>
-          </Link>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
-            <Link to="/" className="hover:text-white transition-colors">Home</Link>
-            <Link to="/services" className="hover:text-white transition-colors">Services</Link>
-            <Link to="/quotes" className="text-white font-bold border-b-2 border-orange-500 pb-0.5">Quotations</Link>
-            <Link to="/dashboard/routes" className="hover:text-white transition-colors">Routes</Link>
-            <Link to="/dashboard/shipments" className="hover:text-white transition-colors">Tracking</Link>
-            <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
-          </nav>
-
-          {/* User Profile & Actions */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs">
-              <div className="w-6 h-6 rounded-full bg-orange-600 text-white font-black text-[11px] flex items-center justify-center">
-                R
-              </div>
-              <div className="text-left hidden sm:block">
-                <div className="text-xs font-bold text-white leading-none">Ravi</div>
-                <div className="text-[10px] text-slate-400 leading-tight">Shipper</div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => navigate('/login')}
-              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 rounded-xl transition-all cursor-pointer"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-
-        </div>
-      </header>
 
       {/* ========================================================================= */}
       {/* 2. TOAST NOTIFICATION (Screenshot 3) */}
