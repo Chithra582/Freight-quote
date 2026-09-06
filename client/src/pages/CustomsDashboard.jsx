@@ -32,6 +32,34 @@ import DashboardCard from '../components/DashboardCard'
 
 const INITIAL_COMPLIANCE_CASES = [
   {
+    id: 'CASE-2026-082',
+    quoteId: 'QT-2026-1001',
+    shipmentId: 'SHP-1001',
+    customer: 'ABC Electronics Pvt Ltd',
+    origin: 'Chennai (INMAA)',
+    destination: 'Rotterdam (NLRTM)',
+    commodity: 'Electronics & Microcontrollers',
+    hsCode: '8504.40.90',
+    incoterm: 'CIF',
+    declaredValue: '₹86,000',
+    status: 'PENDING_REVIEW',
+    priority: 'High',
+    riskScore: 0.15,
+    agentApproved: false,
+    aiFindings: 'Dual-use export classification prescreened. Awaiting Freight Agent sign-off, followed by statutory Customs Officer regulatory authorization.',
+    regulations: [
+      'Indian Customs Tariff Act, Section 46 (ICEGATE Export Declaration)',
+      'EU Combined Nomenclature (CN) Chapter 85 Import Compliance',
+      'Preferential Rules of Origin Verification'
+    ],
+    documents: [
+      { name: 'Commercial Invoice (Signed)', status: 'VERIFIED', mandatory: true },
+      { name: 'Packing List with Gross/Net Weights', status: 'VERIFIED', mandatory: true },
+      { name: 'Certificate of Origin', status: 'VERIFIED', mandatory: true }
+    ],
+    created: 'Just now'
+  },
+  {
     id: 'CASE-2026-081',
     quoteId: 'QT-2026-00934',
     customer: 'Sharma Textiles',
@@ -130,17 +158,43 @@ export default function CustomsDashboard() {
     const name = localStorage.getItem('userName') || 'Customs Compliance Officer'
     setUserName(name)
 
+    let currentCases = INITIAL_COMPLIANCE_CASES
     const storedCases = localStorage.getItem('customsCases')
     if (storedCases) {
       try {
         const parsed = JSON.parse(storedCases)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setCases(parsed)
+          currentCases = parsed
         }
       } catch (err) {
         console.error(err)
       }
     }
+
+    // Check if any quote was approved & forwarded by Freight Agent in agentQuotesQueue or customerQuotes
+    try {
+      const storedAgent = localStorage.getItem('agentQuotesQueue')
+      const agentList = storedAgent ? JSON.parse(storedAgent) : []
+      const storedCust = localStorage.getItem('customerQuotes')
+      const custList = storedCust ? JSON.parse(storedCust) : []
+      const allSourceQuotes = [...agentList, ...custList]
+
+      currentCases = currentCases.map(c => {
+        const matching = allSourceQuotes.find(q => q.id === c.quoteId || (c.shipmentId && q.shipmentId === c.shipmentId))
+        if (matching && matching.agentApproved) {
+          return {
+            ...c,
+            agentApproved: true,
+            forwardedBy: matching.auditHistory?.[0]?.user || 'Freight Agent',
+            status: c.status === 'APPROVED' ? 'APPROVED' : c.status
+          }
+        }
+        return c
+      })
+    } catch {}
+
+    setCases(currentCases)
+    localStorage.setItem('customsCases', JSON.stringify(currentCases))
   }, [])
 
   const handleOpenCase = (c) => {
@@ -156,7 +210,7 @@ export default function CustomsDashboard() {
 
     if (actionType === 'APPROVE') {
       nextStatus = 'APPROVED'
-      stateMessage = `Compliance Case ${selectedCase.id} APPROVED. Quote ${selectedCase.quoteId} unlocked and transitioned to READY_FOR_ISSUANCE.`
+      stateMessage = `Compliance Case ${selectedCase.id} APPROVED. Quote ${selectedCase.quoteId} is fully unlocked and issued to Customer.`
     } else if (actionType === 'REQUEST_DOCUMENTS') {
       nextStatus = 'NEEDS_DOCUMENTS'
       stateMessage = `Compliance Case ${selectedCase.id} marked as HOLD/NEEDS_DOCUMENTS. Shipper notified of missing mandatory items.`
@@ -177,7 +231,8 @@ export default function CustomsDashboard() {
         return {
           ...c,
           status: nextStatus,
-          decisionNotes: decisionNotes.trim() || 'Approved as compliant with customs regulations.',
+          customsApproved: actionType === 'APPROVE',
+          decisionNotes: decisionNotes.trim() || (actionType === 'APPROVE' ? 'Approved as compliant with customs regulations.' : ''),
           reviewedBy: userName,
           reviewedAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         }
@@ -187,6 +242,95 @@ export default function CustomsDashboard() {
 
     setCases(updated)
     localStorage.setItem('customsCases', JSON.stringify(updated))
+
+    if (actionType === 'APPROVE') {
+      // Synchronize to Customer Quotes: Quote is now approved by BOTH Agent and Customs Officer!
+      try {
+        const storedCustomer = localStorage.getItem('customerQuotes')
+        if (storedCustomer) {
+          const parsedCust = JSON.parse(storedCustomer)
+          const updatedCust = parsedCust.map(cq => {
+            if (cq.id === selectedCase.quoteId || (selectedCase.shipmentId && cq.shipmentId === selectedCase.shipmentId)) {
+              const auditEntry = {
+                action: 'Customs Officer Approved',
+                user: `${userName} (Customs Compliance Officer)`,
+                time: 'Just now',
+                note: decisionNotes.trim() || 'Regulatory compliance verified and approved. Quote issued to customer.'
+              }
+              return {
+                ...cq,
+                agentApproved: true,
+                customsApproved: true,
+                status: 'SENT', // Both approved -> Quote and PDF visible to customer!
+                auditHistory: [auditEntry, ...(cq.auditHistory || [])]
+              }
+            }
+            return cq
+          })
+          localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+        }
+      } catch (err) {
+        console.error('Customer quotes sync error:', err)
+      }
+
+      // Synchronize to Agent Quotes Queue
+      try {
+        const storedAgent = localStorage.getItem('agentQuotesQueue')
+        if (storedAgent) {
+          const parsedAgent = JSON.parse(storedAgent)
+          const updatedAgent = parsedAgent.map(aq => {
+            if (aq.id === selectedCase.quoteId || (selectedCase.shipmentId && aq.shipmentId === selectedCase.shipmentId)) {
+              return {
+                ...aq,
+                agentApproved: true,
+                customsApproved: true,
+                status: 'SENT'
+              }
+            }
+            return aq
+          })
+          localStorage.setItem('agentQuotesQueue', JSON.stringify(updatedAgent))
+        }
+      } catch {}
+
+      // Synchronize to Broker Quotes
+      try {
+        const storedBroker = localStorage.getItem('brokerQuotes')
+        if (storedBroker) {
+          const parsedBroker = JSON.parse(storedBroker)
+          const updatedBroker = parsedBroker.map(bq => {
+            if (bq.id === selectedCase.quoteId || (selectedCase.shipmentId && bq.shipmentId === selectedCase.shipmentId)) {
+              return {
+                ...bq,
+                customsApproved: true,
+                status: 'Dispatched to Client'
+              }
+            }
+            return bq
+          })
+          localStorage.setItem('brokerQuotes', JSON.stringify(updatedBroker))
+        }
+      } catch {}
+    } else if (actionType === 'REJECT') {
+      try {
+        const storedCustomer = localStorage.getItem('customerQuotes')
+        if (storedCustomer) {
+          const parsedCust = JSON.parse(storedCustomer)
+          const updatedCust = parsedCust.map(cq => {
+            if (cq.id === selectedCase.quoteId || (selectedCase.shipmentId && cq.shipmentId === selectedCase.shipmentId)) {
+              return {
+                ...cq,
+                customsApproved: false,
+                status: 'REJECTED'
+              }
+            }
+            return cq
+          })
+          localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+        }
+      } catch {}
+    }
+
     setSelectedCase(null)
     alert(stateMessage)
   }
@@ -339,6 +483,11 @@ export default function CustomsDashboard() {
                         <td className="px-4 py-3.5 font-mono">
                           <div className="font-black text-indigo-700">{c.id}</div>
                           <div className="text-[10.5px] text-slate-400">{c.quoteId}</div>
+                          {c.agentApproved && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">
+                              Agent Approved ✓
+                            </span>
+                          )}
                         </td>
 
                         <td className="px-4 py-3.5">

@@ -30,7 +30,8 @@ import {
   Search,
   Eye,
   UploadCloud,
-  Building
+  Building,
+  FolderLock
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -58,7 +59,9 @@ const DEFAULT_CUSTOMER_QUOTES = [
     customsRisk: '40/100 (Medium)',
     routeRisk: '20/100 (Low)',
     compositeRisk: 'MEDIUM',
-    status: 'SENT', // Ready for customer decision (Page 4 Step 11/12)
+    status: 'PENDING_REVIEW', // Sequential approval: Waiting for Freight Agent then Customs Officer
+    agentApproved: false,
+    customsApproved: false,
     validUntil: 'Sep 18, 2026',
     carrier: 'Maersk Line Direct Service',
     ownerEmail: 'customer@apexgl.com'
@@ -83,6 +86,8 @@ const DEFAULT_CUSTOMER_QUOTES = [
     routeRisk: '12/100 (Low)',
     compositeRisk: 'LOW',
     status: 'ACCEPTED',
+    agentApproved: true,
+    customsApproved: true,
     validUntil: 'Aug 22, 2026',
     carrier: 'MSC Mediterranean Shipping',
     ownerEmail: 'customer@apexgl.com'
@@ -107,6 +112,8 @@ const DEFAULT_CUSTOMER_QUOTES = [
     routeRisk: '18/100 (Low)',
     compositeRisk: 'LOW',
     status: 'ACCEPTED',
+    agentApproved: true,
+    customsApproved: true,
     validUntil: 'Aug 18, 2026',
     carrier: 'Lufthansa Cargo Priority',
     ownerEmail: 'customer@apexgl.com'
@@ -131,6 +138,8 @@ const DEFAULT_CUSTOMER_QUOTES = [
     routeRisk: '22/100 (Low)',
     compositeRisk: 'LOW',
     status: 'PENDING_REVIEW',
+    agentApproved: false,
+    customsApproved: false,
     validUntil: 'Aug 28, 2026',
     carrier: 'ONE Ocean Network Express',
     ownerEmail: 'customer@apexgl.com'
@@ -145,7 +154,18 @@ export default function CustomerDashboard() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(q => {
+            // Preserve explicit boolean flags if present
+            const isAcc = q.status === 'ACCEPTED'
+            const isSnt = q.status === 'SENT'
+            return {
+              ...q,
+              agentApproved: q.agentApproved !== undefined ? q.agentApproved : (isAcc || isSnt),
+              customsApproved: q.customsApproved !== undefined ? q.customsApproved : (isAcc || isSnt)
+            }
+          })
+        }
       } catch {}
     }
     return DEFAULT_CUSTOMER_QUOTES
@@ -624,8 +644,11 @@ export default function CustomerDashboard() {
                 {filteredQuotes.map((q) => {
                   const isAccepted = q.status === 'ACCEPTED'
                   const isRejected = q.status === 'REJECTED'
-                  const isSent = q.status === 'SENT'
-                  const isPending = q.status === 'PENDING_REVIEW'
+                  const isAgentApproved = Boolean(q.agentApproved)
+                  const isCustomsApproved = Boolean(q.customsApproved)
+                  const isFullyApproved = (isAgentApproved && isCustomsApproved) || q.status === 'SENT'
+                  const isCustomsPending = q.status === 'PENDING_CUSTOMS_APPROVAL' || (isAgentApproved && !isCustomsApproved && !isAccepted && !isRejected)
+                  const isPendingAgent = (!isAgentApproved && !isAccepted && !isRejected) || q.status === 'PENDING_REVIEW'
 
                   return (
                     <div
@@ -666,11 +689,13 @@ export default function CustomerDashboard() {
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : isRejected
                               ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : isSent
-                              ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse'
+                              : isFullyApproved
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 animate-pulse'
+                              : isCustomsPending
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                               : 'bg-amber-50 text-amber-700 border-amber-200'
                           }`}>
-                            {q.status.replace('_', ' ')}
+                            {isAccepted ? 'ACCEPTED' : isRejected ? 'DECLINED' : isFullyApproved ? 'APPROVED & READY' : isCustomsPending ? 'IN CUSTOMS REVIEW' : 'PENDING AGENT REVIEW'}
                           </span>
                         </div>
                       </div>
@@ -723,7 +748,46 @@ export default function CustomerDashboard() {
                         </div>
                       </div>
 
-                      {/* Customer Actions (Step 12: Accept / Reject Quote) */}
+                      {/* Two-Stage Approval Progress Tracker */}
+                      <div className="my-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Approval Workflow:</span>
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Stage 1: Freight Agent */}
+                          <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                            isAgentApproved
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs'
+                              : 'bg-amber-50 text-amber-800 border-amber-300'
+                          }`}>
+                            {isAgentApproved ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Clock className="w-3.5 h-3.5 text-amber-600" />}
+                            <span>1. Freight Agent: {isAgentApproved ? 'Approved' : 'Pending'}</span>
+                          </div>
+
+                          <span className="text-slate-300 font-bold">➔</span>
+
+                          {/* Stage 2: Customs Officer */}
+                          <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                            isCustomsApproved
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs'
+                              : isAgentApproved
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-300 animate-pulse'
+                              : 'bg-slate-100 text-slate-400 border-slate-200'
+                          }`}>
+                            {isCustomsApproved ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : isAgentApproved ? (
+                              <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                            ) : (
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                            <span>2. Customs Officer: {isCustomsApproved ? 'Approved' : isAgentApproved ? 'In Review' : 'Awaiting Agent'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Customer Actions (Accept / Decline & PDF Download Gated by Dual Approvals) */}
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                         <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                           {isAccepted && (
@@ -733,23 +797,39 @@ export default function CustomerDashboard() {
                           )}
                           {isRejected && (
                             <span className="text-rose-600 font-bold flex items-center gap-1">
-                              <X className="w-3.5 h-3.5" /> Quote rejected by client. Lifecycle marked closed.
+                              <X className="w-3.5 h-3.5" /> Quote declined by client. Lifecycle marked closed.
                             </span>
                           )}
-                          {isSent && (
-                            <span className="text-blue-600 font-medium">
-                              Quote approved by Freight Agent Sarah Jenkins. Please review commercial terms.
+                          {isFullyApproved && !isAccepted && !isRejected && (
+                            <span className="text-emerald-700 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Fully approved by Freight Agent and Customs Officer. Ready for client acceptance.
                             </span>
                           )}
-                          {isPending && (
-                            <span className="text-amber-600 font-medium">
-                              Under Freight Agent & Customs Officer review. Quote will be sent shortly.
+                          {isCustomsPending && (
+                            <span className="text-indigo-700 font-medium flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-indigo-500" /> Freight Agent approved. Awaiting Customs Officer regulatory clearance before quote acceptance and PDF are visible.
+                            </span>
+                          )}
+                          {isPendingAgent && (
+                            <span className="text-amber-700 font-medium flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-amber-500" /> Awaiting Freight Agent review. Quote and PDF will unlock after Freight Agent and Customs Officer approval.
                             </span>
                           )}
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {(isSent || isPending) && (
+                          {/* VIEW ROUTE & RECOMMENDATION DETAILS */}
+                          <Link
+                            to={`/quotes/${q.id}`}
+                            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                            title="View Route Recommendations & Corridor Details"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                            <span>View Route Details</span>
+                          </Link>
+
+                          {/* ACCEPT & DECLINE: ONLY VISIBLE AFTER BOTH AGENT AND CUSTOMS OFFICER APPROVE */}
+                          {isFullyApproved && !isAccepted && !isRejected && (
                             <>
                               <button
                                 onClick={() => handleAcceptQuote(q.id)}
@@ -766,14 +846,29 @@ export default function CustomerDashboard() {
                               </button>
                             </>
                           )}
-                          <button
-                            onClick={() => downloadQuotePDF(q)}
-                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                            title="Download PDF"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>PDF</span>
-                          </button>
+
+                          {/* PDF BUTTON: ONLY VISIBLE AFTER BOTH AGENT AND CUSTOMS OFFICER APPROVE (OR ACCEPTED) */}
+                          {(isFullyApproved || isAccepted) && (
+                            <button
+                              onClick={() => downloadQuotePDF(q)}
+                              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                              title="Download PDF"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download PDF</span>
+                            </button>
+                          )}
+
+                          {/* IF NOT APPROVED BY BOTH, SHOW LOCKED PLACEHOLDER */}
+                          {!isFullyApproved && !isAccepted && !isRejected && (
+                            <div
+                              className="px-3 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-medium flex items-center gap-1.5 select-none"
+                              title="Accept Quote and Quotation PDF will be available once Freight Agent and Customs Officer approve"
+                            >
+                              <FolderLock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Actions & PDF Locked (Pending Approvals)</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 

@@ -386,6 +386,8 @@ export default function NewShipmentEnquiry() {
       overallRisk: 'LOW',
       compositeRisk: 'LOW',
       status: 'PENDING_REVIEW',
+      agentApproved: false,
+      customsApproved: false,
       validUntil: 'Sep 30, 2026',
       carrier: `${formData.serviceMode === 'Air' ? 'Lufthansa Cargo Priority' : 'Maersk Line Direct Service'}`,
       highRisk: false,
@@ -443,8 +445,9 @@ export default function NewShipmentEnquiry() {
 
     setTimeout(() => {
       setIsSubmitting(false)
-      setIsSuccess(true)
-    }, 1200)
+      // Navigate directly to Route Recommendation & Quotation Details page (matching friend project)
+      navigate(`/quotes/${quoteId}`, { state: { isNewlyGenerated: true } })
+    }, 1000)
   }
 
   return (

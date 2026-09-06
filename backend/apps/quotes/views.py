@@ -216,12 +216,22 @@ class QuoteIssueView(APIView):
 class QuoteAcceptView(APIView):
     """
     POST /api/v1/quotes/{id}/accept/
-    Customer acceptance.
+    Customer acceptance. Only permitted once approved by Agent and Customs Officer (ISSUED / APPROVED).
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
         quote = get_object_or_404(FreightQuote, pk=pk)
+
+        # Enforce that quote has been approved before acceptance
+        if quote.status not in (QuoteStatus.ISSUED, QuoteStatus.APPROVED):
+            return Response({
+                'success': False,
+                'error': {
+                    'message': 'Quote cannot be accepted until approved by Freight Agent and Customs Officer.'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         quote.status = QuoteStatus.ACCEPTED
         quote.save(update_fields=['status', 'updated_at'])
 
@@ -258,12 +268,27 @@ class QuoteDocumentDownloadView(APIView):
     """
     GET /api/v1/quotes/{id}/document/
     Streams generated PDF quotation file.
+    Customer can only download after approval by Freight Agent and Customs Officer.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
         quote = get_object_or_404(FreightQuote, pk=pk)
+        user = request.user
+
+        # Customer role can only access PDF once approved and issued
+        if user.role == UserRole.CUSTOMER and quote.status not in (QuoteStatus.ISSUED, QuoteStatus.APPROVED, QuoteStatus.ACCEPTED):
+            return Response({
+                'success': False,
+                'error': {
+                    'message': 'Quotation PDF is not visible or accessible until approved by Freight Agent and Customs Officer.'
+                }
+            }, status=status.HTTP_403_FORBIDDEN)
+
         latest_ver = quote.versions.filter(version=quote.current_version).first()
+        if not latest_ver:
+            raise Http404("Quote version not found.")
+
         doc = latest_ver.documents.filter(document_type='PDF').first()
 
         if not doc or not os.path.exists(doc.file_path):

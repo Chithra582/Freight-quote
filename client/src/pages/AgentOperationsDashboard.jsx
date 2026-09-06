@@ -57,6 +57,8 @@ const INITIAL_AGENT_QUOTES = [
     routeRisk: '20/100 — Low',
     overallRisk: 'MEDIUM',
     status: 'PENDING_REVIEW', // Waiting for agent review (Page 9)
+    agentApproved: false,
+    customsApproved: false,
     validUntil: 'Sep 18, 2026',
     carrier: 'Maersk Line Direct Service',
     highRisk: false,
@@ -85,6 +87,8 @@ const INITIAL_AGENT_QUOTES = [
     routeRisk: '45/100 — Moderate',
     overallRisk: 'HIGH',
     status: 'PENDING_REVIEW',
+    agentApproved: false,
+    customsApproved: false,
     validUntil: 'Aug 30, 2026',
     carrier: 'Hapag-Lloyd Express',
     highRisk: true,
@@ -113,6 +117,8 @@ const INITIAL_AGENT_QUOTES = [
     routeRisk: '15/100 — Low',
     overallRisk: 'LOW',
     status: 'SENT',
+    agentApproved: true,
+    customsApproved: true,
     validUntil: 'Sep 05, 2026',
     carrier: 'MSC Mediterranean Shipping',
     highRisk: false,
@@ -206,20 +212,22 @@ export default function AgentOperationsDashboard() {
     showToast(`Quote ${selectedQuote.id} price updated to ₹${updatedPrice.toLocaleString()} with audit record logged.`)
   }
 
-  // Approve quote and send to customer (Scenario 10)
+  // Approve quote and forward to Customs Officer (Stage 1 of 2-Stage Approval)
   const handleApproveAndSend = (quoteId) => {
     const auditRecord = {
-      action: 'Final Quote Dispatched',
+      action: 'Freight Agent Approved & Forwarded',
       user: `${userName} (Freight Agent)`,
       time: 'Just now',
-      note: 'Commercial validation complete. Approved and sent to customer.'
+      note: 'Commercial validation complete. Approved by Freight Agent and forwarded to Customs Officer for regulatory compliance review.'
     }
 
     const updated = quotes.map(q => {
       if (q.id === quoteId) {
         return {
           ...q,
-          status: 'SENT',
+          agentApproved: true,
+          customsApproved: false,
+          status: 'PENDING_CUSTOMS_APPROVAL',
           auditHistory: [auditRecord, ...(q.auditHistory || [])]
         }
       }
@@ -227,15 +235,70 @@ export default function AgentOperationsDashboard() {
     })
 
     setQuotes(updated)
+    localStorage.setItem('agentQuotesQueue', JSON.stringify(updated))
 
-    // Sync to Customer quotes in localStorage so customer sees it immediately
+    const targetedQuote = quotes.find(q => q.id === quoteId)
+
+    // 1. Sync to Customs Cases so it appears in Customs Officer Dashboard review queue
+    try {
+      const storedCases = localStorage.getItem('customsCases')
+      let caseList = storedCases ? JSON.parse(storedCases) : []
+      const existingCaseIndex = caseList.findIndex(c => c.quoteId === quoteId)
+      if (existingCaseIndex >= 0) {
+        caseList[existingCaseIndex] = {
+          ...caseList[existingCaseIndex],
+          status: 'PENDING_REVIEW',
+          agentApproved: true,
+          forwardedBy: `${userName} (Freight Agent)`,
+          forwardedAt: 'Just now'
+        }
+      } else if (targetedQuote) {
+        caseList.unshift({
+          id: `CASE-2026-${Math.floor(100 + Math.random() * 900)}`,
+          quoteId: targetedQuote.id,
+          customer: targetedQuote.customer || 'ABC Electronics Pvt Ltd',
+          origin: targetedQuote.origin || 'Chennai (INMAA)',
+          destination: targetedQuote.destination || 'Rotterdam (NLRTM)',
+          commodity: targetedQuote.cargo || 'Commercial Freight Consignment',
+          hsCode: targetedQuote.hsCode || '8504.40.90',
+          incoterm: targetedQuote.incoterm || 'CIF',
+          declaredValue: targetedQuote.sellPrice ? `₹${targetedQuote.sellPrice.toLocaleString ? targetedQuote.sellPrice.toLocaleString() : targetedQuote.sellPrice}` : '₹86,000',
+          status: 'PENDING_REVIEW',
+          priority: targetedQuote.overallRisk === 'HIGH' ? 'Critical' : 'High',
+          riskScore: targetedQuote.overallRisk === 'HIGH' ? 0.75 : 0.15,
+          agentApproved: true,
+          forwardedBy: `${userName} (Freight Agent)`,
+          aiFindings: 'Freight agent commercial approval complete. Mandatory customs tariff & regulatory documentation verification required.',
+          regulations: [
+            'Indian Customs Tariff Act, Section 46 (ICEGATE Export Declaration)',
+            'Destination Port Customs Clearance & Classification Regulations'
+          ],
+          documents: [
+            { name: 'Commercial Invoice (Signed)', status: 'VERIFIED', mandatory: true },
+            { name: 'Packing List with Gross/Net Weights', status: 'VERIFIED', mandatory: true },
+            { name: 'Certificate of Origin', status: 'PENDING_UPLOAD', mandatory: true }
+          ],
+          created: 'Just now'
+        })
+      }
+      localStorage.setItem('customsCases', JSON.stringify(caseList))
+    } catch (err) {
+      console.error('Customs case sync error:', err)
+    }
+
+    // 2. Sync to Customer quotes in localStorage (locked until customs officer approves)
     try {
       const storedCustomer = localStorage.getItem('customerQuotes')
       if (storedCustomer) {
         const parsedCust = JSON.parse(storedCustomer)
         const updatedCust = parsedCust.map(cq => {
           if (cq.id === quoteId) {
-            return { ...cq, status: 'SENT' }
+            return {
+              ...cq,
+              agentApproved: true,
+              customsApproved: false,
+              status: 'PENDING_CUSTOMS_APPROVAL'
+            }
           }
           return cq
         })
@@ -243,14 +306,14 @@ export default function AgentOperationsDashboard() {
       }
     } catch {}
 
-    showToast(`Quotation ${quoteId} has been APPROVED and sent to customer!`)
+    showToast(`Quotation ${quoteId} APPROVED by Agent and forwarded to Customs Officer!`)
   }
 
   // Dashboard KPI Cards matching Page 7: New Requests, Pending Reviews, High Risk Shipments, Quotes Sent Today
-  const newRequestsCount = quotes.filter(q => q.status === 'DRAFT' || q.status === 'SUBMITTED' || q.status === 'PENDING_REVIEW').length
-  const pendingReviewsCount = quotes.filter(q => q.status === 'PENDING_REVIEW').length
+  const newRequestsCount = quotes.filter(q => q.status === 'DRAFT' || q.status === 'SUBMITTED' || q.status === 'PENDING_REVIEW' || !q.agentApproved).length
+  const pendingReviewsCount = quotes.filter(q => q.status === 'PENDING_REVIEW' || !q.agentApproved).length
   const highRiskCount = quotes.filter(q => q.overallRisk === 'HIGH' || q.highRisk).length
-  const quotesSentTodayCount = quotes.filter(q => q.status === 'SENT' || q.status === 'ACCEPTED').length
+  const quotesSentTodayCount = quotes.filter(q => (q.agentApproved && q.customsApproved) || q.status === 'SENT' || q.status === 'ACCEPTED').length
 
   const filteredQuotes = quotes.filter(q => {
     if (!searchQuery) return true
@@ -754,8 +817,9 @@ export default function AgentOperationsDashboard() {
 
               <div className="space-y-4">
                 {filteredQuotes.map((q) => {
-                  const isSent = q.status === 'SENT' || q.status === 'ACCEPTED'
-                  const isPending = q.status === 'PENDING_REVIEW'
+                  const isSent = q.status === 'SENT' || q.status === 'ACCEPTED' || (q.agentApproved && q.customsApproved)
+                  const isCustomsPending = q.status === 'PENDING_CUSTOMS_APPROVAL' || (q.agentApproved && !q.customsApproved)
+                  const isPending = q.status === 'PENDING_REVIEW' || (!q.agentApproved && !isSent && !isCustomsPending)
 
                   return (
                     <div
@@ -792,9 +856,11 @@ export default function AgentOperationsDashboard() {
                           <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
                             isSent
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : isCustomsPending
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                               : 'bg-amber-50 text-amber-700 border-amber-200'
                           }`}>
-                            {q.status.replace('_', ' ')}
+                            {isSent ? 'APPROVED & ISSUED' : isCustomsPending ? 'IN CUSTOMS REVIEW' : 'PENDING AGENT REVIEW'}
                           </span>
                         </div>
                       </div>
@@ -871,11 +937,15 @@ export default function AgentOperationsDashboard() {
                         <div className="text-xs text-slate-500">
                           {isSent ? (
                             <span className="text-emerald-700 font-bold flex items-center gap-1">
-                              <CheckCircle2 className="w-4 h-4" /> Quote approved and delivered to client portal.
+                              <CheckCircle2 className="w-4 h-4" /> Quote approved by Agent & Customs Officer. Delivered to client portal.
+                            </span>
+                          ) : isCustomsPending ? (
+                            <span className="text-indigo-700 font-bold flex items-center gap-1">
+                              <Clock className="w-4 h-4" /> Agent approved. Forwarded to Customs Officer for compliance clearance.
                             </span>
                           ) : (
                             <span className="text-amber-700 font-medium">
-                              Pending human approval. You may modify the pricing or dispatch immediately.
+                              Pending agent approval. Validate pricing and forward to Customs Officer.
                             </span>
                           )}
                         </div>
@@ -895,7 +965,7 @@ export default function AgentOperationsDashboard() {
                               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer"
                             >
                               <Send className="w-3.5 h-3.5" />
-                              <span>Approve & Send Quote (Scenario 10)</span>
+                              <span>Approve & Forward to Customs Officer</span>
                             </button>
                           )}
 

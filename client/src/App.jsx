@@ -12,6 +12,7 @@ import Shipments from './pages/Shipments'
 import MasterData from './pages/MasterData'
 import RouteIntelligence from './pages/RouteIntelligence'
 import QuoteCalculatorPage from './pages/QuoteCalculatorPage'
+import QuotationDetailsPage from './pages/QuotationDetailsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -91,6 +92,8 @@ function App() {
           } 
         />
         <Route path="/quotes" element={<Navigate to="/dashboard?tab=quotes" replace />} />
+        <Route path="/quotes/:quoteId" element={<QuotationDetailsPage />} />
+        <Route path="/dashboard/quotes/:quoteId" element={<QuotationDetailsPage />} />
 
         {/* Catch-all fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
