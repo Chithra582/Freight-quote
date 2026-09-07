@@ -94,8 +94,9 @@ export default function QuotationDetailsPage() {
       }
     }
 
-    // Standardize price
-    const rawPrice = (typeof foundQuote.sellPrice === 'number' ? foundQuote.sellPrice : parseInt(String(foundQuote.sellPrice || '60893').replace(/[^0-9]/g, '')) || 60893)
+    // Standardize base price (preserve initial anchor price if available)
+    const storedBase = foundQuote.basePrice || (foundQuote.routes ? foundQuote.routes[0]?.price : null)
+    const rawPrice = storedBase || (typeof foundQuote.sellPrice === 'number' ? foundQuote.sellPrice : parseInt(String(foundQuote.sellPrice || '60893').replace(/[^0-9]/g, '')) || 60893)
 
     // Build or ensure 3 carrier route options matching Image 5
     const basePrice = rawPrice
@@ -141,10 +142,31 @@ export default function QuotationDetailsPage() {
       }
     ]
 
+    const activeRoutes = foundQuote.routes && foundQuote.routes.length > 0 ? foundQuote.routes : defaultRoutes
+
+    // Restore saved route index based on saved index or carrier name
+    let activeIndex = 0
+    if (foundQuote.selectedRouteIndex !== undefined && foundQuote.selectedRouteIndex >= 0 && foundQuote.selectedRouteIndex < activeRoutes.length) {
+      activeIndex = foundQuote.selectedRouteIndex
+    } else if (foundQuote.carrier) {
+      const matchedIdx = activeRoutes.findIndex(r => 
+        r.carrier?.toLowerCase().includes(foundQuote.carrier?.toLowerCase()) || 
+        foundQuote.carrier?.toLowerCase().includes(r.carrier?.toLowerCase())
+      )
+      if (matchedIdx !== -1) {
+        activeIndex = matchedIdx
+      }
+    }
+    setSelectedRouteIndex(activeIndex)
+
+    const chosenRouteOnLoad = activeRoutes[activeIndex] || activeRoutes[0]
+    const currentPrice = chosenRouteOnLoad ? chosenRouteOnLoad.price : basePrice
+
     const fullQuoteData = {
       ...foundQuote,
-      priceNumeric: basePrice,
-      routes: foundQuote.routes || defaultRoutes
+      basePrice: basePrice,
+      priceNumeric: currentPrice,
+      routes: activeRoutes
     }
 
     setQuote(fullQuoteData)
@@ -171,12 +193,15 @@ export default function QuotationDetailsPage() {
       service: chosenRoute.service,
       transitDays: chosenRoute.transitDays,
       sellPrice: formattedPrice,
-      priceNumeric: updatedPrice
+      priceNumeric: updatedPrice,
+      finalPrice: updatedPrice,
+      selectedRouteIndex: idx,
+      routes: quote.routes
     }
 
     setQuote(updatedQuote)
 
-    // Synchronize to localStorage customerQuotes and agentQuotesQueue
+    // Synchronize to localStorage customerQuotes, agentQuotesQueue, and adminAllQuotes
     try {
       const storedCustomer = localStorage.getItem('customerQuotes')
       if (storedCustomer) {
@@ -189,6 +214,12 @@ export default function QuotationDetailsPage() {
         const parsed = JSON.parse(storedAgent)
         const updatedList = parsed.map(q => q.id === quote.id ? { ...q, ...updatedQuote } : q)
         localStorage.setItem('agentQuotesQueue', JSON.stringify(updatedList))
+      }
+      const storedAdmin = localStorage.getItem('adminAllQuotes')
+      if (storedAdmin) {
+        const parsed = JSON.parse(storedAdmin)
+        const updatedList = parsed.map(q => q.id === quote.id ? { ...q, ...updatedQuote } : q)
+        localStorage.setItem('adminAllQuotes', JSON.stringify(updatedList))
       }
     } catch (err) {
       console.error('Error syncing selected route:', err)
