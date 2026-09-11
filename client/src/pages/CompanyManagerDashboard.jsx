@@ -158,7 +158,10 @@ export default function CompanyManagerDashboard() {
   const [company, setCompany] = useState(() => {
     try {
       const stored = localStorage.getItem('companyProfile')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed && typeof parsed === 'object' && parsed.companyId) return parsed
+      }
     } catch {}
     return INITIAL_COMPANY
   })
@@ -166,7 +169,10 @@ export default function CompanyManagerDashboard() {
   const [shipments, setShipments] = useState(() => {
     try {
       const stored = localStorage.getItem('companyShipmentRequests')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
     } catch {}
     return INITIAL_SHIPMENT_REQUESTS
   })
@@ -174,7 +180,10 @@ export default function CompanyManagerDashboard() {
   const [agents, setAgents] = useState(() => {
     try {
       const stored = localStorage.getItem('companyAgentsList')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
     } catch {}
     return INITIAL_AGENTS
   })

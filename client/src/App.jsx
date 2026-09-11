@@ -52,6 +52,8 @@ function App() {
           } 
         />
         <Route path="/company/dashboard" element={<Navigate to="/company/manager/dashboard" replace />} />
+        <Route path="/dashboard/company-manager" element={<Navigate to="/company/manager/dashboard" replace />} />
+        <Route path="/company-manager" element={<Navigate to="/company/manager/dashboard" replace />} />
 
         {/* 3. Company Agent & Freight Agent Portal */}
         <Route 
@@ -63,6 +65,8 @@ function App() {
           } 
         />
         <Route path="/agent/dashboard" element={<Navigate to="/agents/dashboard" replace />} />
+        <Route path="/dashboard/agent" element={<Navigate to="/agents/dashboard" replace />} />
+        <Route path="/agent" element={<Navigate to="/agents/dashboard" replace />} />
 
         {/* 3. Customs Officer Portal */}
         <Route 
@@ -73,6 +77,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route path="/dashboard/customs" element={<Navigate to="/customs/dashboard" replace />} />
+        <Route path="/customs" element={<Navigate to="/customs/dashboard" replace />} />
 
         {/* 4. Admin Portal */}
         <Route 
@@ -83,6 +89,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route path="/dashboard/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         
         {/* Module Pages */}
         <Route path="/dashboard/new-shipment" element={<NewShipmentEnquiry />} />

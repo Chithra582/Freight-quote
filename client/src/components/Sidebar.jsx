@@ -33,7 +33,8 @@ import {
   ShieldAlert,
   FolderCheck,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  Building
 } from 'lucide-react'
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) {
@@ -316,9 +317,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
                     }`}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <IconComponent className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                      isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-                    }`} />
+                    {IconComponent && (
+                      <IconComponent className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                        isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      }`} />
+                    )}
                     
                     {!isCollapsed && (
                       <span className="truncate">{item.name}</span>
