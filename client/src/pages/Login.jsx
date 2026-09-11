@@ -15,6 +15,7 @@ import {
   Scale,
   Cpu,
   CheckCircle2,
+  Building2
 } from 'lucide-react'
 import { API_BASE_URL } from '../config/api'
 
@@ -24,10 +25,14 @@ const DEFAULT_SYSTEM_USERS = [
   { id: 'USR-102', fullName: 'Sarah Jenkins', email: 'agent@freightiq.com', role: 'FREIGHT_AGENT', password: 'password123', companyName: 'FreightIQ Global Forwarding', phone: '+91 98111 22334', status: 'Active', created: 'Aug 01, 2026' },
   { id: 'USR-103', fullName: 'Officer R. Verma', email: 'customs@icegate.gov.in', role: 'CUSTOMS_OFFICER', password: 'password123', companyName: 'Customs & Border Compliance', phone: '+91 98222 33445', status: 'Active', created: 'Aug 05, 2026' },
   { id: 'USR-104', fullName: 'System Administrator', email: 'admin@freightiq.com', role: 'ADMIN', password: 'password123', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
+  // Milestone 4 Seed Accounts
+  { id: 'USR-201', fullName: 'GlobalSea Manager', email: 'manager@globalsea.com', role: 'COMPANY_MANAGER', password: 'password123', companyName: 'GlobalSea Freight', companyId: 'CMP-102', phone: '+91 98401 23456', status: 'Active', created: 'Aug 15, 2026' },
+  { id: 'USR-204', fullName: 'Sarah Jenkins (Agent AGT-204)', email: 'agent204@globalsea.com', role: 'COMPANY_AGENT', password: 'password123', companyName: 'GlobalSea Freight', companyId: 'CMP-102', agentCode: 'AGT-204', phone: '+91 98111 22334', status: 'Active', created: 'Sep 01, 2026' },
 ]
 
 export default function LoginPage() {
-  const [selectedRole, setSelectedRole] = useState('customer') // 'customer', 'freight_agent', 'customs_officer', 'admin'
+  const [selectedRole, setSelectedRole] = useState('customer') // 'customer', 'company_manager', 'company_agent', 'freight_agent', 'customs_officer', 'admin'
+
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
     password: ''
@@ -152,7 +157,9 @@ export default function LoginPage() {
     const matchedAccount = emailMatches.find(u => {
       const uRole = (u.role || '').toLowerCase()
       if (inputRole === 'customer') return uRole === 'customer' || uRole === 'user'
-      if (inputRole === 'freight_agent') return uRole === 'freight_agent' || uRole === 'agent' || uRole === 'broker' || uRole === 'operations'
+      if (inputRole === 'company_manager') return uRole === 'company_manager'
+      if (inputRole === 'company_agent') return uRole === 'company_agent' || uRole === 'agent' || uRole === 'freight_agent'
+      if (inputRole === 'freight_agent') return uRole === 'freight_agent' || uRole === 'agent' || uRole === 'broker' || uRole === 'operations' || uRole === 'company_agent'
       if (inputRole === 'customs_officer') return uRole === 'customs_officer' || uRole === 'customs' || uRole === 'compliance_officer'
       if (inputRole === 'admin') return uRole === 'admin'
       return uRole === inputRole
@@ -189,11 +196,17 @@ export default function LoginPage() {
     localStorage.setItem('userEmail', matchedAccount.email)
     localStorage.setItem('userName', matchedAccount.fullName)
     if (matchedAccount.companyName) localStorage.setItem('userCompany', matchedAccount.companyName)
+    if (matchedAccount.companyId) {
+      localStorage.setItem('agentCompanyId', matchedAccount.companyId)
+      localStorage.setItem('agentCompanyName', matchedAccount.companyName)
+    }
+    if (matchedAccount.agentCode) localStorage.setItem('agentCode', matchedAccount.agentCode)
 
     let dest = '/user/dashboard'
     if (userRole === 'admin') dest = '/admin/dashboard'
+    else if (userRole === 'company_manager') dest = '/company/manager/dashboard'
+    else if (userRole === 'company_agent' || userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
     else if (userRole === 'customs_officer' || userRole === 'customs') dest = '/customs/dashboard'
-    else if (userRole === 'freight_agent' || userRole === 'agent' || userRole === 'broker') dest = '/agents/dashboard'
 
     navigate(dest)
   }
@@ -300,12 +313,13 @@ export default function LoginPage() {
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                 SELECT YOUR ROLE:
               </label>
-              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                 {[
                   { id: 'customer', label: '1. Customer', icon: User, color: 'text-blue-600' },
-                  { id: 'freight_agent', label: '2. Freight Agent', icon: Briefcase, color: 'text-amber-600' },
-                  { id: 'customs_officer', label: '3. Customs Officer', icon: Scale, color: 'text-emerald-600' },
-                  { id: 'admin', label: '4. System Admin', icon: Shield, color: 'text-indigo-600' }
+                  { id: 'company_manager', label: '2. Company Manager', icon: Building2, color: 'text-blue-700' },
+                  { id: 'company_agent', label: '3. Company Agent', icon: Briefcase, color: 'text-amber-600' },
+                  { id: 'customs_officer', label: '4. Customs Officer', icon: Scale, color: 'text-emerald-600' },
+                  { id: 'admin', label: '5. System Admin', icon: Shield, color: 'text-indigo-600' }
                 ].map(r => {
                   const IconComp = r.icon
                   const isSelected = selectedRole === r.id
@@ -406,9 +420,69 @@ export default function LoginPage() {
                 to="/register"
                 className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors ml-1"
               >
-                Register as User, Agent or Admin →
+                Register Company or Agent →
               </Link>
             </div>
+
+            {/* Quick Demo Access Buttons */}
+            <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider text-center">
+                QUICK ACCESS DEMO LOGINS:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('customer')
+                    setFormData({ usernameOrEmail: 'customer@apexgl.com', password: 'password123' })
+                  }}
+                  className="px-2 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 rounded-lg font-bold text-slate-700 transition-all text-center cursor-pointer"
+                >
+                  Customer (Alex)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('company_manager')
+                    setFormData({ usernameOrEmail: 'manager@globalsea.com', password: 'password123' })
+                  }}
+                  className="px-2 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 rounded-lg font-bold text-slate-700 transition-all text-center cursor-pointer"
+                >
+                  Manager (GlobalSea)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('company_agent')
+                    setFormData({ usernameOrEmail: 'agent204@globalsea.com', password: 'password123' })
+                  }}
+                  className="px-2 py-1.5 bg-slate-100 hover:bg-amber-50 hover:text-amber-700 rounded-lg font-bold text-slate-700 transition-all text-center cursor-pointer"
+                >
+                  Agent (AGT-204)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('admin')
+                    setFormData({ usernameOrEmail: 'admin@freightiq.com', password: 'password123' })
+                  }}
+                  className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg font-bold text-slate-700 transition-all text-center cursor-pointer"
+                >
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('customs_officer')
+                    setFormData({ usernameOrEmail: 'customs@icegate.gov.in', password: 'password123' })
+                  }}
+                  className="px-2 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg font-bold text-slate-700 transition-all text-center cursor-pointer"
+                >
+                  Customs Officer
+                </button>
+              </div>
+            </div>
+
 
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CustomerDashboard from './CustomerDashboard'
 import AgentOperationsDashboard from './AgentOperationsDashboard'
+import CompanyManagerDashboard from './CompanyManagerDashboard'
 import AdminDashboard from './AdminDashboard'
 import CustomsDashboard from './CustomsDashboard'
 
@@ -35,7 +36,11 @@ export default function DashboardRouter() {
     return <CustomerDashboard />
   }
 
-  if (role === 'freight_agent' || role === 'agent' || role === 'agent_operator' || role === 'broker') {
+  if (role === 'company_manager' || role === 'company') {
+    return <CompanyManagerDashboard />
+  }
+
+  if (role === 'company_agent' || role === 'freight_agent' || role === 'agent' || role === 'agent_operator' || role === 'broker') {
     return <AgentOperationsDashboard />
   }
 

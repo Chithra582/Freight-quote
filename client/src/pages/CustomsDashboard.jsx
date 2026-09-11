@@ -245,6 +245,7 @@ export default function CustomsDashboard() {
 
     if (actionType === 'APPROVE') {
       // Synchronize to Customer Quotes: Quote is now approved by BOTH Agent and Customs Officer!
+      const clearanceId = `CUS-2026-${Math.floor(10000 + Math.random() * 90000)}`
       try {
         const storedCustomer = localStorage.getItem('customerQuotes')
         if (storedCustomer) {
@@ -255,13 +256,14 @@ export default function CustomsDashboard() {
                 action: 'Customs Officer Approved',
                 user: `${userName} (Customs Compliance Officer)`,
                 time: 'Just now',
-                note: decisionNotes.trim() || 'Regulatory compliance verified and approved. Quote issued to customer.'
+                note: decisionNotes.trim() || `Regulatory compliance verified (${clearanceId}). Sent to Customer for final confirmation.`
               }
               return {
                 ...cq,
                 agentApproved: true,
                 customsApproved: true,
-                status: 'SENT', // Both approved -> Quote and PDF visible to customer!
+                customsClearanceId: clearanceId,
+                status: 'VERIFIED_PENDING_CUSTOMER', // Both approved -> Sent to customer for final sign-off!
                 auditHistory: [auditEntry, ...(cq.auditHistory || [])]
               }
             }
@@ -272,6 +274,26 @@ export default function CustomsDashboard() {
       } catch (err) {
         console.error('Customer quotes sync error:', err)
       }
+
+      // Synchronize to M4 Agent Verification Queue
+      try {
+        const storedM4 = localStorage.getItem('m4AgentVerificationQueue')
+        if (storedM4) {
+          const parsedM4 = JSON.parse(storedM4)
+          const updatedM4 = parsedM4.map(mq => {
+            if (mq.quoteId === selectedCase.quoteId || (selectedCase.shipmentId && mq.shipmentId === selectedCase.shipmentId)) {
+              return {
+                ...mq,
+                status: 'VERIFIED_PENDING_CUSTOMER',
+                customsApproved: true,
+                customsClearanceId: clearanceId
+              }
+            }
+            return mq
+          })
+          localStorage.setItem('m4AgentVerificationQueue', JSON.stringify(updatedM4))
+        }
+      } catch {}
 
       // Synchronize to Agent Quotes Queue
       try {

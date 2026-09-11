@@ -11,6 +11,8 @@ class UserRole(models.TextChoices):
     OPERATIONS = 'OPERATIONS', 'Operations Lead'
     COMPLIANCE_OFFICER = 'COMPLIANCE_OFFICER', 'Compliance Officer'
     EXECUTIVE = 'EXECUTIVE', 'Executive Management'
+    COMPANY_MANAGER = 'COMPANY_MANAGER', 'Freight Company Manager'
+    COMPANY_AGENT = 'COMPANY_AGENT', 'Company Verification Agent'
     ADMIN = 'ADMIN', 'System Administrator'
 
 
@@ -111,3 +113,23 @@ class MarginPolicyScope(models.TextChoices):
     LANE = 'LANE', 'Trade Lane Specific Policy'
     CUSTOMER_TIER = 'CUSTOMER_TIER', 'Customer Tier Specific Policy'
     CARGO_TYPE = 'CARGO_TYPE', 'Cargo Type Specific Policy'
+
+
+class M4WorkflowStatus(models.TextChoices):
+    QUOTE_OPTIONS_AVAILABLE = 'QUOTE_OPTIONS_AVAILABLE', 'Options Ready'
+    QUOTE_SELECTED = 'QUOTE_SELECTED', 'Customer Selected Quote'
+    PENDING_COMPANY_VERIFICATION = 'PENDING_COMPANY_VERIFICATION', 'Pending Company Verification'
+    UNDER_VERIFICATION = 'UNDER_VERIFICATION', 'Under Agent Verification'
+    AWAITING_CUSTOMER_INFO = 'AWAITING_CUSTOMER_INFO', 'Awaiting Customer Info'
+    REVISION_PENDING_CUSTOMER = 'REVISION_PENDING_CUSTOMER', 'Revision Pending Customer Review'
+    APPROVED = 'APPROVED', 'Company Approved'
+    PENDING_CUSTOMS_APPROVAL = 'PENDING_CUSTOMS_APPROVAL', 'Pending Customs Clearance'
+    CUSTOMS_APPROVED = 'CUSTOMS_APPROVED', 'Customs Clearance Granted'
+    VERIFIED_PENDING_CUSTOMER = 'VERIFIED_PENDING_CUSTOMER', 'Verified & Cleared - Pending Customer Confirmation'
+    REJECTED = 'REJECTED', 'Company Rejected'
+    CUSTOMER_REJECTED = 'CUSTOMER_REJECTED', 'Customer Rejected'
+    REVISION_ACCEPTED = 'REVISION_ACCEPTED', 'Customer Accepted Revision'
+    BOOKING_CONFIRMED = 'BOOKING_CONFIRMED', 'Booking Confirmed'
+    BOOKING_CANCELLED = 'BOOKING_CANCELLED', 'Booking Cancelled'
+    RESELECT_QUOTE = 'RESELECT_QUOTE', 'Customer Reselect Quote'
+

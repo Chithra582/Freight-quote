@@ -7,12 +7,14 @@ import CustomerDashboard from './pages/CustomerDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import CustomsDashboard from './pages/CustomsDashboard'
 import AgentOperationsDashboard from './pages/AgentOperationsDashboard'
+import CompanyManagerDashboard from './pages/CompanyManagerDashboard'
 import NewShipmentEnquiry from './pages/NewShipmentEnquiry'
 import Shipments from './pages/Shipments'
 import MasterData from './pages/MasterData'
 import RouteIntelligence from './pages/RouteIntelligence'
 import QuoteCalculatorPage from './pages/QuoteCalculatorPage'
 import QuotationDetailsPage from './pages/QuotationDetailsPage'
+import MultiAgentStudio from './pages/MultiAgentStudio'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -28,7 +30,7 @@ function App() {
         <Route path="/dashboard/calculator" element={<Navigate to="/dashboard/new-shipment" replace />} />
         <Route path="/calculator" element={<Navigate to="/dashboard/new-shipment" replace />} />
         
-        {/* 4 Isolated Portal Routes with Strict Role-Based Access Guards */}
+        {/* Isolated Portal Routes with Strict Role-Based Access Guards */}
         {/* 1. Customer Portal */}
         <Route 
           path="/user/dashboard" 
@@ -40,11 +42,22 @@ function App() {
         />
         <Route path="/customer/dashboard" element={<Navigate to="/user/dashboard" replace />} />
 
-        {/* 2. Freight Agent Portal */}
+        {/* 2. Company Manager Portal */}
+        <Route 
+          path="/company/manager/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['company_manager', 'company', 'admin']}>
+              <CompanyManagerDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/company/dashboard" element={<Navigate to="/company/manager/dashboard" replace />} />
+
+        {/* 3. Company Agent & Freight Agent Portal */}
         <Route 
           path="/agents/dashboard" 
           element={
-            <ProtectedRoute allowedRoles={['freight_agent', 'agent', 'agent_operator', 'broker']}>
+            <ProtectedRoute allowedRoles={['freight_agent', 'company_agent', 'agent', 'agent_operator', 'broker', 'admin']}>
               <AgentOperationsDashboard />
             </ProtectedRoute>
           } 
@@ -94,6 +107,8 @@ function App() {
         <Route path="/quotes" element={<Navigate to="/dashboard?tab=quotes" replace />} />
         <Route path="/quotes/:quoteId" element={<QuotationDetailsPage />} />
         <Route path="/dashboard/quotes/:quoteId" element={<QuotationDetailsPage />} />
+        <Route path="/dashboard/multi-agent" element={<MultiAgentStudio />} />
+        <Route path="/multi-agent" element={<Navigate to="/dashboard/multi-agent" replace />} />
 
         {/* Catch-all fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

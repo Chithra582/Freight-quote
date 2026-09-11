@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'apps.routing',
     'apps.pricing',
     'apps.quotes',
+    'apps.multiagent',
 ]
 
 MIDDLEWARE = [

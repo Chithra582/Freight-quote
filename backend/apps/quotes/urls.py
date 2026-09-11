@@ -6,6 +6,19 @@ from apps.quotes.views import (
     MarginPolicyListView, ApprovalRuleListView
 )
 
+from apps.quotes.m4_views import (
+    CompanyListCreateView,
+    CompanyApprovalView,
+    CompanyAgentManagementView,
+    MultiCompanyQuoteGenerationView,
+    QuoteSelectionView,
+    VerificationActionView,
+    CustomsClearanceActionView,
+    CustomerFinalDecisionView,
+    RevisionResponseView,
+    BookingListView
+)
+
 urlpatterns = [
     path('', QuoteListCreateView.as_view(), name='quote_list_create'),
     path('approvals/queue/', ApprovalQueueListView.as_view(), name='quote_approval_queue'),
@@ -19,4 +32,17 @@ urlpatterns = [
     path('<uuid:pk>/accept/', QuoteAcceptView.as_view(), name='quote_accept'),
     path('<uuid:pk>/decline/', QuoteDeclineView.as_view(), name='quote_decline'),
     path('<uuid:pk>/document/', QuoteDocumentDownloadView.as_view(), name='quote_document_download'),
+
+    # Milestone 4 Routes
+    path('m4/companies/', CompanyListCreateView.as_view(), name='m4_companies_list_create'),
+    path('m4/companies/<uuid:pk>/approval/', CompanyApprovalView.as_view(), name='m4_company_approval'),
+    path('m4/companies/<str:company_id>/agents/', CompanyAgentManagementView.as_view(), name='m4_company_agents'),
+    path('m4/quote-options/', MultiCompanyQuoteGenerationView.as_view(), name='m4_quote_options'),
+    path('m4/selections/', QuoteSelectionView.as_view(), name='m4_quote_selections'),
+    path('m4/selections/<uuid:selection_id>/verify/', VerificationActionView.as_view(), name='m4_verify_action'),
+    path('m4/selections/<uuid:selection_id>/customs-clearance/', CustomsClearanceActionView.as_view(), name='m4_customs_clearance'),
+    path('m4/selections/<uuid:selection_id>/customer-decision/', CustomerFinalDecisionView.as_view(), name='m4_customer_decision'),
+    path('m4/revisions/<uuid:revision_id>/respond/', RevisionResponseView.as_view(), name='m4_revision_respond'),
+    path('m4/bookings/', BookingListView.as_view(), name='m4_bookings_list'),
 ]
+

@@ -27,308 +27,522 @@ import {
   Sparkles,
   Scale,
   Calendar,
-  Download
+  Download,
+  Building2,
+  HelpCircle,
+  XCircle,
+  FileCheck,
+  RotateCcw,
+  CheckSquare,
+  Square,
+  ShieldAlert
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
 import DashboardCard from '../components/DashboardCard'
 import { downloadQuotePDF } from '../utils/exportUtils'
+import { API_BASE_URL } from '../config/api'
 
-// Initial quote queue for Freight Agent review (includes Page 9 test data)
-const INITIAL_AGENT_QUOTES = [
+// Initial test dataset for M4 Company Agent (Page 14 scenario SHP-1001 + company selections)
+const INITIAL_AGENT_REQUESTS = [
   {
-    id: 'QT-2026-1001',
+    id: 'SEL-2026-1001',
+    selectionId: 'SEL-2026-1001',
+    quoteId: 'QT-5002',
     shipmentId: 'SHP-1001',
     customer: 'ABC Electronics Pvt Ltd',
     customerEmail: 'customer@apexgl.com',
+    companyId: 'CMP-102',
+    companyName: 'GlobalSea Freight',
     origin: 'Chennai, India (INMAA)',
     destination: 'Rotterdam, Netherlands (NLRTM)',
-    mode: 'Sea',
-    container: '40FT',
-    cargo: 'Electronics (5,000 KG · 12 CBM)',
-    distanceKm: 8950,
-    transitDays: '24 Days',
-    rulePrice: 87000,
-    aiPrice: 85500,
-    recommendedPrice: 86000,
-    finalPrice: 86000,
-    weatherRisk: '30/100 — Moderate',
-    customsRisk: '40/100 — Medium',
-    routeRisk: '20/100 — Low',
-    overallRisk: 'MEDIUM',
-    status: 'PENDING_REVIEW', // Waiting for agent review (Page 9)
-    agentApproved: false,
-    customsApproved: false,
-    validUntil: 'Sep 18, 2026',
-    carrier: 'Maersk Line Direct Service',
-    highRisk: false,
-    auditHistory: [
-      { action: 'AI Orchestrator Execution', time: '10m ago', user: 'AI Orchestrator', note: 'Combined rule price, ML prediction, and composite risk' }
-    ]
+    mode: 'Sea Freight',
+    container: '40 FT',
+    cargo: 'Electronics',
+    weightKg: 5000,
+    volumeCbm: 12.0,
+    originalPrice: 80000,
+    currentPrice: 80000,
+    priceFormatted: '₹80,000',
+    currency: 'INR',
+    transitDays: '28 Days',
+    riskLevel: 'Medium',
+    status: 'PENDING_COMPANY_VERIFICATION', // Waiting for AGT-204 verification
+    assignedAgent: 'AGT-204',
+    date: 'Sep 08, 2026',
+    checklist: {
+      shipment: true,
+      cargo: true,
+      capacity: true,
+      route: true,
+      schedule: true,
+      documents: true,
+      commercial: true,
+      risk_context: true,
+      quote_validity: true
+    },
+    documents: [
+      { name: 'Commercial_Invoice_SHP1001.pdf', type: 'Invoice', status: 'Verified', size: '240 KB' },
+      { name: 'Packing_List_SHP1001.pdf', type: 'Packing List', status: 'Verified', size: '185 KB' },
+      { name: 'Customs_EDI_Declaration.pdf', type: 'Customs', status: 'Pending Review', size: '410 KB' }
+    ],
+    revisions: [],
+    bookingReference: null
   },
   {
-    id: 'QT-2026-00940',
-    shipmentId: 'SHP-1005',
+    id: 'SEL-2026-1002',
+    selectionId: 'SEL-2026-1002',
+    quoteId: 'QT-5005',
+    shipmentId: 'SHP-1002',
     customer: 'Zenith Chemical Corp',
     customerEmail: 'ops@zenithchem.com',
+    companyId: 'CMP-102',
+    companyName: 'GlobalSea Freight',
     origin: 'Nhava Sheva (INNSA)',
-    destination: 'Antwerp (BEANR)',
-    mode: 'Sea',
-    container: '20OT',
-    cargo: 'Industrial Solvents (Class 3 Flammable, 14,000 KG)',
-    distanceKm: 9200,
-    transitDays: '26 Days',
-    rulePrice: 245000,
-    aiPrice: 260000,
-    recommendedPrice: 255000,
-    finalPrice: 255000,
-    weatherRisk: '65/100 — High Alert',
-    customsRisk: '80/100 — Critical Flag',
-    routeRisk: '45/100 — Moderate',
-    overallRisk: 'HIGH',
-    status: 'PENDING_REVIEW',
-    agentApproved: false,
-    customsApproved: false,
-    validUntil: 'Aug 30, 2026',
-    carrier: 'Hapag-Lloyd Express',
-    highRisk: true,
-    auditHistory: [
-      { action: 'High Risk Alert Triggered', time: '20m ago', user: 'Risk Agent M3', note: 'HazMat IMO Class 3 documentation required' }
-    ]
+    destination: 'Jebel Ali (AEJEA)',
+    mode: 'Sea Freight',
+    container: '20 FT General',
+    cargo: 'Industrial Solvents (Class 3 HazMat)',
+    weightKg: 8500,
+    volumeCbm: 15.0,
+    originalPrice: 65000,
+    currentPrice: 65000,
+    priceFormatted: '₹65,000',
+    currency: 'INR',
+    transitDays: '7 Days',
+    riskLevel: 'Low',
+    status: 'BOOKING_CONFIRMED',
+    assignedAgent: 'AGT-204',
+    date: 'Sep 07, 2026',
+    checklist: {
+      shipment: true,
+      cargo: true,
+      capacity: true,
+      route: true,
+      schedule: true,
+      documents: true,
+      commercial: true,
+      risk_context: true,
+      quote_validity: true
+    },
+    documents: [
+      { name: 'MSDS_Chemical_Safety_Data.pdf', type: 'HazMat Spec', status: 'Verified', size: '520 KB' }
+    ],
+    revisions: [],
+    bookingReference: 'BK-2026-10042'
   },
   {
-    id: 'QT-2026-00933',
-    shipmentId: 'SHP-1006',
+    id: 'SEL-2026-1003',
+    selectionId: 'SEL-2026-1003',
+    quoteId: 'QT-5008',
+    shipmentId: 'SHP-1004',
     customer: 'Nordic Imports AB',
     customerEmail: 'contact@nordicimp.se',
-    origin: 'Nhava Sheva (INNSA)',
-    destination: 'Rotterdam (NLRTM)',
-    mode: 'Sea',
-    container: '40HC',
-    cargo: 'Automotive Assemblies (12,500 KG)',
-    distanceKm: 8950,
-    transitDays: '25 Days',
-    rulePrice: 215000,
-    aiPrice: 210000,
-    recommendedPrice: 212000,
-    finalPrice: 212000,
-    weatherRisk: '20/100 — Low',
-    customsRisk: '15/100 — Low',
-    routeRisk: '15/100 — Low',
-    overallRisk: 'LOW',
-    status: 'SENT',
-    agentApproved: true,
-    customsApproved: true,
-    validUntil: 'Sep 05, 2026',
-    carrier: 'MSC Mediterranean Shipping',
-    highRisk: false,
-    auditHistory: [
-      { action: 'Quote Approved & Sent', time: '1h ago', user: 'Sarah Jenkins (Agent)', note: 'Commercially approved without revision' }
-    ]
+    companyId: 'CMP-102',
+    companyName: 'GlobalSea Freight',
+    origin: 'Chennai (INMAA)',
+    destination: 'Antwerp (BEANR)',
+    mode: 'Sea Freight',
+    container: '40 HC',
+    cargo: 'Machinery Components',
+    weightKg: 12000,
+    volumeCbm: 24.0,
+    originalPrice: 110000,
+    currentPrice: 110000,
+    priceFormatted: '₹1,10,000',
+    currency: 'INR',
+    transitDays: '26 Days',
+    riskLevel: 'Low',
+    status: 'UNDER_VERIFICATION',
+    assignedAgent: 'AGT-204',
+    date: 'Sep 08, 2026',
+    checklist: {
+      shipment: true,
+      cargo: true,
+      capacity: false,
+      route: true,
+      schedule: true,
+      documents: true,
+      commercial: true,
+      risk_context: true,
+      quote_validity: true
+    },
+    documents: [
+      { name: 'Bill_Of_Lading_Draft.pdf', type: 'Draft BL', status: 'Pending Review', size: '190 KB' }
+    ],
+    revisions: [],
+    bookingReference: null
   }
+]
+
+const INITIAL_NOTIFICATIONS = [
+  { id: 1, title: 'New Quote Selection Dispatched', desc: 'Customer ABC Electronics selected QT-5002. Immediate verification required.', time: '5m ago', read: false },
+  { id: 2, title: 'Customer Accepted Revision', desc: 'Zenith Chemical accepted revised price ₹65,000. Booking BK-2026-10042 confirmed.', time: '1h ago', read: true },
+  { id: 3, title: 'SLA Warning: Capacity Verification', desc: 'SHP-1004 Antwerp corridor vessel space confirmation due in 2 hours.', time: '3h ago', read: true }
 ]
 
 export default function AgentOperationsDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [quotes, setQuotes] = useState(() => {
-    const stored = localStorage.getItem('agentQuotesQueue')
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      } catch {}
+
+  const location = useLocation()
+  const navigate = useNavigate()
+  const searchParams = new URLSearchParams(location.search)
+  const rawTab = searchParams.get('tab') || 'dashboard'
+
+  // Tab Aliases to ensure 100% compatibility with Sidebar navigation
+  const tabAliases = {
+    'overview': 'dashboard',
+    'incoming-requests': 'incoming',
+    'pending-verification': 'pending',
+    'quote-verification': 'verification',
+    'booking-management': 'bookings'
+  }
+  const activeTab = tabAliases[rawTab] || rawTab
+
+  // Agent Context
+  const [agentCompany, setAgentCompany] = useState(() => {
+    return {
+      companyId: localStorage.getItem('agentCompanyId') || 'CMP-102',
+      name: localStorage.getItem('agentCompanyName') || 'GlobalSea Freight',
+      agentCode: localStorage.getItem('agentCode') || 'AGT-204'
     }
-    return INITIAL_AGENT_QUOTES
   })
 
   const [userName, setUserName] = useState('Sarah Jenkins')
-  const [selectedQuote, setSelectedQuote] = useState(null)
-  const [isModifyModalOpen, setIsModifyModalOpen] = useState(false)
-  const [modifyForm, setModifyForm] = useState({
-    newPrice: '',
-    reason: ''
-  })
-  const [searchQuery, setSearchQuery] = useState('')
-  const [toastMessage, setToastMessage] = useState('')
 
-  const location = useLocation()
-  const searchParams = new URLSearchParams(location.search)
-  const activeTab = searchParams.get('tab') || 'overview'
+  const [requests, setRequests] = useState(() => {
+    try {
+      const stored = localStorage.getItem('m4AgentVerificationQueue')
+      if (stored) return JSON.parse(stored)
+    } catch {}
+    return INITIAL_AGENT_REQUESTS
+  })
+
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
+  const [selectedReq, setSelectedReq] = useState(null)
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false)
+  const [isModifyModalOpen, setIsModifyModalOpen] = useState(false)
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
+  const [isRequestInfoModalOpen, setIsRequestInfoModalOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Verification Checklist State
+  const [checklistState, setChecklistState] = useState({
+    shipment: true,
+    cargo: true,
+    capacity: true,
+    route: true,
+    schedule: true,
+    documents: true,
+    commercial: true,
+    risk_context: true,
+    quote_validity: true
+  })
+
+  // Modification Form State (Scenario: 80,000 -> 82,500 due to Fuel surcharge increase)
+  const [modifyForm, setModifyForm] = useState({
+    newPrice: 82500,
+    newEtaDays: 28,
+    reason: 'Fuel surcharge increase'
+  })
+
+  // Reject Form State
+  const [rejectReason, setRejectReason] = useState('Vessel space fully allocated for selected departure window.')
+
+  // Request Info Form State
+  const [requestInfoNotes, setRequestInfoNotes] = useState('Clear copy of commercial invoice and HS Code 8542 declaration required.')
 
   useEffect(() => {
-    const name = localStorage.getItem('userName') || 'Sarah Jenkins'
-    setUserName(name)
+    const storedName = localStorage.getItem('userName') || 'Sarah Jenkins'
+    setUserName(storedName)
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('agentQuotesQueue', JSON.stringify(quotes))
-  }, [quotes])
+    localStorage.setItem('m4AgentVerificationQueue', JSON.stringify(requests))
+  }, [requests])
 
   const showToast = (msg) => {
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 4000)
+    setTimeout(() => setToastMessage(''), 5000)
   }
 
-  // Open modify price modal (Scenario 9)
-  const handleOpenModify = (q) => {
-    setSelectedQuote(q)
-    setModifyForm({
-      newPrice: q.finalPrice || q.recommendedPrice,
-      reason: ''
+  // Strict Company Data Isolation: Filter requests by current agent's companyId
+  const isolatedRequests = requests.filter(r => r.companyId === agentCompany.companyId)
+
+  // KPI calculations
+  const newRequestsCount = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION').length
+  const pendingVerificationCount = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION').length
+  const approvedTodayCount = isolatedRequests.filter(r => r.status === 'BOOKING_CONFIRMED' || r.status === 'APPROVED' || r.status === 'PENDING_CUSTOMS_APPROVAL' || r.status === 'VERIFIED_PENDING_CUSTOMER').length
+  const rejectedCount = isolatedRequests.filter(r => r.status === 'REJECTED').length
+
+  // Filtered requests by tab and search
+  const getTabRequests = () => {
+    let list = isolatedRequests
+    if (activeTab === 'incoming') {
+      list = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION')
+    } else if (activeTab === 'pending') {
+      list = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION')
+    } else if (activeTab === 'shipment-requests') {
+      list = isolatedRequests
+    } else if (activeTab === 'verification') {
+      list = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION')
+    } else if (activeTab === 'approved') {
+      list = isolatedRequests.filter(r => r.status === 'PENDING_CUSTOMS_APPROVAL' || r.status === 'VERIFIED_PENDING_CUSTOMER' || r.status === 'BOOKING_CONFIRMED' || r.status === 'APPROVED')
+    } else if (activeTab === 'rejected') {
+      list = isolatedRequests.filter(r => r.status === 'REJECTED')
+    } else if (activeTab === 'bookings') {
+      list = isolatedRequests.filter(r => r.status === 'BOOKING_CONFIRMED')
+    }
+
+    if (!searchQuery) return list
+    const q = searchQuery.toLowerCase()
+    return list.filter(r => 
+      r.shipmentId?.toLowerCase().includes(q) ||
+      r.customer?.toLowerCase().includes(q) ||
+      r.origin?.toLowerCase().includes(q) ||
+      r.destination?.toLowerCase().includes(q) ||
+      r.quoteId?.toLowerCase().includes(q)
+    )
+  }
+
+  const currentList = getTabRequests()
+
+  // ACTION: APPROVE -> Forward to Customs Officer (Workflow Step 3)
+  const handleApprove = async (req) => {
+    // Try backend API call
+    try {
+      if (req.selectionId) {
+        await fetch(`${API_BASE_URL}/api/v1/quotes/m4/selections/${req.selectionId}/verify/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'APPROVE', checklist: checklistState })
+        })
+      }
+    } catch (err) {
+      console.warn('API sync warning:', err)
+    }
+
+    const updated = requests.map(r => {
+      if (r.id === req.id) {
+        return {
+          ...r,
+          status: 'PENDING_CUSTOMS_APPROVAL',
+          agentApproved: true,
+          agentApprovedBy: `${userName} (${agentCompany.agentCode})`,
+          agentApprovedAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          checklist: { ...checklistState }
+        }
+      }
+      return r
     })
-    setIsModifyModalOpen(true)
+
+    setRequests(updated)
+    setIsVerifyModalOpen(false)
+    showToast(`Shipment ${req.shipmentId} approved by ${agentCompany.name}! Forwarded to Customs Officer for regulatory clearance.`)
+
+    // Forward to Customs Cases in localStorage
+    try {
+      const storedCustoms = JSON.parse(localStorage.getItem('customsCases') || '[]')
+      const existingCaseIndex = storedCustoms.findIndex(c => c.shipmentId === req.shipmentId || c.quoteId === req.quoteId)
+      
+      const newCustomsCase = {
+        id: `CASE-2026-${Math.floor(100 + Math.random() * 900)}`,
+        quoteId: req.quoteId,
+        shipmentId: req.shipmentId,
+        customer: req.customer,
+        origin: req.origin,
+        destination: req.destination,
+        commodity: req.cargo || 'Electronics & Microcontrollers',
+        hsCode: '8504.40.90',
+        incoterm: 'CIF',
+        declaredValue: req.priceFormatted,
+        status: 'PENDING_REVIEW',
+        priority: 'High',
+        riskScore: 0.15,
+        agentApproved: true,
+        forwardedBy: `${userName} (${agentCompany.name})`,
+        aiFindings: `Operational verification completed by ${agentCompany.name} (${agentCompany.agentCode}). Awaiting statutory Customs Officer clearance.`,
+        regulations: [
+          'Indian Customs Tariff Act, Section 46 (ICEGATE Export Declaration)',
+          'EU Combined Nomenclature (CN) Chapter 85 Import Compliance',
+          'Preferential Rules of Origin Verification'
+        ],
+        documents: req.documents || [
+          { name: 'Commercial Invoice (Signed)', status: 'VERIFIED', mandatory: true },
+          { name: 'Packing List with Gross/Net Weights', status: 'VERIFIED', mandatory: true }
+        ],
+        created: 'Just now'
+      }
+
+      if (existingCaseIndex >= 0) {
+        storedCustoms[existingCaseIndex] = {
+          ...storedCustoms[existingCaseIndex],
+          agentApproved: true,
+          status: 'PENDING_REVIEW',
+          forwardedBy: `${userName} (${agentCompany.name})`
+        }
+      } else {
+        storedCustoms.unshift(newCustomsCase)
+      }
+      localStorage.setItem('customsCases', JSON.stringify(storedCustoms))
+    } catch (e) {
+      console.error('Customs sync error:', e)
+    }
+
+    // Update customer quotes in localStorage so customer dashboard reflects PENDING_CUSTOMS_APPROVAL
+    try {
+      const custQuotes = JSON.parse(localStorage.getItem('customerQuotes') || '[]')
+      const updatedCust = custQuotes.map(cq => {
+        if (cq.shipmentId === req.shipmentId || cq.id === req.quoteId) {
+          return {
+            ...cq,
+            status: 'PENDING_CUSTOMS_APPROVAL',
+            agentApproved: true,
+            agentApprovedBy: `${userName} (${agentCompany.agentCode})`
+          }
+        }
+        return cq
+      })
+      localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+    } catch {}
   }
 
-  // Save modified price with reason & audit record (Scenario 9)
-  const handleSavePriceModification = (e) => {
+  // ACTION: MODIFY (Page 14 Scenario -> ₹80,000 -> ₹82,500 due to Fuel surcharge increase)
+  const handleModifySubmit = async (e) => {
     e.preventDefault()
-    if (!modifyForm.newPrice || !modifyForm.reason.trim()) {
-      alert('Please provide both the new price and an operational audit reason.')
+    if (!selectedReq) return
+
+    const newP = parseFloat(modifyForm.newPrice)
+    const reason = modifyForm.reason.trim()
+
+    if (!newP || !reason) {
+      alert('Price and mandatory modification reason are required.')
       return
     }
 
-    const updatedPrice = parseFloat(modifyForm.newPrice)
-    const auditRecord = {
-      action: 'Price Modified by Agent',
-      user: `${userName} (Freight Agent)`,
-      time: 'Just now',
-      note: `Revised from ₹${selectedQuote.finalPrice?.toLocaleString()} to ₹${updatedPrice.toLocaleString()}. Reason: ${modifyForm.reason}`
+    try {
+      if (selectedReq.selectionId) {
+        await fetch(`${API_BASE_URL}/api/v1/quotes/m4/selections/${selectedReq.selectionId}/verify/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'MODIFY',
+            new_price: newP,
+            reason: reason,
+            checklist: checklistState
+          })
+        })
+      }
+    } catch (err) {
+      console.warn('API sync warning:', err)
     }
 
-    const updatedQuotes = quotes.map(q => {
-      if (q.id === selectedQuote.id) {
+    const revisionItem = {
+      originalPrice: selectedReq.originalPrice,
+      revisedPrice: newP,
+      reason: reason,
+      date: 'Just now',
+      status: 'PENDING_CUSTOMER'
+    }
+
+    const updated = requests.map(r => {
+      if (r.id === selectedReq.id) {
         return {
-          ...q,
-          finalPrice: updatedPrice,
-          auditHistory: [auditRecord, ...(q.auditHistory || [])]
+          ...r,
+          status: 'REVISION_PENDING_CUSTOMER',
+          currentPrice: newP,
+          priceFormatted: `₹${newP.toLocaleString('en-IN')}`,
+          revisions: [revisionItem, ...(r.revisions || [])]
         }
       }
-      return q
+      return r
     })
 
-    setQuotes(updatedQuotes)
+    setRequests(updated)
     setIsModifyModalOpen(false)
-    showToast(`Quote ${selectedQuote.id} price updated to ₹${updatedPrice.toLocaleString()} with audit record logged.`)
+    setIsVerifyModalOpen(false)
+    showToast(`Quote modified to ₹${newP.toLocaleString('en-IN')}. Reason: "${reason}". Sent to customer for acceptance.`)
+
+    // Notify Customer Portal storage for revision review modal
+    try {
+      const custQuotes = JSON.parse(localStorage.getItem('customerQuotes') || '[]')
+      const updatedCust = custQuotes.map(cq => {
+        if (cq.shipmentId === selectedReq.shipmentId || cq.id === selectedReq.quoteId) {
+          return {
+            ...cq,
+            status: 'REVISION_PENDING_CUSTOMER',
+            pendingRevision: revisionItem
+          }
+        }
+        return cq
+      })
+      localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+    } catch {}
   }
 
-  // Approve quote and forward to Customs Officer (Stage 1 of 2-Stage Approval)
-  const handleApproveAndSend = (quoteId) => {
-    const auditRecord = {
-      action: 'Freight Agent Approved & Forwarded',
-      user: `${userName} (Freight Agent)`,
-      time: 'Just now',
-      note: 'Commercial validation complete. Approved by Freight Agent and forwarded to Customs Officer for regulatory compliance review.'
-    }
+  // ACTION: REJECT
+  const handleRejectSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedReq) return
 
-    const updated = quotes.map(q => {
-      if (q.id === quoteId) {
-        return {
-          ...q,
-          agentApproved: true,
-          customsApproved: false,
-          status: 'PENDING_CUSTOMS_APPROVAL',
-          auditHistory: [auditRecord, ...(q.auditHistory || [])]
-        }
-      }
-      return q
-    })
-
-    setQuotes(updated)
-    localStorage.setItem('agentQuotesQueue', JSON.stringify(updated))
-
-    const targetedQuote = quotes.find(q => q.id === quoteId)
-
-    // 1. Sync to Customs Cases so it appears in Customs Officer Dashboard review queue
     try {
-      const storedCases = localStorage.getItem('customsCases')
-      let caseList = storedCases ? JSON.parse(storedCases) : []
-      const existingCaseIndex = caseList.findIndex(c => c.quoteId === quoteId)
-      if (existingCaseIndex >= 0) {
-        caseList[existingCaseIndex] = {
-          ...caseList[existingCaseIndex],
-          status: 'PENDING_REVIEW',
-          agentApproved: true,
-          forwardedBy: `${userName} (Freight Agent)`,
-          forwardedAt: 'Just now'
-        }
-      } else if (targetedQuote) {
-        caseList.unshift({
-          id: `CASE-2026-${Math.floor(100 + Math.random() * 900)}`,
-          quoteId: targetedQuote.id,
-          customer: targetedQuote.customer || 'ABC Electronics Pvt Ltd',
-          origin: targetedQuote.origin || 'Chennai (INMAA)',
-          destination: targetedQuote.destination || 'Rotterdam (NLRTM)',
-          commodity: targetedQuote.cargo || 'Commercial Freight Consignment',
-          hsCode: targetedQuote.hsCode || '8504.40.90',
-          incoterm: targetedQuote.incoterm || 'CIF',
-          declaredValue: targetedQuote.sellPrice ? `₹${targetedQuote.sellPrice.toLocaleString ? targetedQuote.sellPrice.toLocaleString() : targetedQuote.sellPrice}` : '₹86,000',
-          status: 'PENDING_REVIEW',
-          priority: targetedQuote.overallRisk === 'HIGH' ? 'Critical' : 'High',
-          riskScore: targetedQuote.overallRisk === 'HIGH' ? 0.75 : 0.15,
-          agentApproved: true,
-          forwardedBy: `${userName} (Freight Agent)`,
-          aiFindings: 'Freight agent commercial approval complete. Mandatory customs tariff & regulatory documentation verification required.',
-          regulations: [
-            'Indian Customs Tariff Act, Section 46 (ICEGATE Export Declaration)',
-            'Destination Port Customs Clearance & Classification Regulations'
-          ],
-          documents: [
-            { name: 'Commercial Invoice (Signed)', status: 'VERIFIED', mandatory: true },
-            { name: 'Packing List with Gross/Net Weights', status: 'VERIFIED', mandatory: true },
-            { name: 'Certificate of Origin', status: 'PENDING_UPLOAD', mandatory: true }
-          ],
-          created: 'Just now'
+      if (selectedReq.selectionId) {
+        await fetch(`${API_BASE_URL}/api/v1/quotes/m4/selections/${selectedReq.selectionId}/verify/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'REJECT',
+            reason: rejectReason,
+            checklist: checklistState
+          })
         })
-      }
-      localStorage.setItem('customsCases', JSON.stringify(caseList))
-    } catch (err) {
-      console.error('Customs case sync error:', err)
-    }
-
-    // 2. Sync to Customer quotes in localStorage (locked until customs officer approves)
-    try {
-      const storedCustomer = localStorage.getItem('customerQuotes')
-      if (storedCustomer) {
-        const parsedCust = JSON.parse(storedCustomer)
-        const updatedCust = parsedCust.map(cq => {
-          if (cq.id === quoteId) {
-            return {
-              ...cq,
-              agentApproved: true,
-              customsApproved: false,
-              status: 'PENDING_CUSTOMS_APPROVAL'
-            }
-          }
-          return cq
-        })
-        localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
       }
     } catch {}
 
-    showToast(`Quotation ${quoteId} APPROVED by Agent and forwarded to Customs Officer!`)
+    const updated = requests.map(r => {
+      if (r.id === selectedReq.id) {
+        return {
+          ...r,
+          status: 'REJECTED',
+          rejectReason: rejectReason
+        }
+      }
+      return r
+    })
+
+    setRequests(updated)
+    setIsRejectModalOpen(false)
+    setIsVerifyModalOpen(false)
+    showToast(`Request ${selectedReq.shipmentId} REJECTED. Customer has been notified to pick another quote.`)
   }
 
-  // Dashboard KPI Cards matching Page 7: New Requests, Pending Reviews, High Risk Shipments, Quotes Sent Today
-  const newRequestsCount = quotes.filter(q => q.status === 'DRAFT' || q.status === 'SUBMITTED' || q.status === 'PENDING_REVIEW' || !q.agentApproved).length
-  const pendingReviewsCount = quotes.filter(q => q.status === 'PENDING_REVIEW' || !q.agentApproved).length
-  const highRiskCount = quotes.filter(q => q.overallRisk === 'HIGH' || q.highRisk).length
-  const quotesSentTodayCount = quotes.filter(q => (q.agentApproved && q.customsApproved) || q.status === 'SENT' || q.status === 'ACCEPTED').length
+  // ACTION: REQUEST INFO
+  const handleRequestInfoSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedReq) return
 
-  const filteredQuotes = quotes.filter(q => {
-    if (!searchQuery) return true
-    const qStr = searchQuery.toLowerCase()
-    return (
-      q.id.toLowerCase().includes(qStr) ||
-      (q.shipmentId && q.shipmentId.toLowerCase().includes(qStr)) ||
-      q.customer.toLowerCase().includes(qStr) ||
-      q.origin.toLowerCase().includes(qStr) ||
-      q.destination.toLowerCase().includes(qStr)
-    )
-  })
+    const updated = requests.map(r => {
+      if (r.id === selectedReq.id) {
+        return {
+          ...r,
+          status: 'AWAITING_CUSTOMER_INFO',
+          infoRequested: requestInfoNotes
+        }
+      }
+      return r
+    })
+
+    setRequests(updated)
+    setIsRequestInfoModalOpen(false)
+    setIsVerifyModalOpen(false)
+    showToast(`Requested additional details from customer for ${selectedReq.shipmentId}.`)
+  }
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+      {/* Sidebar */}
       <Sidebar 
         isCollapsed={isCollapsed} 
         setIsCollapsed={setIsCollapsed} 
@@ -336,336 +550,303 @@ export default function AgentOperationsDashboard() {
         setIsMobileOpen={setIsMobileOpen} 
       />
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-
-          {/* Toast Notification */}
-          {toastMessage && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-emerald-600 text-white rounded-2xl shadow-lg flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <CheckCircle2 className="w-5 h-5" />
-                <span>{toastMessage}</span>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-black text-slate-900 leading-tight">
+                  Company Agent Operations Desk
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-black font-mono">
+                  {agentCompany.name} ({agentCompany.companyId})
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-mono font-bold border border-slate-200">
+                  Agent ID: {agentCompany.agentCode}
+                </span>
               </div>
-              <button onClick={() => setToastMessage('')} className="p-1 hover:bg-emerald-700 rounded-lg">
-                <X className="w-4 h-4" />
-              </button>
-            </motion.div>
-          )}
+              <p className="text-[11px] text-slate-500">
+                Milestone 4 Quote Verification & Booking Confirmation · Strict Company Isolation Active
+              </p>
+            </div>
+          </div>
 
-          {/* Scenario 9: Price Modification Modal */}
-          {isModifyModalOpen && selectedQuote && (
-            <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-bold text-slate-700 hidden sm:inline">
+              Logged in: <strong className="text-slate-900">{userName}</strong>
+            </span>
+          </div>
+        </header>
+
+        {/* M4 Navigation Tabs (Strictly matching PDF Page 7 & User Prompt) */}
+        <div className="bg-white border-b border-slate-200 px-6 flex items-center gap-1 overflow-x-auto shrink-0">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
+            { id: 'incoming', label: 'Incoming Requests', icon: Clock, count: newRequestsCount },
+            { id: 'pending', label: 'Pending Verification', icon: ShieldCheck, count: pendingVerificationCount },
+            { id: 'shipment-requests', label: 'Shipment Requests', icon: Truck },
+            { id: 'verification', label: 'Quote Verification', icon: CheckSquare },
+            { id: 'document-review', label: 'Document Review', icon: FileSearch },
+            { id: 'bookings', label: 'Booking Management', icon: FileCheck, count: approvedTodayCount },
+            { id: 'approved', label: 'Approved', icon: CheckCircle2 },
+            { id: 'rejected', label: 'Rejected', icon: XCircle, count: rejectedCount },
+            { id: 'notifications', label: 'Notifications', icon: Bell, count: notifications.filter(n => !n.read).length }
+          ].map(tab => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => navigate(`/agents/dashboard?tab=${tab.id}`)}
+                className={`py-3 px-3 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                  isActive 
+                    ? 'border-amber-500 text-amber-600' 
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                    isActive ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Toast Alert */}
+        {toastMessage && (
+          <div className="mx-6 mt-4 p-3 bg-emerald-600 text-white rounded-xl shadow-lg flex items-center justify-between text-xs font-bold animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{toastMessage}</span>
+            </div>
+            <button onClick={() => setToastMessage('')} className="p-1 hover:bg-emerald-700 rounded-lg">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* TAB: DASHBOARD */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              {/* Isolation Alert */}
+              <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>
+                    <strong>Company Isolation Active:</strong> You are authorized for <strong>{agentCompany.name} ({agentCompany.companyId})</strong>. You only receive quote selections directed specifically to your freight company.
+                  </span>
+                </div>
+                <span className="font-mono text-[11px] font-bold text-blue-700 bg-white px-2.5 py-1 rounded-lg border border-blue-200">
+                  Agent: {agentCompany.agentCode}
+                </span>
+              </div>
+
+              {/* KPI Cards (PDF Page 8) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <DashboardCard 
+                  title="New Requests" 
+                  value={newRequestsCount} 
+                  subtext="Customer selections" 
+                  icon={Clock} 
+                  trend="up" 
+                  trendValue="Fresh" 
+                />
+                <DashboardCard 
+                  title="Pending Verification" 
+                  value={pendingVerificationCount} 
+                  subtext="Requiring review" 
+                  icon={ShieldCheck} 
+                  trend="neutral" 
+                  trendValue="Active Queue" 
+                />
+                <DashboardCard 
+                  title="Approved Today" 
+                  value={approvedTodayCount} 
+                  subtext="Converted to bookings" 
+                  icon={CheckCircle2} 
+                  trend="up" 
+                  trendValue="+1 today" 
+                />
+                <DashboardCard 
+                  title="Rejected Today" 
+                  value={rejectedCount} 
+                  subtext="Declined requests" 
+                  icon={XCircle} 
+                  trend="neutral" 
+                  trendValue="Within SLA" 
+                />
+                <DashboardCard 
+                  title="Response Time" 
+                  value="42 min" 
+                  subtext="Average verification SLA" 
+                  icon={TrendingUp} 
+                  trend="up" 
+                  trendValue="Target < 2h" 
+                />
+              </div>
+
+              {/* Priority Verification Queue */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900">
-                      Modify Quote Price
-                    </h3>
-                    <span className="text-xs font-mono text-slate-500">
-                      {selectedQuote.id} · {selectedQuote.shipmentId}
-                    </span>
+                    <h3 className="text-sm font-black text-slate-900">Priority Verification Queue</h3>
+                    <p className="text-[11px] text-slate-500">Quotes selected by shippers awaiting commercial & operational validation</p>
                   </div>
-                  <button onClick={() => setIsModifyModalOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400">
-                    <X className="w-5 h-5" />
+                  <button
+                    onClick={() => navigate('/agents/dashboard?tab=incoming')}
+                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    View All Incoming ({isolatedRequests.length}) ➔
                   </button>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs mb-4 space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Rule-Based Price (M1):</span>
-                    <span className="font-mono font-bold">₹{selectedQuote.rulePrice?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">AI ML Predicted (M2):</span>
-                    <span className="font-mono font-bold text-indigo-600">₹{selectedQuote.aiPrice?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">AI Recommended:</span>
-                    <span className="font-mono font-bold text-emerald-600">₹{selectedQuote.recommendedPrice?.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <form onSubmit={handleSavePriceModification} className="space-y-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      NEW QUOTED AMOUNT (INR ₹)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={modifyForm.newPrice}
-                      onChange={(e) => setModifyForm({ ...modifyForm, newPrice: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      OPERATIONAL MODIFICATION REASON (SCENARIO 9 AUDIT RECORD)
-                    </label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="e.g. Volume discount for long-term customer lane, fuel surcharge adjustment"
-                      value={modifyForm.reason}
-                      onChange={(e) => setModifyForm({ ...modifyForm, reason: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsModifyModalOpen(false)}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all"
-                    >
-                      Save & Log Audit Record
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Freight Agent Header Banner */}
-          <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/30 text-xs font-semibold text-amber-300 mb-3">
-                <Briefcase className="w-3.5 h-3.5 text-amber-400" />
-                <span>Freight Agent / Operations Portal</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                Commercial Quote Review Desk
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                Reviews shipment requests and AI analysis, validates commercial margins, modifies when required with audit logging, and approves final quotes for clients.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Link
-                to="/dashboard/calculator"
-                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow flex items-center gap-2 transition-all cursor-pointer"
-              >
-                <DollarSign className="w-3.5 h-3.5" />
-                <span>Calculate New Quote</span>
-              </Link>
-              <Link
-                to="/dashboard/shipments"
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 flex items-center gap-2 transition-all cursor-pointer"
-              >
-                <Truck className="w-3.5 h-3.5" />
-                <span>All Shipments</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Page 7 Required KPI Cards: New Requests, Pending Reviews, High Risk Shipments, Quotes Sent Today */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <DashboardCard
-              title="NEW REQUESTS"
-              value={newRequestsCount.toString()}
-              change="+2 incoming inquiries"
-              isPositive={true}
-              icon={Clock}
-              color="blue"
-            />
-            <DashboardCard
-              title="PENDING REVIEWS"
-              value={pendingReviewsCount.toString()}
-              change="Requires agent sign-off"
-              isPositive={false}
-              icon={FileText}
-              color="amber"
-            />
-            <DashboardCard
-              title="HIGH RISK SHIPMENTS"
-              value={highRiskCount.toString()}
-              change="HazMat / Extreme Weather"
-              isPositive={false}
-              icon={AlertTriangle}
-              color="rose"
-            />
-            <DashboardCard
-              title="QUOTES SENT TODAY"
-              value={quotesSentTodayCount.toString()}
-              change="Dispatched to customers"
-              isPositive={true}
-              icon={CheckCircle2}
-              color="emerald"
-            />
-          </div>
-
-          {/* Search & Navigation Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <Link
-                to="/agents/dashboard"
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === 'overview' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                Quote Review Desk ({quotes.length})
-              </Link>
-              <Link
-                to="/agents/dashboard?tab=shipment-requests"
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === 'shipment-requests' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                Shipment Requests
-              </Link>
-              <Link
-                to="/agents/dashboard?tab=pricing-analysis"
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === 'pricing-analysis' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                AI Pricing Analysis (M2)
-              </Link>
-              <Link
-                to="/agents/dashboard?tab=risk-analysis"
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === 'risk-analysis' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                Risk Analysis (M3)
-              </Link>
-            </div>
-
-            <div className="relative w-72">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search shipment, shipper, lane..."
-                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-500"
-              />
-            </div>
-          </div>
-
-          {/* Tab: AI Pricing Analysis (M2) */}
-          {activeTab === 'pricing-analysis' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">M2 · AI/ML Pricing Intelligence Comparison</h3>
-                  <p className="text-xs text-slate-500">Historical pattern regression vs deterministic rule pricing.</p>
-                </div>
-                <span className="px-3 py-1 bg-blue-50 text-blue-700 font-mono text-xs font-bold rounded-full">
-                  LightGBM v3.2 Model Active
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
-                    <tr>
-                      <th className="p-3">Shipment</th>
-                      <th className="p-3">Route</th>
-                      <th className="p-3">Rule Price (M1)</th>
-                      <th className="p-3">AI ML Predicted (M2)</th>
-                      <th className="p-3">Recommended</th>
-                      <th className="p-3">Variance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {quotes.map(q => {
-                      const diff = (q.aiPrice || 0) - (q.rulePrice || 0)
-                      return (
-                        <tr key={q.id}>
-                          <td className="p-3 font-bold">{q.id} ({q.shipmentId})</td>
-                          <td className="p-3">{q.origin} → {q.destination}</td>
-                          <td className="p-3 font-mono font-bold">₹{q.rulePrice?.toLocaleString()}</td>
-                          <td className="p-3 font-mono font-bold text-indigo-600">₹{q.aiPrice?.toLocaleString()}</td>
-                          <td className="p-3 font-mono font-bold text-emerald-600">₹{q.recommendedPrice?.toLocaleString()}</td>
-                          <td className="p-3 font-mono font-bold">
-                            <span className={diff < 0 ? 'text-emerald-600' : 'text-amber-600'}>
-                              {diff < 0 ? '-' : '+'}₹{Math.abs(diff).toLocaleString()}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Tab: Risk Analysis (M3) */}
-          {activeTab === 'risk-analysis' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-              <div>
-                <h3 className="text-base font-black text-slate-900">M3 · Composite Risk Intelligence Engine</h3>
-                <p className="text-xs text-slate-500">Weather radar, customs document verification, and maritime corridor congestion.</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl">
-                  <span className="text-[10px] font-bold text-sky-600 uppercase">Weather Intelligence Agent</span>
-                  <div className="text-xl font-black text-sky-950 mt-1">NOAA Radar Active</div>
-                  <p className="text-xs text-sky-800 mt-1">Monitors tropical depressions, wave heights & typhoons across key trade loops.</p>
-                </div>
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase">Customs Intelligence Agent</span>
-                  <div className="text-xl font-black text-emerald-950 mt-1">HS Code Matching</div>
-                  <p className="text-xs text-emerald-800 mt-1">Cross-references tariff regulations, dual-use restrictions & export clearances.</p>
-                </div>
-                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl">
-                  <span className="text-[10px] font-bold text-indigo-600 uppercase">Route Risk Agent</span>
-                  <div className="text-xl font-black text-indigo-950 mt-1">Chokepoint Telemetry</div>
-                  <p className="text-xs text-indigo-800 mt-1">Real-time Suez/Bab-el-Mandeb & Malacca strait transit latency evaluation.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tab: Generated / Dispatched Quotes */}
-          {activeTab === 'generated-quotes' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Commercial Generated Quotes & Dispatches</h3>
-                  <p className="text-xs text-slate-500">Quotes commercially cleared, priced, and issued to customer portals.</p>
-                </div>
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
-                  {quotes.filter(q => q.status === 'SENT' || q.status === 'ACCEPTED').length} Quotes Dispatched
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
-                    <tr>
-                      <th className="p-3">Quote Ref</th>
-                      <th className="p-3">Customer</th>
-                      <th className="p-3">Corridor</th>
-                      <th className="p-3">Final Dispatched Price</th>
-                      <th className="p-3">Client Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {quotes.filter(q => q.status === 'SENT' || q.status === 'ACCEPTED').map(q => (
-                      <tr key={q.id} className="hover:bg-slate-50">
-                        <td className="p-3 font-mono font-bold text-amber-700">{q.id}</td>
-                        <td className="p-3 font-bold text-slate-900">{q.customer}</td>
-                        <td className="p-3">{q.origin} → {q.destination}</td>
-                        <td className="p-3 font-mono font-bold text-slate-900">₹{q.finalPrice?.toLocaleString()}</td>
-                        <td className="p-3">
-                          <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                            q.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'
-                          }`}>
-                            {q.status === 'ACCEPTED' ? 'BOOKED BY SHIPPER' : 'SENT TO CLIENT'}
+                <div className="space-y-3">
+                  {isolatedRequests.slice(0, 3).map(req => (
+                    <div key={req.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-black text-xs text-blue-700">{req.shipmentId}</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="font-bold text-xs text-slate-900">{req.customer}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-mono text-[10px] font-bold text-slate-600">
+                            {req.quoteId}
                           </span>
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          <strong>{req.origin}</strong> ➔ <strong>{req.destination}</strong> ({req.container} · {req.cargo})
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Selected Price: <strong className="text-slate-900 font-mono">{req.priceFormatted}</strong> · Transit: {req.transitDays}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedReq(req)
+                            setIsVerifyModalOpen(true)
+                          }}
+                          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <CheckSquare className="w-3.5 h-3.5" />
+                          <span>Open 9-Point Verification</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: INCOMING REQUESTS / PENDING / SHIPMENT REQUESTS / APPROVED / REJECTED / BOOKINGS */}
+          {activeTab !== 'dashboard' && activeTab !== 'notifications' && activeTab !== 'document-review' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 capitalize">
+                    {activeTab.replace('-', ' ')}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Requests scoped exclusively to {agentCompany.name} ({agentCompany.companyId})
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Search shipment, client, corridor..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 w-64"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-y border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">Shipment & Quote</th>
+                      <th className="py-3 px-4">Shipper / Customer</th>
+                      <th className="py-3 px-4">Corridor & Cargo</th>
+                      <th className="py-3 px-4">Selected Price</th>
+                      <th className="py-3 px-4">Risk Level</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Verification Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {currentList.map(req => (
+                      <tr key={req.id} className="hover:bg-slate-50/60 transition-all">
+                        <td className="py-3.5 px-4">
+                          <div className="font-mono font-black text-blue-700">{req.shipmentId}</div>
+                          <div className="text-[10px] font-mono text-slate-500">{req.quoteId} · {req.date}</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          {req.customer}
+                          <div className="text-[10px] font-normal text-slate-500">{req.customerEmail}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-800">{req.origin} ➔ {req.destination}</div>
+                          <div className="text-[10px] text-slate-500">{req.cargo} · {req.container} ({req.weightKg?.toLocaleString()} KG)</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-mono font-black text-slate-900">{req.priceFormatted}</div>
+                          <div className="text-[10px] text-slate-500">{req.transitDays}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            req.riskLevel === 'Low' 
+                              ? 'bg-emerald-100 text-emerald-800' 
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {req.riskLevel} Risk
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            req.status === 'BOOKING_CONFIRMED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : req.status === 'REVISION_PENDING_CUSTOMER'
+                              ? 'bg-purple-100 text-purple-800'
+                              : req.status === 'REJECTED'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {req.status}
+                          </span>
+                          {req.bookingReference && (
+                            <div className="text-[10px] font-mono font-bold text-emerald-700 mt-1">
+                              Ref: {req.bookingReference}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => {
+                              setSelectedReq(req)
+                              setIsVerifyModalOpen(true)
+                            }}
+                            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-black shadow-sm transition-all cursor-pointer inline-flex items-center gap-1.5"
+                          >
+                            <CheckSquare className="w-3.5 h-3.5" />
+                            <span>Verify Checklist</span>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -675,84 +856,65 @@ export default function AgentOperationsDashboard() {
             </div>
           )}
 
-          {/* Tab: Customer Directory */}
-          {activeTab === 'customers' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Freight Agent Shipper Directory</h3>
-                  <p className="text-xs text-slate-500">Assigned commercial shippers, tier status, and credit profile.</p>
-                </div>
+          {/* TAB: DOCUMENT REVIEW */}
+          {activeTab === 'document-review' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-slate-900">Shipper Document Verification</h3>
+                <p className="text-xs text-slate-500">Inspect trade documentation, invoices, and customs packing lists</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { name: 'ABC Electronics Pvt Ltd', contact: 'Alex Shipper', email: 'customer@apexgl.com', volume: '14 TEU / month', tier: 'TIER 1 STRATEGIC' },
-                  { name: 'Zenith Chemical Corp', contact: 'Vikram Mehta', email: 'ops@zenithchem.com', volume: '22 TEU / month', tier: 'HAZMAT VERIFIED' },
-                  { name: 'Nordic Imports AB', contact: 'Lars Lindqvist', email: 'contact@nordicimp.se', volume: '8 TEU / month', tier: 'STANDARD CORPORATE' }
-                ].map((c, i) => (
-                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-900">{c.name}</span>
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded">
-                        {c.tier}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {isolatedRequests.flatMap(r => r.documents?.map(doc => ({ ...doc, shipmentId: r.shipmentId, customer: r.customer })) || []).map((doc, idx) => (
+                  <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <FileText className="w-6 h-6 text-blue-600 shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-xs text-slate-900 truncate max-w-[180px]">{doc.name}</h4>
+                          <span className="text-[10px] font-mono text-slate-500">{doc.shipmentId} · {doc.size}</span>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        doc.status === 'Verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {doc.status}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-600">Contact: {c.contact} ({c.email})</div>
-                    <div className="text-[11px] font-mono text-slate-500">Booking Volume: {c.volume}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Tab: Documents Review Desk */}
-          {activeTab === 'documents' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Commercial Shipping Documents Desk</h3>
-                  <p className="text-xs text-slate-500">Bills of Lading, Commercial Invoices & Carrier contracts under review.</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { name: 'Commercial Invoice — SHP-1001', customer: 'ABC Electronics Pvt Ltd', status: 'Approved for Carriage', time: '15m ago' },
-                  { name: 'Packing List — SHP-1002', customer: 'Apex Global Logistics', status: 'Approved for Carriage', time: '1h ago' },
-                  { name: 'Dangerous Goods MSDS — SHP-1005', customer: 'Zenith Chemical Corp', status: 'Customs Officer Verification Required', time: '2h ago' }
-                ].map((d, i) => (
-                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">{d.name}</span>
-                      <span className="text-[11px] text-slate-500">Shipper: {d.customer} · {d.time}</span>
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">Category: <strong>{doc.type}</strong></span>
+                      <button 
+                        onClick={() => showToast(`Document ${doc.name} verified and stamped.`)}
+                        className="text-blue-600 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Mark Verified</span>
+                      </button>
                     </div>
-                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-bold">
-                      {d.status}
-                    </span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Tab: Agent Operational Notifications */}
+          {/* TAB: NOTIFICATIONS */}
           {activeTab === 'notifications' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Operational Desk Broadcasts</h3>
-                  <p className="text-xs text-slate-500">Live system events and dispatch confirmations.</p>
-                </div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-slate-900">Workflow Notifications</h3>
+                <p className="text-xs text-slate-500">Real-time alerts for customer quote selections and revision responses</p>
               </div>
+
               <div className="space-y-3">
-                {[
-                  { title: 'New Quote Request Submitted: SHP-1001', time: 'Just now', note: '5-Agent multi-verification complete. Awaiting commercial sign-off.' },
-                  { title: 'Carrier Bunker Surcharge Update', time: '1h ago', note: 'Maersk BAF adjusted +1.5% across Asia-Europe routes.' },
-                  { title: 'Quote QT-2026-00930 Accepted by Shipper', time: '3h ago', note: 'ABC Electronics accepted quote terms. Shipment status set to Confirmed.' }
-                ].map((n, i) => (
-                  <div key={i} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-start justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">{n.title}</span>
-                      <span className="text-[11px] text-slate-600 mt-0.5">{n.note}</span>
+                {notifications.map(n => (
+                  <div key={n.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-start justify-between">
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                        <Bell className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{n.title}</span>
+                      </div>
+                      <p className="text-xs text-slate-600">{n.desc}</p>
                     </div>
                     <span className="text-[10px] font-mono text-slate-400">{n.time}</span>
                   </div>
@@ -760,234 +922,340 @@ export default function AgentOperationsDashboard() {
               </div>
             </div>
           )}
+        </main>
+      </div>
 
-          {/* Tab: Agent Profile */}
-          {activeTab === 'profile' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {/* 9-POINT VERIFICATION MODAL (Section 5 of Specification) */}
+      <AnimatePresence>
+        {isVerifyModalOpen && selectedReq && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Freight Agent Desk Profile</h3>
-                  <p className="text-xs text-slate-500">Commercial agent license details and margin discretionary limits.</p>
-                </div>
-                <span className="px-3 py-1 bg-amber-50 text-amber-800 font-bold text-xs rounded-full border border-amber-200">
-                  Licensed Freight Broker
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Broker Full Name</span>
-                  <div className="text-sm font-black text-slate-900">{userName}</div>
-                  <span className="text-xs text-slate-500">Senior Commercial Quote Reviewer</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">License / ID</span>
-                  <div className="text-sm font-black font-mono text-slate-900">FMC-OTI-029481 / MTO-IND-492</div>
-                  <span className="text-xs text-emerald-600 font-semibold">Authorized Signatory</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Discretionary Price Limit</span>
-                  <div className="text-sm font-black text-slate-900">Up to ₹50,00,000 per Quotation</div>
-                  <span className="text-xs text-slate-500">Audit Logging Required for all modifications</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned Hub Operations</span>
-                  <div className="text-sm font-black text-slate-900">JNPT (INNSA), Chennai (INMAA), Mundra (INMUN)</div>
-                  <span className="text-xs text-slate-500">Indian Subcontinent & Global Outbound</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Main Review Desk (Overview & Tab Default) */}
-          {(activeTab === 'overview' || activeTab === 'shipment-requests' || activeTab === 'quote-requests' || activeTab === 'quote-review' || !['pricing-analysis', 'risk-analysis', 'generated-quotes', 'customers', 'documents', 'notifications', 'profile'].includes(activeTab)) && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                    Shipment Requests & Quote Validation Queue
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Human review step (Page 4 Step 10). Modify prices with audit justification and dispatch finalized quotes.
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-black text-blue-600">{selectedReq.shipmentId}</span>
+                    <span className="text-slate-300">·</span>
+                    <h3 className="text-base font-black text-slate-900">9-Point Verification Checklist</h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {selectedReq.origin} ➔ {selectedReq.destination} ({selectedReq.customer})
                   </p>
                 </div>
-                <span className="text-xs font-bold text-slate-500 font-mono">
-                  {filteredQuotes.length} Enquiries in Queue
-                </span>
+                <button
+                  onClick={() => setIsVerifyModalOpen(false)}
+                  className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <div className="space-y-4">
-                {filteredQuotes.map((q) => {
-                  const isSent = q.status === 'SENT' || q.status === 'ACCEPTED' || (q.agentApproved && q.customsApproved)
-                  const isCustomsPending = q.status === 'PENDING_CUSTOMS_APPROVAL' || (q.agentApproved && !q.customsApproved)
-                  const isPending = q.status === 'PENDING_REVIEW' || (!q.agentApproved && !isSent && !isCustomsPending)
+              {/* Commercial Summary Banner */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs">
+                <div>
+                  <span className="text-slate-500 block text-[11px]">Selected Quote Rate</span>
+                  <span className="font-mono font-black text-lg text-slate-900">{selectedReq.priceFormatted}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px]">Cargo & Container</span>
+                  <strong className="text-slate-800">{selectedReq.cargo} ({selectedReq.container})</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px]">Gross Weight</span>
+                  <strong className="text-slate-800">{selectedReq.weightKg?.toLocaleString()} KG</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px]">Transit Schedule</span>
+                  <strong className="text-blue-600">{selectedReq.transitDays}</strong>
+                </div>
+              </div>
 
+              {/* The 9 Checklist Items (PDF Section 5) */}
+              <div className="space-y-2.5">
+                <h4 className="text-xs font-black uppercase text-slate-500 tracking-wider">
+                  Operational & Commercial Verification Items:
+                </h4>
+
+                {[
+                  { key: 'shipment', title: '1. Shipment Context', desc: 'Origin, destination, cargo classification, date validity' },
+                  { key: 'cargo', title: '2. Cargo Specifications', desc: 'Weight, volume, hazardous/reefer handling acceptance' },
+                  { key: 'capacity', title: '3. Capacity Allocation', desc: 'Container/vehicle space available on planned vessel' },
+                  { key: 'route', title: '4. Route Feasibility', desc: 'Operational corridor approved, no embargo or blockade' },
+                  { key: 'schedule', title: '5. Pickup & ETA Schedule', desc: 'Pickup cutoff and target arrival dates confirmed' },
+                  { key: 'documents', title: '6. Required Documents', desc: 'Commercial invoice, packing list, customs readiness' },
+                  { key: 'commercial', title: '7. Commercial Validation', desc: 'Base freight, bunker fuel surcharge (BAF), terminal handling' },
+                  { key: 'risk_context', title: '8. AI Risk Context (M3)', desc: 'Weather storm alerts, port congestion, customs checks accepted' },
+                  { key: 'quote_validity', title: '9. Quote Expiry Date', desc: 'Quote selection submitted within 7-day validity window' }
+                ].map(item => {
+                  const isChecked = checklistState[item.key]
                   return (
-                    <div
-                      key={q.id}
-                      className={`bg-white border rounded-3xl p-5 sm:p-6 shadow-sm transition-all ${
-                        q.shipmentId === 'SHP-1001' ? 'border-amber-300 ring-2 ring-amber-500/10' : 'border-slate-200'
+                    <div 
+                      key={item.key}
+                      onClick={() => setChecklistState(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                      className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        isChecked ? 'bg-emerald-50/60 border-emerald-300' : 'bg-slate-50 border-slate-200'
                       }`}
                     >
-                      {/* Top Row */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-black text-xs border border-amber-200">
-                            <Truck className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-black text-slate-900">{q.id}</span>
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[10px] font-mono font-bold">
-                                {q.shipmentId}
-                              </span>
-                              {q.shipmentId === 'SHP-1001' && (
-                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold">
-                                  Page 9 Test Shipment
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-xs text-slate-500">
-                              Customer: <strong className="text-slate-800">{q.customer}</strong> ({q.customerEmail})
-                            </span>
-                          </div>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center ${
+                          isChecked ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white'
+                        }`}>
+                          {isChecked && <Check className="w-3.5 h-3.5" />}
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
-                            isSent
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : isCustomsPending
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                            {isSent ? 'APPROVED & ISSUED' : isCustomsPending ? 'IN CUSTOMS REVIEW' : 'PENDING AGENT REVIEW'}
-                          </span>
+                        <div>
+                          <div className="font-bold text-xs text-slate-900">{item.title}</div>
+                          <div className="text-[11px] text-slate-500">{item.desc}</div>
                         </div>
                       </div>
-
-                      {/* Route & Cargo Specs */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-4 text-xs">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ROUTE CORRIDOR</span>
-                          <span className="font-bold text-slate-800 block mt-0.5">{q.origin}</span>
-                          <span className="text-slate-500 text-[11px]">→ {q.destination}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">COMMODITY & CONTAINER</span>
-                          <span className="font-bold text-slate-800 block mt-0.5">{q.cargo}</span>
-                          <span className="text-slate-500 text-[11px]">{q.container} · {q.mode}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">DISTANCE & ETA</span>
-                          <span className="font-bold text-slate-800 block mt-0.5">{q.distanceKm?.toLocaleString()} KM</span>
-                          <span className="text-slate-500 text-[11px]">{q.transitDays}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">FINAL APPROVED PRICE</span>
-                          <span className="text-lg font-black text-slate-900 block mt-0.5">
-                            ₹{q.finalPrice?.toLocaleString()}
-                          </span>
-                          <span className="text-slate-400 text-[10px]">{q.carrier}</span>
-                        </div>
-                      </div>
-
-                      {/* AI Pricing & Risk Breakdown Matrix (Page 9 Output Alignment) */}
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 mb-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
-                        <div>
-                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Rule-Based Price (M1)</span>
-                          <span className="font-mono font-bold text-slate-700">₹{q.rulePrice?.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">AI ML Predicted (M2)</span>
-                          <span className="font-mono font-bold text-indigo-600">₹{q.aiPrice?.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Recommended Rate</span>
-                          <span className="font-mono font-bold text-emerald-600">₹{q.recommendedPrice?.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Weather & Customs</span>
-                          <span className="text-slate-700 font-semibold">{q.weatherRisk}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Composite Risk (M3)</span>
-                          <span className={`font-bold font-mono ${
-                            q.overallRisk === 'HIGH' ? 'text-rose-600' : q.overallRisk === 'MEDIUM' ? 'text-amber-600' : 'text-emerald-600'
-                          }`}>
-                            {q.overallRisk}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Audit History (Scenario 9 Audit Trail) */}
-                      {q.auditHistory && q.auditHistory.length > 0 && (
-                        <div className="mb-4 p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl text-[11px] space-y-1">
-                          <span className="font-bold text-amber-900 block text-[10px] uppercase tracking-wider">Audit Trail (Scenario 9):</span>
-                          {q.auditHistory.map((ah, i) => (
-                            <div key={i} className="flex items-center justify-between text-slate-600">
-                              <span><strong>{ah.action}</strong>: {ah.note}</span>
-                              <span className="font-mono text-[10px] text-slate-400 ml-2">{ah.time}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Agent Action Buttons (Scenario 9 & 10) */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <div className="text-xs text-slate-500">
-                          {isSent ? (
-                            <span className="text-emerald-700 font-bold flex items-center gap-1">
-                              <CheckCircle2 className="w-4 h-4" /> Quote approved by Agent & Customs Officer. Delivered to client portal.
-                            </span>
-                          ) : isCustomsPending ? (
-                            <span className="text-indigo-700 font-bold flex items-center gap-1">
-                              <Clock className="w-4 h-4" /> Agent approved. Forwarded to Customs Officer for compliance clearance.
-                            </span>
-                          ) : (
-                            <span className="text-amber-700 font-medium">
-                              Pending agent approval. Validate pricing and forward to Customs Officer.
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleOpenModify(q)}
-                            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Modify Price (Scenario 9)</span>
-                          </button>
-
-                          {isPending && (
-                            <button
-                              onClick={() => handleApproveAndSend(q.id)}
-                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer"
-                            >
-                              <Send className="w-3.5 h-3.5" />
-                              <span>Approve & Forward to Customs Officer</span>
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => downloadQuotePDF(q)}
-                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>PDF</span>
-                          </button>
-                        </div>
-                      </div>
-
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        isChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {isChecked ? 'Verified' : 'Flagged'}
+                      </span>
                     </div>
                   )
                 })}
               </div>
-            </div>
-          )}
 
-        </main>
-      </div>
+              {/* 4 Agent Actions (Approve, Modify, Reject, Request Info) */}
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <h4 className="text-xs font-black uppercase text-slate-500 tracking-wider">
+                  Agent Verification Decision:
+                </h4>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <button
+                    onClick={() => handleApprove(selectedReq)}
+                    className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-600/20 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Approve & Book</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsModifyModalOpen(true)}
+                    className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md shadow-blue-600/20 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Modify Quote</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsRejectModalOpen(true)}
+                    className="py-3 px-3 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-md shadow-rose-600/20 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Reject Request</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsRequestInfoModalOpen(true)}
+                    className="py-3 px-3 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-xl shadow-md flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    <span>Request Info</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODIFY QUOTE MODAL (Scenario 80,000 -> 82,500 Fuel surcharge increase) */}
+      <AnimatePresence>
+        {isModifyModalOpen && selectedReq && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Modify Commercial Terms</h3>
+                  <p className="text-[11px] text-slate-500">Every change requires customer approval & logged reason</p>
+                </div>
+                <button onClick={() => setIsModifyModalOpen(false)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Original Selected Price:</span>
+                  <strong className="font-mono text-slate-900">{selectedReq.priceFormatted}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Shipper:</span>
+                  <strong className="text-slate-800">{selectedReq.customer}</strong>
+                </div>
+              </div>
+
+              <form onSubmit={handleModifySubmit} className="space-y-3.5">
+                <div>
+                  <label className="block text-slate-700 font-semibold text-xs mb-1">
+                    Revised Total Price (INR)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={modifyForm.newPrice}
+                    onChange={e => setModifyForm({ ...modifyForm, newPrice: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Test scenario: ₹80,000 → ₹82,500</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold text-xs mb-1">
+                    Mandatory Operational Reason
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    placeholder="e.g. Fuel surcharge increase, peak season adjustment, container shortage"
+                    value={modifyForm.reason}
+                    onChange={e => setModifyForm({ ...modifyForm, reason: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModifyModalOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Dispatch Revision to Customer
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* REJECT REQUEST MODAL */}
+      <AnimatePresence>
+        {isRejectModalOpen && selectedReq && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-base font-black text-slate-900">Reject Shipment Request</h3>
+                <button onClick={() => setIsRejectModalOpen(false)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRejectSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-slate-700 font-semibold text-xs mb-1">
+                    Rejection Reason
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={rejectReason}
+                    onChange={e => setRejectReason(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-rose-600"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Customer will be notified and prompted to select an alternate company quote.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRejectModalOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Confirm Rejection
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* REQUEST INFO MODAL */}
+      <AnimatePresence>
+        {isRequestInfoModalOpen && selectedReq && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-base font-black text-slate-900">Request Missing Information</h3>
+                <button onClick={() => setIsRequestInfoModalOpen(false)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRequestInfoSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-slate-700 font-semibold text-xs mb-1">
+                    Required Details or Documents
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={requestInfoNotes}
+                    onChange={e => setRequestInfoNotes(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Status will transition to AWAITING_CUSTOMER_INFO until documents are uploaded.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRequestInfoModalOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Send Info Request
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -439,6 +439,68 @@ export default function NewShipmentEnquiry() {
       let adminList = storedAdmin ? JSON.parse(storedAdmin) : []
       adminList.unshift(newQuote)
       localStorage.setItem('adminAllQuotes', JSON.stringify(adminList))
+
+      // 5. Milestone 4: Save to companyShipmentRequests (appears in Company Manager & Company Agent dashboards)
+      const baseCost = estimate.cost || 80000
+      const companyShipment = {
+        id: shipmentId,
+        quoteId: quoteId,
+        companyId: 'CMP-102', // GlobalSea Freight LLC
+        companyName: 'GlobalSea Freight LLC',
+        customer: formData.companyName || 'ABC Electronics Pvt Ltd',
+        customerEmail: formData.contactEmail || 'customer@apexgl.com',
+        origin: formData.origin,
+        destination: formData.destination,
+        cargo: `${formData.items?.length || 1} Pkg (${formData.commodity || 'General Cargo'})`,
+        weight: `${(formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 36800).toLocaleString()} kg`,
+        mode: formData.serviceMode,
+        containerType: formData.containerType || '40HC',
+        offeredRate: baseCost,
+        status: 'PENDING_COMPANY_VERIFICATION',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        assignedAgent: 'Elena Rostova (AGT-204)'
+      }
+
+      const storedCompShips = localStorage.getItem('companyShipmentRequests')
+      let compShipsList = storedCompShips ? JSON.parse(storedCompShips) : []
+      compShipsList.unshift(companyShipment)
+      localStorage.setItem('companyShipmentRequests', JSON.stringify(compShipsList))
+
+      // 6. Milestone 4: Save to m4AgentVerificationQueue for Company Agent 9-point verification
+      const m4VerificationItem = {
+        id: `M4-VR-${Math.floor(1000 + Math.random() * 9000)}`,
+        shipmentId: shipmentId,
+        quoteId: quoteId,
+        companyId: 'CMP-102',
+        companyName: 'GlobalSea Freight LLC',
+        customer: formData.companyName || 'ABC Electronics Pvt Ltd',
+        origin: formData.origin,
+        destination: formData.destination,
+        cargo: `${formData.items?.length || 1} Pkg (${formData.commodity || 'General Cargo'})`,
+        weight: `${(formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 36800).toLocaleString()} kg`,
+        mode: formData.serviceMode,
+        containerType: formData.containerType || '40HC',
+        basePrice: baseCost,
+        currentPrice: baseCost,
+        status: 'PENDING_VERIFICATION',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        checklist: {
+          rateAccuracy: false,
+          carrierCapacity: false,
+          routeFeasibility: false,
+          transitFeasibility: false,
+          customsCompliance: false,
+          hazardousCargoCheck: false,
+          bafSurchargeCheck: false,
+          portTerminalClearance: false,
+          documentationReadiness: false
+        }
+      }
+
+      const storedM4Queue = localStorage.getItem('m4AgentVerificationQueue')
+      let m4QueueList = storedM4Queue ? JSON.parse(storedM4Queue) : []
+      m4QueueList.unshift(m4VerificationItem)
+      localStorage.setItem('m4AgentVerificationQueue', JSON.stringify(m4QueueList))
     } catch (err) {
       console.error('Error saving synchronized quote:', err)
     }

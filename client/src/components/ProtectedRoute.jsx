@@ -5,7 +5,8 @@ import { ShieldAlert, ArrowLeft, LogOut } from 'lucide-react'
 export function getAuthorizedDashboardPath(role) {
   const normalized = (role || '').toLowerCase()
   if (normalized === 'customer' || normalized === 'user') return '/user/dashboard'
-  if (normalized === 'freight_agent' || normalized === 'agent' || normalized === 'agent_operator' || normalized === 'broker') return '/agents/dashboard'
+  if (normalized === 'company_manager' || normalized === 'company') return '/company/manager/dashboard'
+  if (normalized === 'company_agent' || normalized === 'freight_agent' || normalized === 'agent' || normalized === 'agent_operator' || normalized === 'broker') return '/agents/dashboard'
   if (normalized === 'customs_officer' || normalized === 'customs') return '/customs/dashboard'
   if (normalized === 'admin') return '/admin/dashboard'
   return '/dashboard'
@@ -14,6 +15,8 @@ export function getAuthorizedDashboardPath(role) {
 export function getRoleDisplayName(role) {
   const normalized = (role || '').toLowerCase()
   if (normalized === 'customer' || normalized === 'user') return 'Customer'
+  if (normalized === 'company_manager' || normalized === 'company') return 'Company Manager'
+  if (normalized === 'company_agent') return 'Company Agent'
   if (normalized === 'freight_agent' || normalized === 'agent' || normalized === 'agent_operator' || normalized === 'broker') return 'Freight Agent'
   if (normalized === 'customs_officer' || normalized === 'customs') return 'Customs Officer'
   if (normalized === 'admin') return 'System Administrator'

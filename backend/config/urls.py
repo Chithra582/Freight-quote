@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/v1/routes/', include('apps.routing.urls')),
     path('api/v1/pricing/', include('apps.pricing.urls')),
     path('api/v1/quotes/', include('apps.quotes.urls')),
+    path('api/v1/multi-agent/', include('apps.multiagent.urls')),
     path('api/v1/mongodb/status/', __import__('apps.core.views', fromlist=['mongodb_status_view']).mongodb_status_view, name='mongodb-status'),
 ]
 

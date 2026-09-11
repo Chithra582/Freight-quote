@@ -157,3 +157,18 @@ class QuoteDocument(models.Model):
 
     def __str__(self):
         return f"{self.document_type}: {self.file_name}"
+
+
+# Milestone 4 Models Export
+from apps.quotes.m4_models import (
+    FreightCompany,
+    CompanyAgentProfile,
+    CompanyQuoteOption,
+    QuoteSelection,
+    VerificationRequest,
+    QuoteRevision,
+    Booking,
+    M4StatusHistory,
+    M4Notification,
+)
+

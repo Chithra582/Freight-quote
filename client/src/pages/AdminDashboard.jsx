@@ -104,6 +104,70 @@ const INITIAL_USERS = [
   { id: 'USR-104', fullName: 'John Administrator', email: 'admin@freightiq.com', role: 'ADMIN', password: 'password123', companyName: 'FreightIQ Platform Core', phone: '+91 99999 00000', status: 'Active', created: 'Jul 15, 2026' },
 ]
 
+const INITIAL_COMPANIES = [
+  {
+    id: 'CMP-101',
+    companyId: 'CMP-101',
+    name: 'OceanLink Logistics',
+    legalName: 'OceanLink Maritime Ltd',
+    licenseNo: 'LIC-2026-1102',
+    modes: ['Ocean Freight', 'Air Freight', 'Road Transport'],
+    contactEmail: 'ops@oceanlink.com',
+    phone: '+91 98200 11223',
+    status: 'APPROVED',
+    isEligible: true,
+    rating: 4.9,
+    agentsCount: 4,
+    registeredDate: 'Aug 10, 2026'
+  },
+  {
+    id: 'CMP-102',
+    companyId: 'CMP-102',
+    name: 'GlobalSea Freight',
+    legalName: 'GlobalSea Forwarding LLC',
+    licenseNo: 'LIC-2026-8941',
+    modes: ['Ocean Freight', 'Air Freight'],
+    contactEmail: 'manager@globalsea.com',
+    phone: '+91 98401 23456',
+    status: 'APPROVED',
+    isEligible: true,
+    rating: 4.7,
+    agentsCount: 2,
+    registeredDate: 'Aug 15, 2026'
+  },
+  {
+    id: 'CMP-103',
+    companyId: 'CMP-103',
+    name: 'FastRoute Cargo',
+    legalName: 'FastRoute Express Intermodal',
+    licenseNo: 'LIC-2026-4409',
+    modes: ['Ocean Freight', 'Road Transport', 'Rail Freight'],
+    contactEmail: 'support@fastroute.com',
+    phone: '+91 98999 55667',
+    status: 'APPROVED',
+    isEligible: true,
+    rating: 4.8,
+    agentsCount: 3,
+    registeredDate: 'Aug 18, 2026'
+  },
+  {
+    id: 'CMP-104',
+    companyId: 'CMP-104',
+    name: 'Pacific Horizon Lines',
+    legalName: 'Pacific Horizon Shipping Co.',
+    licenseNo: 'LIC-2026-7712',
+    modes: ['Ocean Freight'],
+    contactEmail: 'contact@pacifichorizon.com',
+    phone: '+91 98777 88990',
+    status: 'PENDING_VERIFICATION',
+    isEligible: false,
+    rating: 4.5,
+    agentsCount: 1,
+    registeredDate: 'Sep 08, 2026'
+  }
+]
+
+
 const INITIAL_MARGIN_POLICIES = [
   { id: 'pol-1', scope: 'CUSTOMER_LANE', scopeKey: 'Sharma Textiles | INNSA-AEJEA', floorPct: 9.0, targetPct: 12.0, stretchPct: 16.0, priority: 1, active: true },
   { id: 'pol-2', scope: 'CUSTOMER_TIER', scopeKey: 'STRATEGIC Clients', floorPct: 10.0, targetPct: 13.0, stretchPct: 17.0, priority: 2, active: true },
@@ -160,6 +224,106 @@ export default function AdminDashboard() {
 
   // Approval Rules State
   const [approvalRules, setApprovalRules] = useState(INITIAL_APPROVAL_RULES)
+
+  // Milestone 4: Freight Companies Verification & Eligibility State
+  const [companies, setCompanies] = useState(() => {
+    try {
+      const stored = localStorage.getItem('freightCompaniesList')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    return INITIAL_COMPANIES
+  })
+  const [companySearch, setCompanySearch] = useState('')
+  const [companyFilter, setCompanyFilter] = useState('ALL')
+  const [adminToast, setAdminToast] = useState('')
+
+  // Milestone 4: End-to-End Workflow Observability State
+  const [workflowQueue, setWorkflowQueue] = useState(() => {
+    try {
+      const stored = localStorage.getItem('m4AgentVerificationQueue')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    return [
+      {
+        id: 'REQ-2026-881',
+        shipmentId: 'SHP-2026-904',
+        quoteId: 'QT-2026-1002',
+        customerName: 'Apex Global Logistics',
+        origin: 'INMAA (Chennai)',
+        destination: 'NLRTM (Rotterdam)',
+        mode: 'Ocean Freight',
+        companyId: 'CMP-102',
+        companyName: 'GlobalSea Freight',
+        assignedAgentEmail: 'agent@globalsea.com',
+        price: '₹1,18,000',
+        status: 'PENDING_COMPANY_VERIFICATION',
+        date: '2026-09-11',
+        checklistScore: '7/9 Checks Complete'
+      },
+      {
+        id: 'REQ-2026-882',
+        shipmentId: 'SHP-2026-905',
+        quoteId: 'QT-2026-1001',
+        customerName: 'ABC Electronics Pvt Ltd',
+        origin: 'INNSA (Mumbai)',
+        destination: 'AEJEA (Jebel Ali)',
+        mode: 'Ocean Freight',
+        companyId: 'CMP-102',
+        companyName: 'GlobalSea Freight',
+        assignedAgentEmail: 'agent@globalsea.com',
+        price: '₹86,000',
+        status: 'PENDING_CUSTOMS_APPROVAL',
+        date: '2026-09-11',
+        operationalApproval: { verifiedAt: '2026-09-11 14:30', verifiedBy: 'agent@globalsea.com' }
+      },
+      {
+        id: 'REQ-2026-883',
+        shipmentId: 'SHP-2026-906',
+        quoteId: 'QT-2026-1003',
+        customerName: 'Zenith Pharma Exports',
+        origin: 'DEL (Delhi)',
+        destination: 'LHR (London Heathrow)',
+        mode: 'Air Freight',
+        companyId: 'CMP-103',
+        companyName: 'FastRoute Cargo',
+        assignedAgentEmail: 'support@fastroute.com',
+        price: '₹2,55,000',
+        status: 'VERIFIED_PENDING_CUSTOMER',
+        date: '2026-09-11',
+        operationalApproval: { verifiedAt: '2026-09-11 11:20', verifiedBy: 'support@fastroute.com' },
+        customsApproval: { clearedAt: '2026-09-11 13:45', customsOfficer: 'officer@icegate.gov.in', clearanceId: 'CUS-2026-9901' }
+      },
+      {
+        id: 'REQ-2026-884',
+        shipmentId: 'SHP-2026-907',
+        quoteId: 'QT-2026-1004',
+        customerName: 'Reliance Chem International',
+        origin: 'INMUN (Mundra)',
+        destination: 'SGSIN (Singapore)',
+        mode: 'Ocean Freight',
+        companyId: 'CMP-101',
+        companyName: 'OceanLink Logistics',
+        assignedAgentEmail: 'operations@oceanlink.com',
+        price: '₹98,500',
+        status: 'BOOKING_CONFIRMED',
+        date: '2026-09-11',
+        operationalApproval: { verifiedAt: '2026-09-10 16:00', verifiedBy: 'operations@oceanlink.com' },
+        customsApproval: { clearedAt: '2026-09-10 18:30', customsOfficer: 'officer@icegate.gov.in', clearanceId: 'CUS-2026-8812' },
+        bookingId: 'BK-2026-99214'
+      }
+    ]
+  })
+  const [workflowFilter, setWorkflowFilter] = useState('ALL')
+  const [workflowCompanyFilter, setWorkflowCompanyFilter] = useState('ALL')
+  const [workflowSearch, setWorkflowSearch] = useState('')
+  const [selectedWorkflowItem, setSelectedWorkflowItem] = useState(null)
+
 
   // System Quotes State
   const [allQuotes, setAllQuotes] = useState(() => {
@@ -247,6 +411,21 @@ export default function AdminDashboard() {
       }
     } catch {}
 
+    // Load Milestone 4 Workflow Queue
+    try {
+      const storedM4 = localStorage.getItem('m4AgentVerificationQueue')
+      if (storedM4) {
+        const parsed = JSON.parse(storedM4)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setWorkflowQueue(prev => {
+            const parsedIds = new Set(parsed.map(item => item.id))
+            const remaining = prev.filter(item => !parsedIds.has(item.id))
+            return [...parsed, ...remaining]
+          })
+        }
+      }
+    } catch {}
+
     // Fetch live rate config
     fetch(`${API_BASE_URL}/api/v1/pricing/rate-config/`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -260,6 +439,84 @@ export default function AdminDashboard() {
       })
       .catch(() => {})
   }, [navigate])
+
+  useEffect(() => {
+    localStorage.setItem('freightCompaniesList', JSON.stringify(companies))
+  }, [companies])
+
+  const showAdminToast = (msg) => {
+    setAdminToast(msg)
+    setTimeout(() => setAdminToast(''), 4000)
+  }
+
+  // Milestone 4: Admin - Verify - Approve Company
+  const handleApproveCompany = async (companyId) => {
+    const target = companies.find(c => c.companyId === companyId)
+    if (!target) return
+
+    // Call backend API if company has a uuid id
+    try {
+      if (target.id && target.id.length > 20) {
+        await fetch(`${API_BASE_URL}/api/v1/quotes/m4/companies/${target.id}/approval/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'APPROVE' })
+        })
+      }
+    } catch {}
+
+    const updated = companies.map(c => {
+      if (c.companyId === companyId) {
+        return {
+          ...c,
+          status: 'APPROVED',
+          isEligible: true,
+          verifiedAt: 'Just now'
+        }
+      }
+      return c
+    })
+    setCompanies(updated)
+    showAdminToast(`Company ${target.name} (${companyId}) VERIFIED & APPROVED! It is now ELIGIBLE and will be recommended in customer quote generation.`)
+  }
+
+  const handleRejectCompany = async (companyId) => {
+    const target = companies.find(c => c.companyId === companyId)
+    if (!target) return
+
+    try {
+      if (target.id && target.id.length > 20) {
+        await fetch(`${API_BASE_URL}/api/v1/quotes/m4/companies/${target.id}/approval/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'REJECT' })
+        })
+      }
+    } catch {}
+
+    const updated = companies.map(c => {
+      if (c.companyId === companyId) {
+        return { ...c, status: 'REJECTED', isEligible: false }
+      }
+      return c
+    })
+    setCompanies(updated)
+    showAdminToast(`Company ${target.name} (${companyId}) registration REJECTED.`)
+  }
+
+  const handleToggleEligibility = (companyId) => {
+    const updated = companies.map(c => {
+      if (c.companyId === companyId) {
+        const next = !c.isEligible
+        return { ...c, isEligible: next }
+      }
+      return c
+    })
+    setCompanies(updated)
+    const comp = updated.find(c => c.companyId === companyId)
+    showAdminToast(`Company ${companyId} eligibility updated: ${comp.isEligible ? 'ELIGIBLE (Active in recommendations)' : 'INELIGIBLE (Hidden from customers)'}`)
+  }
+
 
   const handleSaveRateConfig = async (e) => {
     if (e) e.preventDefault()
@@ -512,13 +769,38 @@ export default function AdminDashboard() {
                 <span>Users ({users.length})</span>
               </Link>
               <Link
+                to="/admin/dashboard?tab=companies"
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'companies' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <Building className="w-3.5 h-3.5" />
+                <span>Companies ({companies.length})</span>
+              </Link>
+              <Link
+                to="/admin/dashboard?tab=workflow-monitor"
+                className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
+                  currentTab === 'workflow-monitor' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Workflow Lifecycle ({workflowQueue.length})</span>
+              </Link>
+              <Link
+                to="/dashboard/multi-agent"
+                className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Multi-Agent Studio</span>
+              </Link>
+              <Link
                 to="/admin/dashboard?tab=ai-agent-monitor"
                 className={`px-3.5 py-2.5 rounded-xl font-bold text-xs shadow flex items-center gap-2 transition-all cursor-pointer ${
                   currentTab === 'ai-agent-monitor' ? 'bg-indigo-600 text-white shadow-indigo-500/25' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200'
                 }`}
               >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>AI Agent Monitor</span>
+                <Terminal className="w-3.5 h-3.5" />
+                <span>AI Agents Health</span>
               </Link>
               <Link
                 to="/admin/dashboard?tab=margin-policy"
@@ -618,6 +900,425 @@ export default function AdminDashboard() {
               color="sky"
             />
           </div>
+
+          {/* Milestone 4 Toast Alert */}
+          {adminToast && (
+            <div className="p-3.5 bg-emerald-600 text-white rounded-2xl shadow-lg flex items-center justify-between text-xs font-bold animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>{adminToast}</span>
+              </div>
+              <button onClick={() => setAdminToast('')} className="p-1 hover:bg-emerald-700 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: MULTI-AGENT & 4-STAGE WORKFLOW LIFECYCLE MONITOR (MILESTONE 4) */}
+          {/* ========================================================================= */}
+          {currentTab === 'workflow-monitor' && (
+            <div className="space-y-6">
+              {/* Top Banner / Pipeline Summary */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl text-white space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-indigo-400" />
+                      <h2 className="text-lg font-black text-white tracking-tight">
+                        End-to-End 4-Stage Approval Workflow & Multi-Agent Monitor
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        {workflowQueue.length} Active Shipments
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Complete visibility into every customer quotation, company agent operational review, customs officer compliance audit, and customer final booking confirmation.
+                    </p>
+                  </div>
+                  <Link
+                    to="/dashboard/multi-agent"
+                    className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-2 shrink-0"
+                  >
+                    <Cpu className="w-4 h-4" />
+                    <span>Launch Multi-Agent Studio</span>
+                  </Link>
+                </div>
+
+                {/* 4-Step Visual Architecture Flow */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-sky-400 uppercase tracking-wider">Step 1</span>
+                      <span className="w-2 h-2 rounded-full bg-sky-400" />
+                    </div>
+                    <div className="text-xs font-bold text-white">Customer Quote Selection</div>
+                    <p className="text-[11px] text-slate-400">Shipper fills lane inquiry & selects AI-recommended carrier route</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">Step 2</span>
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    </div>
+                    <div className="text-xs font-bold text-white">Company Agent Review</div>
+                    <p className="text-[11px] text-slate-400">Dispatched to forwarder agent for 9-point operational & capacity check</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Step 3</span>
+                      <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                    </div>
+                    <div className="text-xs font-bold text-white">Customs Officer Clearance</div>
+                    <p className="text-[11px] text-slate-400">Regulatory audit: HS Code classification, ICEGATE filing & duties</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">Step 4</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    </div>
+                    <div className="text-xs font-bold text-white">Customer Sign-off</div>
+                    <p className="text-[11px] text-slate-400">Customer approves (Generates BK-2026-XXXXX booking) or rejects</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Workflow Table & Filters */}
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {['ALL', 'PENDING_COMPANY_VERIFICATION', 'PENDING_CUSTOMS_APPROVAL', 'VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED', 'CUSTOMER_REJECTED'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setWorkflowFilter(st)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          workflowFilter === st
+                            ? 'bg-slate-900 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {st === 'ALL' ? 'All Requests' :
+                         st === 'PENDING_COMPANY_VERIFICATION' ? '1. Agent Review' :
+                         st === 'PENDING_CUSTOMS_APPROVAL' ? '2. Customs Desk' :
+                         st === 'VERIFIED_PENDING_CUSTOMER' ? '3. Pending Customer' :
+                         st === 'BOOKING_CONFIRMED' ? '4. Confirmed' : 'Rejected'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search shipment, carrier, agent..."
+                        value={workflowSearch}
+                        onChange={e => setWorkflowSearch(e.target.value)}
+                        className="pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 w-56 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3">Inquiry / Quote</th>
+                        <th className="px-4 py-3">Customer & Lane</th>
+                        <th className="px-4 py-3">Forwarder & Assigned Agent</th>
+                        <th className="px-4 py-3">Price / Quoted</th>
+                        <th className="px-4 py-3">Lifecycle Stage</th>
+                        <th className="px-4 py-3 text-right">Observability</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {workflowQueue
+                        .filter(item => {
+                          if (workflowFilter !== 'ALL' && item.status !== workflowFilter) return false
+                          if (workflowSearch) {
+                            const q = workflowSearch.toLowerCase()
+                            const matches = (item.id || '').toLowerCase().includes(q) ||
+                              (item.shipmentId || '').toLowerCase().includes(q) ||
+                              (item.quoteId || '').toLowerCase().includes(q) ||
+                              (item.customerName || '').toLowerCase().includes(q) ||
+                              (item.companyName || '').toLowerCase().includes(q) ||
+                              (item.assignedAgentEmail || '').toLowerCase().includes(q) ||
+                              (item.origin || '').toLowerCase().includes(q) ||
+                              (item.destination || '').toLowerCase().includes(q)
+                            if (!matches) return false
+                          }
+                          return true
+                        })
+                        .map((item, idx) => (
+                          <tr key={item.id || idx} className="hover:bg-slate-50">
+                            <td className="px-4 py-3">
+                              <div className="font-mono font-bold text-indigo-600">{item.id || item.quoteId}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{item.shipmentId || 'SHP-2026'}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="font-bold text-slate-900">{item.customerName || 'Shipper Client'}</div>
+                              <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                <span>{item.origin}</span>
+                                <ArrowRight className="w-3 h-3 text-slate-400" />
+                                <span>{item.destination}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                                <Building className="w-3.5 h-3.5 text-indigo-500" />
+                                <span>{item.companyName || item.carrierName || 'GlobalSea Freight'}</span>
+                                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 rounded text-slate-600">{item.companyId || 'CMP-102'}</span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                {item.assignedAgentEmail || 'agent@globalsea.com'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 font-mono font-bold text-slate-900">
+                              {item.price || (item.totalCost ? `₹${item.totalCost.toLocaleString()}` : '₹86,000')}
+                            </td>
+                            <td className="px-4 py-3">
+                              {item.status === 'PENDING_COMPANY_VERIFICATION' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                  <Clock className="w-3 h-3" /> Step 2: At Forwarder Agent
+                                </span>
+                              )}
+                              {item.status === 'PENDING_CUSTOMS_APPROVAL' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-200">
+                                  <Shield className="w-3 h-3" /> Step 3: At Customs Desk
+                                </span>
+                              )}
+                              {item.status === 'VERIFIED_PENDING_CUSTOMER' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                  <UserCheck className="w-3 h-3" /> Step 4: Pending Customer Sign-off
+                                </span>
+                              )}
+                              {item.status === 'BOOKING_CONFIRMED' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3" /> Confirmed Booking {item.bookingId ? `(${item.bookingId})` : ''}
+                                </span>
+                              )}
+                              {item.status === 'CUSTOMER_REJECTED' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                  <X className="w-3 h-3" /> Customer Rejected
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <button
+                                onClick={() => setSelectedWorkflowItem(item)}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 rounded-xl font-bold text-[11px] transition-all cursor-pointer"
+                              >
+                                View Audit Trail
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: FREIGHT COMPANIES MANAGEMENT & ELIGIBILITY VERIFICATION (MILESTONE 4) */}
+          {/* ========================================================================= */}
+          {currentTab === 'companies' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Building className="w-5 h-5 text-indigo-600" />
+                      <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                        Freight Company Governance & Eligibility Desk
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {companies.length} Registered Companies
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Admin Verification Workflow: Review registered company details and approve eligibility. Only <strong>Approved & Eligible</strong> companies appear in customer quote recommendations.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search company or ID..."
+                        value={companySearch}
+                        onChange={e => setCompanySearch(e.target.value)}
+                        className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-600 w-48 sm:w-60"
+                      />
+                    </div>
+
+                    <select
+                      value={companyFilter}
+                      onChange={e => setCompanyFilter(e.target.value)}
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-600"
+                    >
+                      <option value="ALL">All Companies</option>
+                      <option value="PENDING_VERIFICATION">Pending Approval</option>
+                      <option value="APPROVED">Approved / Eligible</option>
+                      <option value="REJECTED">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Companies Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="bg-slate-50 text-[11px] font-extrabold uppercase text-slate-500 border-y border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Company & ID</th>
+                        <th className="py-3 px-4">Contact & License</th>
+                        <th className="py-3 px-4">Transport Modes</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Customer Recommendation</th>
+                        <th className="py-3 px-4 text-right">Admin Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {companies
+                        .filter(c => {
+                          const matchesSearch = 
+                            c.name.toLowerCase().includes(companySearch.toLowerCase()) ||
+                            c.companyId.toLowerCase().includes(companySearch.toLowerCase()) ||
+                            c.contactEmail.toLowerCase().includes(companySearch.toLowerCase())
+                          if (companyFilter === 'ALL') return matchesSearch
+                          return matchesSearch && c.status === companyFilter
+                        })
+                        .map(comp => (
+                          <tr key={comp.companyId} className="hover:bg-slate-50/60 transition-all">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
+                                  <Building className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <div className="font-bold text-slate-900 text-xs">{comp.name}</div>
+                                  <div className="text-[10px] font-mono text-indigo-600 font-extrabold">
+                                    ID: {comp.companyId} · Rating: {comp.rating}★
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="font-semibold text-slate-800">{comp.contactEmail}</div>
+                              <div className="text-[10px] font-mono text-slate-400">{comp.licenseNo || 'LIC-2026-REG'}</div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex flex-wrap gap-1">
+                                {(Array.isArray(comp.modes) ? comp.modes : ['Ocean', 'Air']).map((m, i) => (
+                                  <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200">
+                                    {m}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                comp.status === 'APPROVED'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : comp.status === 'REJECTED'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {comp.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {comp.isEligible ? (
+                                <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-black inline-flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Eligible · Shown in Customer Quotes</span>
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-black inline-flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>Ineligible · Hidden from Shippers</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="inline-flex items-center gap-1.5">
+                                {comp.status === 'PENDING_VERIFICATION' ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleApproveCompany(comp.companyId)}
+                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-sm transition-all cursor-pointer flex items-center gap-1"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Verify & Approve</span>
+                                    </button>
+                                    <button
+                                      onClick={() => handleRejectCompany(comp.companyId)}
+                                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleEligibility(comp.companyId)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                                      comp.isEligible 
+                                        ? 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+                                        : 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+                                    }`}
+                                  >
+                                    {comp.isEligible ? 'Revoke Eligibility' : 'Enable Eligibility'}
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* M4 Platform Monitoring Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-slate-500">Selected Quotes Monitor</span>
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 font-mono">14 Active</div>
+                  <p className="text-xs text-slate-500">
+                    Customer quote selections actively locked in PENDING_COMPANY_VERIFICATION across forwarders.
+                  </p>
+                </div>
+
+                <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-slate-500">Booking Requests Tracker</span>
+                    <Truck className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 font-mono">94.2% Confirmed</div>
+                  <p className="text-xs text-slate-500">
+                    High conversion rate from agent approval directly into confirmed booking references (BK-2026-XXXXX).
+                  </p>
+                </div>
+
+                <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-slate-500">Company SLA Response</span>
+                    <Clock className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 font-mono">42 mins avg</div>
+                  <p className="text-xs text-slate-500">
+                    Fast operational turn-around time across GlobalSea, OceanLink, and FastRoute Cargo verification desks.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ========================================================================= */}
           {/* TAB 1: USER MANAGEMENT CONSOLE */}
@@ -1592,7 +2293,7 @@ export default function AdminDashboard() {
           {/* ========================================================================= */}
           {/* TAB 5: OVERVIEW (TARIFF RULES & ML PERFORMANCE) */}
           {/* ========================================================================= */}
-          {(currentTab === 'overview' || !['users', 'customers', 'freight-agents', 'customs-officers', 'roles-permissions', 'all-quotes', 'ai-pricing-monitor', 'ai-agent-monitor', 'margin-policy', 'approval-rules', 'reports', 'notifications', 'settings', 'audit-logs', 'feedback'].includes(currentTab)) && (
+          {(currentTab === 'overview' || !['users', 'customers', 'freight-agents', 'customs-officers', 'roles-permissions', 'all-quotes', 'ai-pricing-monitor', 'ai-agent-monitor', 'margin-policy', 'approval-rules', 'reports', 'notifications', 'settings', 'audit-logs', 'feedback', 'companies', 'workflow-monitor'].includes(currentTab)) && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -1975,6 +2676,191 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ========================================================================= */}
+      {/* MODAL: WORKFLOW AUDIT TRAIL & OBSERVABILITY */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {selectedWorkflowItem && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-base font-black text-slate-900">
+                      Audit Trail: {selectedWorkflowItem.id || selectedWorkflowItem.quoteId}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    End-to-End Lifecycle Verification & Clearance Record
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedWorkflowItem(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Lane & Shipment Metadata */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Shipper / Customer</span>
+                  <div className="text-xs font-bold text-slate-800 mt-0.5">{selectedWorkflowItem.customerName || 'Shipper Client'}</div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Corridor Route</span>
+                  <div className="text-xs font-bold text-slate-800 mt-0.5">{selectedWorkflowItem.origin} → {selectedWorkflowItem.destination}</div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Assigned Forwarder</span>
+                  <div className="text-xs font-bold text-indigo-600 mt-0.5">{selectedWorkflowItem.companyName || 'GlobalSea Freight'} ({selectedWorkflowItem.companyId || 'CMP-102'})</div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Assigned Agent</span>
+                  <div className="text-xs font-bold text-slate-700 font-mono mt-0.5">{selectedWorkflowItem.assignedAgentEmail || 'agent@globalsea.com'}</div>
+                </div>
+              </div>
+
+              {/* 4-Stage Stepper Status */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">4-Stage Progression Audit</h4>
+
+                {/* Stage 1: Customer Selection */}
+                <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50 flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">Stage 1: Customer Inquiry & Forwarder Quote Selection</span>
+                      <span className="text-[10px] font-bold text-emerald-700 uppercase bg-emerald-100 px-2 py-0.5 rounded-full">Completed</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Customer filled shipment requirements and selected carrier quote. Dispatched directly to {selectedWorkflowItem.companyName || 'GlobalSea Freight'}.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stage 2: Company Agent Operational Review */}
+                <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                  ['PENDING_CUSTOMS_APPROVAL', 'VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status)
+                    ? 'border-emerald-200 bg-emerald-50/50'
+                    : selectedWorkflowItem.status === 'PENDING_COMPANY_VERIFICATION'
+                    ? 'border-amber-200 bg-amber-50/50'
+                    : 'border-slate-200 bg-slate-50'
+                }`}>
+                  {['PENDING_CUSTOMS_APPROVAL', 'VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status) ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">Stage 2: Particular Forwarder Agent 9-Point Verification</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        ['PENDING_CUSTOMS_APPROVAL', 'VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status)
+                          ? 'text-emerald-700 bg-emerald-100'
+                          : 'text-amber-700 bg-amber-100'
+                      }`}>
+                        {['PENDING_CUSTOMS_APPROVAL', 'VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status) ? 'Approved' : 'In Review'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      9-point operational checklist verified by {selectedWorkflowItem.assignedAgentEmail || 'forwarder agent'}. Container capacity, IMO clearance, and tariff margins validated.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stage 3: Customs Compliance Clearance */}
+                <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                  ['VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status)
+                    ? 'border-emerald-200 bg-emerald-50/50'
+                    : selectedWorkflowItem.status === 'PENDING_CUSTOMS_APPROVAL'
+                    ? 'border-sky-200 bg-sky-50/50'
+                    : 'border-slate-200 bg-slate-50'
+                }`}>
+                  {['VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status) ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <Shield className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">Stage 3: Regulatory Customs Compliance Clearance</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        ['VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status)
+                          ? 'text-emerald-700 bg-emerald-100'
+                          : selectedWorkflowItem.status === 'PENDING_CUSTOMS_APPROVAL'
+                          ? 'text-sky-700 bg-sky-100'
+                          : 'text-slate-500 bg-slate-200'
+                      }`}>
+                        {['VERIFIED_PENDING_CUSTOMER', 'BOOKING_CONFIRMED'].includes(selectedWorkflowItem.status) ? 'Cleared' :
+                         selectedWorkflowItem.status === 'PENDING_CUSTOMS_APPROVAL' ? 'Awaiting Customs' : 'Queued'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Audited by Customs Officer via ICEGATE. HS Code tariff verification, restricted cargo check, and regulatory compliance certificate granted.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stage 4: Customer Final Decision */}
+                <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                  selectedWorkflowItem.status === 'BOOKING_CONFIRMED'
+                    ? 'border-emerald-200 bg-emerald-50/50'
+                    : selectedWorkflowItem.status === 'CUSTOMER_REJECTED'
+                    ? 'border-rose-200 bg-rose-50/50'
+                    : selectedWorkflowItem.status === 'VERIFIED_PENDING_CUSTOMER'
+                    ? 'border-indigo-200 bg-indigo-50/50'
+                    : 'border-slate-200 bg-slate-50'
+                }`}>
+                  {selectedWorkflowItem.status === 'BOOKING_CONFIRMED' ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : selectedWorkflowItem.status === 'CUSTOMER_REJECTED' ? (
+                    <X className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <Clock className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">Stage 4: Customer Final Sign-off & Booking Generation</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        selectedWorkflowItem.status === 'BOOKING_CONFIRMED' ? 'text-emerald-700 bg-emerald-100' :
+                        selectedWorkflowItem.status === 'CUSTOMER_REJECTED' ? 'text-rose-700 bg-rose-100' :
+                        selectedWorkflowItem.status === 'VERIFIED_PENDING_CUSTOMER' ? 'text-indigo-700 bg-indigo-100' :
+                        'text-slate-500 bg-slate-200'
+                      }`}>
+                        {selectedWorkflowItem.status === 'BOOKING_CONFIRMED' ? 'Booking Confirmed' :
+                         selectedWorkflowItem.status === 'CUSTOMER_REJECTED' ? 'Rejected' :
+                         selectedWorkflowItem.status === 'VERIFIED_PENDING_CUSTOMER' ? 'Sent to Customer' : 'Pending Previous Stages'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      {selectedWorkflowItem.bookingId ? `Official booking confirmed: ID ${selectedWorkflowItem.bookingId}` : 'Customer can review operational and customs clearances to approve or reject.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedWorkflowItem(null)}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow"
+                >
+                  Close Audit Record
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
