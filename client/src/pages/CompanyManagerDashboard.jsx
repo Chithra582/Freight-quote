@@ -223,12 +223,14 @@ export default function CompanyManagerDashboard() {
 
   // Filtered shipments
   const filteredShipments = shipments.filter(s => {
+    if (!s) return false
+    const q = (searchQuery || '').toLowerCase()
     const matchesSearch = 
-      s.shipmentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.cargo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.destination.toLowerCase().includes(searchQuery.toLowerCase())
+      (s.shipmentId || '').toLowerCase().includes(q) ||
+      (s.customerName || '').toLowerCase().includes(q) ||
+      (s.cargo || '').toLowerCase().includes(q) ||
+      (s.origin || '').toLowerCase().includes(q) ||
+      (s.destination || '').toLowerCase().includes(q)
     
     if (statusFilter === 'ALL') return matchesSearch
     return matchesSearch && s.status === statusFilter
@@ -552,11 +554,11 @@ export default function CompanyManagerDashboard() {
                       <div key={ag.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                            {ag.fullName.slice(0, 2).toUpperCase()}
+                            {(ag.fullName || 'AG').slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-bold text-xs text-slate-900">{ag.fullName}</div>
-                            <div className="text-[10px] font-mono text-slate-500">{ag.email} · {ag.agentCode}</div>
+                            <div className="font-bold text-xs text-slate-900">{ag.fullName || 'Agent'}</div>
+                            <div className="text-[10px] font-mono text-slate-500">{ag.email} · {ag.agentCode || 'AGT'}</div>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -710,11 +712,11 @@ export default function CompanyManagerDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center justify-center">
-                          {ag.fullName.slice(0, 2).toUpperCase()}
+                          {(ag.fullName || 'AG').slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <h4 className="font-bold text-xs text-slate-900">{ag.fullName}</h4>
-                          <span className="font-mono text-[10px] text-blue-600 font-extrabold">{ag.agentCode}</span>
+                          <h4 className="font-bold text-xs text-slate-900">{ag.fullName || 'Agent'}</h4>
+                          <span className="font-mono text-[10px] text-blue-600 font-extrabold">{ag.agentCode || 'AGT'}</span>
                         </div>
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
