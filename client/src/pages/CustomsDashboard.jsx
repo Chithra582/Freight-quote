@@ -333,6 +333,26 @@ export default function CustomsDashboard() {
           localStorage.setItem('brokerQuotes', JSON.stringify(updatedBroker))
         }
       } catch {}
+
+      // Synchronize to allShipments
+      try {
+        const storedShips = localStorage.getItem('allShipments')
+        if (storedShips) {
+          const parsedShips = JSON.parse(storedShips)
+          const updatedShips = parsedShips.map(s => {
+            if (s.id === selectedCase.shipmentId || s.quoteId === selectedCase.quoteId) {
+              return {
+                ...s,
+                status: 'Customs Cleared',
+                customsApproved: true,
+                customsClearanceId: clearanceId
+              }
+            }
+            return s
+          })
+          localStorage.setItem('allShipments', JSON.stringify(updatedShips))
+        }
+      } catch {}
     } else if (actionType === 'REJECT') {
       try {
         const storedCustomer = localStorage.getItem('customerQuotes')

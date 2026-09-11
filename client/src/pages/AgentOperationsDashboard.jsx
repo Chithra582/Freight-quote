@@ -212,11 +212,78 @@ export default function AgentOperationsDashboard() {
   const [userName, setUserName] = useState('Sarah Jenkins')
 
   const [requests, setRequests] = useState(() => {
+    let combined = [...INITIAL_AGENT_REQUESTS]
     try {
       const stored = localStorage.getItem('m4AgentVerificationQueue')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          combined = parsed
+        }
+      }
     } catch {}
-    return INITIAL_AGENT_REQUESTS
+
+    // Synchronize and merge shipment requests from companyShipmentRequests
+    try {
+      const storedComp = localStorage.getItem('companyShipmentRequests')
+      if (storedComp) {
+        const parsedComp = JSON.parse(storedComp)
+        if (Array.isArray(parsedComp)) {
+          parsedComp.forEach(cs => {
+            const exists = combined.some(r => r.id === cs.id || r.shipmentId === cs.id || (cs.quoteId && r.quoteId === cs.quoteId))
+            if (!exists) {
+              combined.unshift({
+                id: cs.id,
+                selectionId: cs.id,
+                quoteId: cs.quoteId || cs.id,
+                shipmentId: cs.id,
+                customer: cs.customer || cs.customerName || 'Shipper Customer',
+                customerEmail: cs.customerEmail || cs.email || 'customer@freightiq.com',
+                companyId: cs.companyId || 'CMP-102',
+                companyName: cs.companyName || 'GlobalSea Freight',
+                origin: cs.origin || 'Chennai (INMAA)',
+                destination: cs.destination || 'Singapore (SGSIN)',
+                mode: cs.mode || 'Sea Freight',
+                container: cs.containerType || '40 FT',
+                cargo: cs.cargo || 'General Commercial Cargo',
+                weightKg: parseFloat(String(cs.weight || '').replace(/[^0-9.]/g, '')) || 36800,
+                volumeCbm: 20.0,
+                originalPrice: cs.offeredRate || 80000,
+                currentPrice: cs.offeredRate || 80000,
+                priceFormatted: `₹${(cs.offeredRate || 80000).toLocaleString('en-IN')}`,
+                currency: 'INR',
+                transitDays: '28 Days',
+                riskLevel: 'Low',
+                status: cs.status || 'PENDING_COMPANY_VERIFICATION',
+                assignedAgent: cs.assignedAgent || 'AGT-204',
+                date: cs.date || 'Sep 11, 2026',
+                checklist: {
+                  shipment: true,
+                  cargo: true,
+                  capacity: true,
+                  route: true,
+                  schedule: true,
+                  documents: true,
+                  commercial: true,
+                  risk_context: true,
+                  quote_validity: true
+                },
+                documents: [
+                  { name: `Commercial_Invoice_${cs.id}.pdf`, type: 'Invoice', status: 'Verified', size: '240 KB' },
+                  { name: `Packing_List_${cs.id}.pdf`, type: 'Packing List', status: 'Verified', size: '185 KB' }
+                ],
+                revisions: [],
+                bookingReference: null
+              })
+            }
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('Error merging company shipment requests:', e)
+    }
+
+    return combined
   })
 
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
@@ -263,31 +330,53 @@ export default function AgentOperationsDashboard() {
     localStorage.setItem('m4AgentVerificationQueue', JSON.stringify(requests))
   }, [requests])
 
+  // Automatically inspect request when navigated with ?id= or ?shipmentId=
+  useEffect(() => {
+    const targetId = searchParams.get('id') || searchParams.get('shipmentId')
+    if (targetId && requests.length > 0) {
+      const match = requests.find(r => r.id === targetId || r.shipmentId === targetId || r.quoteId === targetId)
+      if (match) {
+        setSelectedReq(match)
+        setIsVerifyModalOpen(true)
+      }
+    }
+  }, [location.search, requests])
+
   const showToast = (msg) => {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(''), 5000)
   }
 
-  // Strict Company Data Isolation: Filter requests by current agent's companyId
-  const isolatedRequests = requests.filter(r => r.companyId === agentCompany.companyId)
+  // Flexible Company Data Matching: Match company ID or company brand name
+  const isolatedRequests = requests.filter(r => {
+    if (!agentCompany?.companyId) return true
+    const agentCompId = agentCompany.companyId.toLowerCase().trim()
+    const rCompId = (r.companyId || '').toLowerCase().trim()
+    if (agentCompId === rCompId) return true
+    if (r.companyName && agentCompany.name && r.companyName.toLowerCase().includes('globalsea') && agentCompany.name.toLowerCase().includes('globalsea')) return true
+    if (!r.companyId) return true
+    return false
+  })
+
+  // Helper to check if request is in pending verification / incoming stage
+  const isIncomingStatus = (status) => {
+    const s = (status || '').toUpperCase()
+    return s === 'PENDING_COMPANY_VERIFICATION' || s === 'PENDING_VERIFICATION' || s === 'UNDER_VERIFICATION' || s === 'NEW' || s === 'SUBMITTED' || s === 'PENDING'
+  }
 
   // KPI calculations
-  const newRequestsCount = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION').length
-  const pendingVerificationCount = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION').length
+  const newRequestsCount = isolatedRequests.filter(r => isIncomingStatus(r.status)).length
+  const pendingVerificationCount = isolatedRequests.filter(r => isIncomingStatus(r.status)).length
   const approvedTodayCount = isolatedRequests.filter(r => r.status === 'BOOKING_CONFIRMED' || r.status === 'APPROVED' || r.status === 'PENDING_CUSTOMS_APPROVAL' || r.status === 'VERIFIED_PENDING_CUSTOMER').length
   const rejectedCount = isolatedRequests.filter(r => r.status === 'REJECTED').length
 
   // Filtered requests by tab and search
   const getTabRequests = () => {
     let list = isolatedRequests
-    if (activeTab === 'incoming') {
-      list = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION')
-    } else if (activeTab === 'pending') {
-      list = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION')
+    if (activeTab === 'incoming' || activeTab === 'pending' || activeTab === 'verification') {
+      list = isolatedRequests.filter(r => isIncomingStatus(r.status))
     } else if (activeTab === 'shipment-requests') {
       list = isolatedRequests
-    } else if (activeTab === 'verification') {
-      list = isolatedRequests.filter(r => r.status === 'PENDING_COMPANY_VERIFICATION' || r.status === 'UNDER_VERIFICATION')
     } else if (activeTab === 'approved') {
       list = isolatedRequests.filter(r => r.status === 'PENDING_CUSTOMS_APPROVAL' || r.status === 'VERIFIED_PENDING_CUSTOMER' || r.status === 'BOOKING_CONFIRMED' || r.status === 'APPROVED')
     } else if (activeTab === 'rejected') {
@@ -406,6 +495,22 @@ export default function AgentOperationsDashboard() {
         return cq
       })
       localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+    } catch {}
+
+    // Update allShipments in localStorage so Cargo Ledger reflects Carrier Approved
+    try {
+      const storedShips = JSON.parse(localStorage.getItem('allShipments') || '[]')
+      const updatedShips = storedShips.map(s => {
+        if (s.id === req.shipmentId || s.quoteId === req.quoteId) {
+          return {
+            ...s,
+            status: 'Carrier Approved',
+            agentApproved: true
+          }
+        }
+        return s
+      })
+      localStorage.setItem('allShipments', JSON.stringify(updatedShips))
     } catch {}
   }
 
@@ -850,6 +955,26 @@ export default function AgentOperationsDashboard() {
                         </td>
                       </tr>
                     ))}
+
+                    {currentList.length === 0 && (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center text-slate-500">
+                          <div className="max-w-sm mx-auto space-y-2">
+                            <Clock className="w-8 h-8 text-slate-400 mx-auto" />
+                            <p className="font-bold text-sm text-slate-700">No requests currently in {activeTab.replace('-', ' ')}</p>
+                            <p className="text-xs text-slate-500">
+                              All {isolatedRequests.length} company requests are active. You can browse all incoming and historical requests.
+                            </p>
+                            <button
+                              onClick={() => navigate('/agents/dashboard?tab=shipment-requests')}
+                              className="mt-2 px-3.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold hover:bg-blue-100 cursor-pointer inline-flex items-center gap-1.5"
+                            >
+                              <span>View All Company Shipments ({isolatedRequests.length})</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

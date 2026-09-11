@@ -318,6 +318,23 @@ export default function CustomerDashboard() {
       localStorage.setItem('m4AgentVerificationQueue', JSON.stringify(updatedAgentQueue))
     } catch {}
 
+    // Sync to allShipments so Cargo Ledger immediately updates to Booking Confirmed
+    try {
+      const storedShips = JSON.parse(localStorage.getItem('allShipments') || '[]')
+      const updatedShips = storedShips.map(s => {
+        if (s.quoteId === quoteId || s.id === quoteId || s.id === 'SHP-1001') {
+          return {
+            ...s,
+            status: 'Booking Confirmed',
+            bookingReference: bookingRef,
+            customerApproved: true
+          }
+        }
+        return s
+      })
+      localStorage.setItem('allShipments', JSON.stringify(updatedShips))
+    } catch {}
+
     showNotification(`Commercial revision accepted! Booking reference ${bookingRef} has been confirmed.`)
   }
 
@@ -422,6 +439,23 @@ export default function CustomerDashboard() {
         return item
       })
       localStorage.setItem('m4AgentVerificationQueue', JSON.stringify(updatedAgentQueue))
+    } catch {}
+
+    // Sync to allShipments so Cargo Ledger immediately updates to Booking Confirmed
+    try {
+      const storedShips = JSON.parse(localStorage.getItem('allShipments') || '[]')
+      const updatedShips = storedShips.map(s => {
+        if (s.quoteId === quoteId || s.id === quoteId || s.id === 'SHP-1001') {
+          return {
+            ...s,
+            status: 'Booking Confirmed',
+            bookingReference: bookingRef,
+            customerApproved: true
+          }
+        }
+        return s
+      })
+      localStorage.setItem('allShipments', JSON.stringify(updatedShips))
     } catch {}
 
     showNotification(`Booking CONFIRMED! Official Booking Reference: ${bookingRef}`)

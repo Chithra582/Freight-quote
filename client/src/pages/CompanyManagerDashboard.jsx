@@ -31,7 +31,8 @@ import {
   Layers, 
   Calendar,
   Sparkles,
-  Plus
+  Plus,
+  ExternalLink
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -191,6 +192,7 @@ export default function CompanyManagerDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false)
+  const [inspectingShipment, setInspectingShipment] = useState(null)
   const [newAgentData, setNewAgentData] = useState({
     fullName: '',
     email: '',
@@ -201,6 +203,76 @@ export default function CompanyManagerDashboard() {
   const [agentFormSuccess, setAgentFormSuccess] = useState('')
   const [agentFormError, setAgentFormError] = useState('')
   const [isSubmittingAgent, setIsSubmittingAgent] = useState(false)
+
+  // Manager Approval Handler directly from Inspection Modal
+  const handleManagerApproveRequest = (shipment) => {
+    const updated = shipments.map(s => {
+      if (s.id === shipment.id) {
+        return {
+          ...s,
+          status: 'PENDING_CUSTOMS_APPROVAL',
+          agentApproved: true
+        }
+      }
+      return s
+    })
+    setShipments(updated)
+    localStorage.setItem('companyShipmentRequests', JSON.stringify(updated))
+
+    // Forward to customsCases in localStorage
+    try {
+      const storedCustoms = JSON.parse(localStorage.getItem('customsCases') || '[]')
+      const exists = storedCustoms.some(c => c.shipmentId === shipment.id || c.quoteId === shipment.quoteId)
+      if (!exists) {
+        storedCustoms.unshift({
+          id: `CASE-2026-${Math.floor(100 + Math.random() * 900)}`,
+          quoteId: shipment.quoteId,
+          shipmentId: shipment.id,
+          customer: shipment.customer || shipment.customerName || 'Shipper Customer',
+          origin: shipment.origin,
+          destination: shipment.destination,
+          commodity: shipment.cargo || 'Electronics & Commercial Cargo',
+          hsCode: '8504.40.90',
+          incoterm: 'CIF',
+          declaredValue: shipment.priceFormatted || `₹${(shipment.offeredRate || 80000).toLocaleString('en-IN')}`,
+          status: 'PENDING_REVIEW',
+          priority: 'High',
+          riskScore: 0.15,
+          agentApproved: true,
+          forwardedBy: `${company.name} Management Desk`,
+          aiFindings: `Operational verification completed and approved by ${company.name} management. Awaiting statutory Customs clearance.`
+        })
+        localStorage.setItem('customsCases', JSON.stringify(storedCustoms))
+      }
+    } catch {}
+
+    // Update allShipments
+    try {
+      const storedShips = JSON.parse(localStorage.getItem('allShipments') || '[]')
+      const updatedShips = storedShips.map(s => {
+        if (s.id === shipment.id || s.quoteId === shipment.quoteId) {
+          return { ...s, status: 'Carrier Approved', agentApproved: true }
+        }
+        return s
+      })
+      localStorage.setItem('allShipments', JSON.stringify(updatedShips))
+    } catch {}
+
+    // Update customerQuotes
+    try {
+      const storedCust = JSON.parse(localStorage.getItem('customerQuotes') || '[]')
+      const updatedCust = storedCust.map(q => {
+        if (q.shipmentId === shipment.id || q.id === shipment.quoteId) {
+          return { ...q, status: 'PENDING_CUSTOMS_APPROVAL', agentApproved: true }
+        }
+        return q
+      })
+      localStorage.setItem('customerQuotes', JSON.stringify(updatedCust))
+    } catch {}
+
+    setInspectingShipment(null)
+    alert(`Shipment ${shipment.id} successfully verified and approved by Company Manager! Forwarded to Customs Compliance Officer.`)
+  }
 
   // Sync to localStorage
   useEffect(() => {
@@ -670,10 +742,10 @@ export default function CompanyManagerDashboard() {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <button
-                            onClick={() => navigate('/agents/dashboard?tab=incoming')}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            onClick={() => setInspectingShipment(req)}
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-sm"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-blue-600" />
                             <span>Inspect</span>
                           </button>
                         </td>
@@ -886,6 +958,182 @@ export default function CompanyManagerDashboard() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* INSPECT SHIPMENT MODAL */}
+        {inspectingShipment && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 sm:p-7 space-y-5 my-8 max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-sm text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
+                      {inspectingShipment.id || inspectingShipment.shipmentId}
+                    </span>
+                    {inspectingShipment.quoteId && (
+                      <span className="text-xs font-mono text-slate-500">
+                        ({inspectingShipment.quoteId})
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    Shipment Operations & Agent Inspection
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Verification dossier managed under {company.name} ({company.companyId})
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setInspectingShipment(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Status Banner */}
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-800">Current Milestone Status:</span>
+                  <span className="px-2.5 py-0.5 text-xs font-black rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    {inspectingShipment.status}
+                  </span>
+                </div>
+
+                {inspectingShipment.bookingRef && (
+                  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                    {inspectingShipment.bookingRef}
+                  </span>
+                )}
+              </div>
+
+              {/* Grid Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                {/* Shipper Info */}
+                <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-2">
+                  <div className="flex items-center gap-1.5 font-black text-slate-700 uppercase tracking-wider text-[10px]">
+                    <User className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Customer / Shipper</span>
+                  </div>
+                  <div className="font-bold text-slate-900 text-sm">
+                    {inspectingShipment.customer || inspectingShipment.customerName || 'Shipper Client'}
+                  </div>
+                  <div className="text-slate-500 text-[11px]">
+                    Email: {inspectingShipment.customerEmail || inspectingShipment.email || 'customer@apexgl.com'}
+                  </div>
+                  <div className="text-slate-400 text-[10px]">
+                    Created: {inspectingShipment.date || 'Sep 11, 2026'}
+                  </div>
+                </div>
+
+                {/* Corridor Info */}
+                <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-2">
+                  <div className="flex items-center gap-1.5 font-black text-slate-700 uppercase tracking-wider text-[10px]">
+                    <Truck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Trade Route & Mode</span>
+                  </div>
+                  <div className="font-bold text-slate-900 text-sm">
+                    {inspectingShipment.origin} ➔ {inspectingShipment.destination}
+                  </div>
+                  <div className="text-slate-500 text-[11px]">
+                    Mode: {inspectingShipment.mode || 'Sea Freight'} · {inspectingShipment.container || inspectingShipment.containerType || '40 FT'}
+                  </div>
+                  <div className="text-slate-500 text-[11px]">
+                    Cargo: {inspectingShipment.cargo || 'General Commercial Cargo'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing and Assigned Agent */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-1.5">
+                  <span className="font-black text-slate-700 uppercase tracking-wider text-[10px]">Commercial Freight Tariff</span>
+                  <div className="text-lg font-black text-slate-900 font-mono">
+                    {inspectingShipment.priceFormatted || `₹${(inspectingShipment.offeredRate || 80000).toLocaleString('en-IN')}`}
+                  </div>
+                  <span className="text-[10px] text-slate-500 block">Includes bunker adjustment & origin port terminal handling</span>
+                </div>
+
+                <div className="p-4 rounded-2xl border border-slate-200 bg-white space-y-1.5">
+                  <span className="font-black text-slate-700 uppercase tracking-wider text-[10px]">Assigned Operational Agent</span>
+                  <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>{inspectingShipment.assignedAgent || 'Elena Rostova (AGT-204)'}</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 font-medium">Licensed operational verifier</span>
+                </div>
+              </div>
+
+              {/* 9-Point Verification Checklist Summary */}
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    Carrier 9-Point Verification Checklist
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                    Ready for Approval
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                  {[
+                    'Corridor Feasibility',
+                    'Vessel Space Allocated',
+                    'Transit Time Aligned',
+                    'Rate Accuracy Verified',
+                    'Trade Docs Complete',
+                    'Regulatory Compliance'
+                  ].map((chk, i) => (
+                    <div key={i} className="flex items-center gap-1.5 font-bold text-slate-700 bg-white p-2 rounded-xl border border-slate-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">{chk}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button
+                  onClick={() => {
+                    const targetId = inspectingShipment.id || inspectingShipment.shipmentId
+                    navigate(`/agents/dashboard?tab=incoming&id=${targetId}`)
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open in Agent Desk</span>
+                </button>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    onClick={() => setInspectingShipment(null)}
+                    className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                  >
+                    Close
+                  </button>
+
+                  {inspectingShipment.status !== 'BOOKING_CONFIRMED' && inspectingShipment.status !== 'PENDING_CUSTOMS_APPROVAL' && (
+                    <button
+                      onClick={() => handleManagerApproveRequest(inspectingShipment)}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Approve & Dispatch to Customs</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

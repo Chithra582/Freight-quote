@@ -28,7 +28,8 @@ import {
   Edit3,
   X,
   Sliders,
-  Check
+  Check,
+  RefreshCw
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -153,6 +154,110 @@ export default function Shipments() {
 
   const navigate = useNavigate()
 
+  // Workflow Synchronization: Reads approvals from Agent, Customs, and Customer portals
+  const syncShipmentWorkflowStatus = (shipmentList) => {
+    try {
+      const customerQuotes = JSON.parse(localStorage.getItem('customerQuotes') || '[]')
+      const m4AgentQueue = JSON.parse(localStorage.getItem('m4AgentVerificationQueue') || '[]')
+      const companyShipmentRequests = JSON.parse(localStorage.getItem('companyShipmentRequests') || '[]')
+      const customsCases = JSON.parse(localStorage.getItem('customsCases') || '[]')
+      const adminAllQuotes = JSON.parse(localStorage.getItem('adminAllQuotes') || '[]')
+
+      return shipmentList.map(s => {
+        // Find matching records across all workflow tables
+        const custMatch = customerQuotes.find(q => 
+          q.id === s.id || q.shipmentId === s.id || q.quoteId === s.quoteId || 
+          (q.quoteId && s.id && s.id.includes(q.quoteId)) ||
+          (q.origin && s.origin && q.origin === s.origin && q.destination === s.destination)
+        )
+        const agentMatch = m4AgentQueue.find(q => 
+          q.shipmentId === s.id || q.quoteId === s.quoteId || q.id === s.id ||
+          (q.origin && s.origin && q.origin === s.origin && q.destination === s.destination)
+        )
+        const compMatch = companyShipmentRequests.find(q => 
+          q.id === s.id || q.shipmentId === s.id || q.quoteId === s.quoteId ||
+          (q.origin && s.origin && q.origin === s.origin && q.destination === s.destination)
+        )
+        const custCaseMatch = customsCases.find(c => 
+          c.shipmentId === s.id || c.quoteId === s.quoteId || c.id === s.id ||
+          (c.origin && s.origin && c.origin === s.origin && c.destination === s.destination)
+        )
+        const adminMatch = adminAllQuotes.find(q => 
+          q.id === s.id || q.shipmentId === s.id || q.quoteId === s.quoteId ||
+          (q.origin && s.origin && q.origin === s.origin && q.destination === s.destination)
+        )
+
+        // Stage 4: Booking Confirmed
+        const isConfirmed = 
+          s.status?.toLowerCase().includes('confirmed') ||
+          custMatch?.status === 'BOOKING_CONFIRMED' ||
+          agentMatch?.status === 'BOOKING_CONFIRMED' ||
+          compMatch?.status === 'BOOKING_CONFIRMED' ||
+          adminMatch?.status === 'BOOKING_CONFIRMED'
+
+        if (isConfirmed) {
+          const bookingRef = custMatch?.bookingReference || agentMatch?.bookingReference || compMatch?.bookingReference || s.bookingReference || 'BK-2026-10045'
+          return {
+            ...s,
+            status: 'Booking Confirmed',
+            bookingReference: bookingRef,
+            stageProgress: '4/4 Completed',
+            agentApproved: true,
+            customsApproved: true,
+            customerApproved: true
+          }
+        }
+
+        // Stage 3: Customs Cleared / Awaiting Customer Final Sign-off
+        const isCustomsCleared =
+          s.status?.toLowerCase().includes('customs cleared') ||
+          custMatch?.status === 'VERIFIED_PENDING_CUSTOMER' ||
+          agentMatch?.status === 'VERIFIED_PENDING_CUSTOMER' ||
+          compMatch?.status === 'VERIFIED_PENDING_CUSTOMER' ||
+          custCaseMatch?.status === 'CLEARED' ||
+          custCaseMatch?.status === 'APPROVED' ||
+          custMatch?.customsApproved ||
+          agentMatch?.customsApproved
+
+        if (isCustomsCleared) {
+          return {
+            ...s,
+            status: 'Customs Cleared',
+            stageProgress: '3/4 Cleared',
+            agentApproved: true,
+            customsApproved: true,
+            customerApproved: false
+          }
+        }
+
+        // Stage 2: Carrier Agent Approved / Forwarded to Customs Officer
+        const isAgentApproved =
+          s.status?.toLowerCase().includes('carrier approved') ||
+          agentMatch?.status === 'PENDING_CUSTOMS_APPROVAL' ||
+          agentMatch?.agentApproved ||
+          compMatch?.status === 'PENDING_CUSTOMS_APPROVAL' ||
+          compMatch?.status === 'APPROVED' ||
+          custMatch?.agentApproved
+
+        if (isAgentApproved) {
+          return {
+            ...s,
+            status: 'Carrier Approved',
+            stageProgress: '2/4 Verified',
+            agentApproved: true,
+            customsApproved: false,
+            customerApproved: false
+          }
+        }
+
+        return s
+      })
+    } catch (err) {
+      console.warn('Error syncing shipment workflows:', err)
+      return shipmentList
+    }
+  }
+
   useEffect(() => {
     let token = localStorage.getItem('token')
     if (!token) {
@@ -162,6 +267,7 @@ export default function Shipments() {
     const role = (localStorage.getItem('userRole') || 'customer').toLowerCase()
     setUserRole(role)
 
+    let baseList = SAMPLE_SHIPMENTS
     const storedShipments = localStorage.getItem('allShipments')
     if (storedShipments) {
       try {
@@ -169,19 +275,72 @@ export default function Shipments() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           const existingIds = new Set(parsed.map(s => s.id))
           const remaining = SAMPLE_SHIPMENTS.filter(s => !existingIds.has(s.id))
-          setShipments([...parsed, ...remaining])
+          baseList = [...parsed, ...remaining]
         }
       } catch (err) {
         console.error('Shipments loading error:', err)
       }
     }
+
+    // Auto-synchronize with live approval states from Agent, Customs, and Customer portals
+    const synced = syncShipmentWorkflowStatus(baseList)
+    setShipments(synced)
+    localStorage.setItem('allShipments', JSON.stringify(synced))
   }, [navigate])
 
-  // Only Broker can adjust; Admin and Customer can only view and download as PDF
-  const canAdjust = userRole === 'broker'
+  // Broker, Admin, and Company Manager can adjust and confirm shipments
+  const canAdjust = ['broker', 'admin', 'company_manager', 'agent'].includes(userRole)
 
+  // Force manual re-sync button handler
+  const handleForceSync = () => {
+    const stored = localStorage.getItem('allShipments')
+    let current = shipments
+    if (stored) {
+      try {
+        current = JSON.parse(stored)
+      } catch {}
+    }
+    const synced = syncShipmentWorkflowStatus(current)
+    setShipments(synced)
+    localStorage.setItem('allShipments', JSON.stringify(synced))
+    alert('Shipment ledger successfully synchronized with all Agent, Customs, and Customer approval workflows!')
+  }
 
+  // Quick One-Click Booking Confirm for Admin/Broker
+  const handleQuickConfirm = (shipmentId, e) => {
+    if (e) e.stopPropagation()
+    const bookingRef = `BK-2026-${Math.floor(10000 + Math.random() * 90000)}`
+    const updated = shipments.map(s => {
+      if (s.id === shipmentId) {
+        return {
+          ...s,
+          status: 'Booking Confirmed',
+          bookingReference: bookingRef,
+          stageProgress: '4/4 Completed',
+          agentApproved: true,
+          customsApproved: true,
+          customerApproved: true
+        }
+      }
+      return s
+    })
+    setShipments(updated)
+    localStorage.setItem('allShipments', JSON.stringify(updated))
 
+    // Also sync to customerQuotes
+    try {
+      const storedQuotes = JSON.parse(localStorage.getItem('customerQuotes') || '[]')
+      const updatedQuotes = storedQuotes.map(q => {
+        if (q.shipmentId === shipmentId || q.id === shipmentId) {
+          return { ...q, status: 'BOOKING_CONFIRMED', bookingReference: bookingRef }
+        }
+        return q
+      })
+      localStorage.setItem('customerQuotes', JSON.stringify(updatedQuotes))
+    } catch {}
+
+    alert(`Shipment ${shipmentId} confirmed! Official Booking Reference: ${bookingRef}`)
+  }
 
   const handleOpenAdjustShipment = (s, e) => {
     if (e) e.stopPropagation()
@@ -199,11 +358,16 @@ export default function Shipments() {
 
   const handleSaveShipmentAdjustment = () => {
     if (!adjustingShipment) return
+    const bookingRef = (adjStatus === 'Booking Confirmed' && !adjustingShipment.bookingReference)
+      ? `BK-2026-${Math.floor(10000 + Math.random() * 90000)}`
+      : adjustingShipment.bookingReference
+
     const updated = shipments.map(s => {
       if (s.id === adjustingShipment.id) {
         return {
           ...s,
           status: adjStatus,
+          bookingReference: bookingRef,
           origin: adjOrigin,
           destination: adjDestination,
           mode: adjMode,
@@ -238,31 +402,45 @@ export default function Shipments() {
 
   const getStatusConfig = (status) => {
     switch (status?.toLowerCase()) {
+      case 'booking confirmed':
+      case 'booking_confirmed':
+      case 'confirmed':
+        return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-300', icon: CheckCircle2, dotColor: 'bg-emerald-500', label: 'Booking Confirmed' }
+      case 'customs cleared':
+      case 'verified_pending_customer':
+        return { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-300', icon: CheckCircle2, dotColor: 'bg-purple-500', label: 'Customs Cleared' }
+      case 'carrier approved':
+      case 'pending_customs_approval':
+      case 'approved':
+        return { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-300', icon: CheckCircle2, dotColor: 'bg-sky-500', label: 'Carrier Approved' }
       case 'in transit':
-        return { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', icon: Truck, dotColor: 'bg-blue-500' }
+        return { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', icon: Truck, dotColor: 'bg-blue-500', label: 'In Transit' }
       case 'delivered':
-        return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2, dotColor: 'bg-emerald-500' }
+        return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2, dotColor: 'bg-emerald-500', label: 'Delivered' }
+      case 'pending review':
+      case 'pending_company_verification':
+        return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-300', icon: Clock, dotColor: 'bg-amber-500', label: 'Pending Review' }
       case 'pending pickup':
       case 'pending booking':
-        return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', icon: Clock, dotColor: 'bg-amber-500' }
+        return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', icon: Clock, dotColor: 'bg-amber-500', label: 'Pending Pickup' }
       case 'customs hold':
       case 'delayed':
-        return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', icon: AlertCircle, dotColor: 'bg-rose-500' }
+        return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', icon: AlertCircle, dotColor: 'bg-rose-500', label: 'Customs Hold' }
       case 'vessel dispatched':
-      case 'customs cleared':
-        return { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', icon: CheckCircle2, dotColor: 'bg-indigo-500' }
+        return { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', icon: CheckCircle2, dotColor: 'bg-indigo-500', label: 'Vessel Dispatched' }
       default:
-        return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200', icon: Clock, dotColor: 'bg-slate-400' }
+        return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200', icon: Clock, dotColor: 'bg-slate-400', label: status || 'Pending' }
     }
   }
 
   const filteredShipments = shipments.filter(s => {
     const matchesSearch = 
-      s.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.destination.toLowerCase().includes(searchQuery.toLowerCase())
+      s.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.origin?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.destination?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.bookingReference && s.bookingReference.toLowerCase().includes(searchQuery.toLowerCase()))
     if (filterStatus === 'all') return matchesSearch
-    return matchesSearch && s.status.toLowerCase() === filterStatus.toLowerCase()
+    return matchesSearch && s.status?.toLowerCase() === filterStatus.toLowerCase()
   })
 
   return (
@@ -294,6 +472,17 @@ export default function Shipments() {
                 <p className="text-[10px] text-slate-500 font-medium">Track, manage, and manually adjust system shipments across broker and administrative consoles</p>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleForceSync}
+                className="px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                title="Sync approvals from Agent Desk, Customs Officer, and Customer Portals"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
+                <span>Sync Approvals</span>
+              </button>
+            </div>
           </div>
 
           {/* Search and Filter Bar */}
@@ -302,7 +491,7 @@ export default function Shipments() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search shipments by ID, origin, destination..."
+                placeholder="Search shipments by ID, booking ref, origin, destination..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors font-medium"
@@ -317,6 +506,10 @@ export default function Shipments() {
                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
               >
                 <option value="all">All Statuses ({shipments.length})</option>
+                <option value="booking confirmed">Booking Confirmed</option>
+                <option value="customs cleared">Customs Cleared</option>
+                <option value="carrier approved">Carrier Approved</option>
+                <option value="pending review">Pending Review</option>
                 <option value="in transit">In Transit</option>
                 <option value="delivered">Delivered</option>
                 <option value="pending pickup">Pending Pickup</option>
@@ -344,12 +537,20 @@ export default function Shipments() {
                     className="p-4 sm:p-5 cursor-pointer select-none"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-wrap sm:flex-nowrap">
                         {/* ID Badge */}
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-50 border border-sky-200 shrink-0">
                           <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
                           <span className="text-sm font-extrabold text-sky-600">{shipment.id}</span>
                         </div>
+
+                        {/* Booking Ref Badge if confirmed */}
+                        {shipment.bookingReference && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-mono font-bold shrink-0">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{shipment.bookingReference}</span>
+                          </div>
+                        )}
 
                         {/* Route */}
                         <div className="min-w-0 flex-1">
@@ -362,7 +563,7 @@ export default function Shipments() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap sm:flex-nowrap">
                         {/* Mode */}
                         <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
                           {getModeIcon(shipment.mode)}
@@ -377,8 +578,20 @@ export default function Shipments() {
                         {/* Status Badge */}
                         <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border} flex items-center gap-1`}>
                           <StatusIcon className="w-3 h-3" />
-                          {shipment.status}
+                          {statusConfig.label || shipment.status}
                         </span>
+
+                        {/* Quick One-Click Confirm if Pending Review */}
+                        {canAdjust && (shipment.status?.toLowerCase().includes('pending') || shipment.status === 'Carrier Approved' || shipment.status === 'Customs Cleared') && !shipment.bookingReference && (
+                          <button
+                            onClick={(e) => handleQuickConfirm(shipment.id, e)}
+                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Confirm booking and generate official BK reference"
+                          >
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span>Confirm</span>
+                          </button>
+                        )}
 
                         {/* Adjust Button (Broker & Admin only) */}
                         {canAdjust && (
@@ -432,7 +645,6 @@ export default function Shipments() {
                               )}
                               <button
                                 onClick={() => downloadQuotePDF({
-
                                   id: shipment.id,
                                   customer: 'Direct Shipper',
                                   cost: `₹ ${parseFloat(shipment.declaredValue || 500000).toLocaleString('en-IN')}`,
@@ -445,6 +657,92 @@ export default function Shipments() {
                               >
                                 <Download className="w-3 h-3" /> Waybill PDF
                               </button>
+                            </div>
+                          </div>
+
+                          {/* 4-Stage Lifecycle Approval Tracker */}
+                          <div className="bg-white p-4 rounded-xl border border-slate-200">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                4-Stage Cargo Lifecycle & Regulatory Clearance
+                              </span>
+                              {shipment.bookingReference ? (
+                                <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                                  Booking Confirmed: {shipment.bookingReference}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                                  Status: {shipment.status}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                              {/* Stage 1 */}
+                              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  <span>1. Shipper Selection</span>
+                                </div>
+                                <p className="text-[10px] text-emerald-600 mt-0.5 font-medium">Quote selected & dispatched</p>
+                              </div>
+
+                              {/* Stage 2 */}
+                              <div className={`p-2.5 rounded-lg border ${
+                                shipment.status === 'Carrier Approved' || shipment.status === 'Customs Cleared' || shipment.status === 'Booking Confirmed' || shipment.agentApproved
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                  : 'bg-slate-50 border-slate-200 text-slate-500'
+                              }`}>
+                                <div className="flex items-center gap-1.5 text-xs font-bold">
+                                  {shipment.status === 'Carrier Approved' || shipment.status === 'Customs Cleared' || shipment.status === 'Booking Confirmed' || shipment.agentApproved ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  )}
+                                  <span>2. Carrier Agent Desk</span>
+                                </div>
+                                <p className="text-[10px] mt-0.5 font-medium">
+                                  {shipment.status === 'Carrier Approved' || shipment.status === 'Customs Cleared' || shipment.status === 'Booking Confirmed' || shipment.agentApproved ? 'Operational verification verified' : 'Pending agent verification'}
+                                </p>
+                              </div>
+
+                              {/* Stage 3 */}
+                              <div className={`p-2.5 rounded-lg border ${
+                                shipment.status === 'Customs Cleared' || shipment.status === 'Booking Confirmed' || shipment.customsApproved
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                  : 'bg-slate-50 border-slate-200 text-slate-500'
+                              }`}>
+                                <div className="flex items-center gap-1.5 text-xs font-bold">
+                                  {shipment.status === 'Customs Cleared' || shipment.status === 'Booking Confirmed' || shipment.customsApproved ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  )}
+                                  <span>3. Customs Officer</span>
+                                </div>
+                                <p className="text-[10px] mt-0.5 font-medium">
+                                  {shipment.status === 'Customs Cleared' || shipment.status === 'Booking Confirmed' || shipment.customsApproved ? 'ICEGATE regulatory cleared' : 'Awaiting customs approval'}
+                                </p>
+                              </div>
+
+                              {/* Stage 4 */}
+                              <div className={`p-2.5 rounded-lg border ${
+                                shipment.status === 'Booking Confirmed' || shipment.customerApproved || shipment.bookingReference
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                  : 'bg-slate-50 border-slate-200 text-slate-500'
+                              }`}>
+                                <div className="flex items-center gap-1.5 text-xs font-bold">
+                                  {shipment.status === 'Booking Confirmed' || shipment.customerApproved || shipment.bookingReference ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  )}
+                                  <span>4. Customer Booking</span>
+                                </div>
+                                <p className="text-[10px] mt-0.5 font-medium">
+                                  {shipment.status === 'Booking Confirmed' || shipment.customerApproved || shipment.bookingReference ? 'Confirmed booking sign-off' : 'Pending final sign-off'}
+                                </p>
+                              </div>
                             </div>
                           </div>
 
@@ -535,9 +833,12 @@ export default function Shipments() {
                   onChange={e => setAdjStatus(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 cursor-pointer"
                 >
+                  <option value="Booking Confirmed">Booking Confirmed (4/4 Complete)</option>
+                  <option value="Customs Cleared">Customs Cleared (3/4 Cleared)</option>
+                  <option value="Carrier Approved">Carrier Approved (2/4 Verified)</option>
+                  <option value="Pending Review">Pending Review</option>
                   <option value="In Transit">In Transit</option>
                   <option value="Vessel Dispatched">Vessel Dispatched</option>
-                  <option value="Customs Cleared">Customs Cleared</option>
                   <option value="Pending Pickup">Pending Pickup</option>
                   <option value="Delivered">Delivered</option>
                   <option value="Customs Hold">Customs Hold</option>
