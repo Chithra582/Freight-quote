@@ -185,7 +185,7 @@ const DEFAULT_CUSTOMER_QUOTES = [
 export default function CustomerDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [quotes, setQuotes] = useState(() => {
+  const [allQuotes, setAllQuotes] = useState(() => {
     const stored = localStorage.getItem('customerQuotes')
     if (stored) {
       try {
@@ -207,11 +207,48 @@ export default function CustomerDashboard() {
     return DEFAULT_CUSTOMER_QUOTES
   })
 
-  const [userName, setUserName] = useState('Alex Shipper')
-  const [userEmail, setUserEmail] = useState('customer@apexgl.com')
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Alex Shipper')
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || 'customer@apexgl.com')
   const [searchQuery, setSearchQuery] = useState('')
   const [unauthorizedAttempt, setUnauthorizedAttempt] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
+
+  // Multi-Customer Isolation: Filter quotes to only those belonging to this customer
+  const quotes = useMemo(() => {
+    const emailLower = (userEmail || '').toLowerCase().trim()
+    const isDemo = !userEmail || emailLower === 'customer@apexgl.com' || emailLower === 'alex@apexgl.com'
+    return allQuotes.filter(q => {
+      const owner = (q.ownerEmail || '').toLowerCase().trim()
+      const cust = (q.customerEmail || '').toLowerCase().trim()
+      if (isDemo) {
+        return !owner || owner === 'customer@apexgl.com' || cust === 'customer@apexgl.com' || owner === 'alex@apexgl.com'
+      }
+      return owner === emailLower || cust === emailLower
+    })
+  }, [allQuotes, userEmail])
+
+  // Custom setQuotes that merges updates into allQuotes preserving other customers' quotes
+  const setQuotes = (updaterOrList) => {
+    if (typeof updaterOrList === 'function') {
+      setAllQuotes(prev => {
+        const updated = updaterOrList(prev)
+        localStorage.setItem('customerQuotes', JSON.stringify(updated))
+        return updated
+      })
+    } else if (Array.isArray(updaterOrList)) {
+      setAllQuotes(prev => {
+        const updatedMap = new Map(updaterOrList.map(item => [item.id, item]))
+        const merged = prev.map(item => updatedMap.get(item.id) || item)
+        updaterOrList.forEach(item => {
+          if (!prev.some(p => p.id === item.id)) {
+            merged.unshift(item)
+          }
+        })
+        localStorage.setItem('customerQuotes', JSON.stringify(merged))
+        return merged
+      })
+    }
+  }
 
   // Document Management & Upload State
   const [documents, setDocuments] = useState(() => {
@@ -252,11 +289,6 @@ export default function CustomerDashboard() {
     setUserName(name)
     setUserEmail(email)
   }, [])
-
-  // Save quotes changes to localStorage
-  useEffect(() => {
-    localStorage.setItem('customerQuotes', JSON.stringify(quotes))
-  }, [quotes])
 
   const showNotification = (msg) => {
     setToastMessage(msg)
@@ -1446,7 +1478,27 @@ export default function CustomerDashboard() {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {filteredQuotes.map((q) => {
+                {filteredQuotes.length === 0 ? (
+                  <div className="bg-white border border-slate-200 rounded-3xl p-10 text-center space-y-4 shadow-sm">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                      <FileText className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-slate-900">No Quotations Found</h3>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        No quotations registered under <strong>{userEmail}</strong> yet. You can calculate instant market rates or submit a detailed 5-agent shipment request.
+                      </p>
+                    </div>
+                    <Link
+                      to="/dashboard/new-shipment"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition-all cursor-pointer"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Request Quote (5-Agent AI)</span>
+                    </Link>
+                  </div>
+                ) : (
+                  filteredQuotes.map((q) => {
                   const isAccepted = q.status === 'ACCEPTED'
                   const isRejected = q.status === 'REJECTED'
                   const isAgentApproved = Boolean(q.agentApproved)
@@ -1679,7 +1731,7 @@ export default function CustomerDashboard() {
 
                     </div>
                   )
-                })}
+                }))}
               </div>
             </div>
           )}

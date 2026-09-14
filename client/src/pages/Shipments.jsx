@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -433,7 +433,24 @@ export default function Shipments() {
     }
   }
 
-  const filteredShipments = shipments.filter(s => {
+  const loggedEmail = (localStorage.getItem('userEmail') || '').toLowerCase().trim()
+  const isDemoCustomer = !loggedEmail || loggedEmail === 'customer@apexgl.com' || loggedEmail === 'alex@apexgl.com'
+
+  const userScopedShipments = useMemo(() => {
+    if (userRole !== 'customer' && userRole !== 'user') {
+      return shipments
+    }
+    return shipments.filter(s => {
+      const owner = (s.ownerEmail || '').toLowerCase().trim()
+      const cust = (s.customerEmail || '').toLowerCase().trim()
+      if (isDemoCustomer) {
+        return !owner || owner === 'customer@apexgl.com' || cust === 'customer@apexgl.com' || owner === 'alex@apexgl.com'
+      }
+      return owner === loggedEmail || cust === loggedEmail
+    })
+  }, [shipments, userRole, loggedEmail, isDemoCustomer])
+
+  const filteredShipments = userScopedShipments.filter(s => {
     const matchesSearch = 
       s.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.origin?.toLowerCase().includes(searchQuery.toLowerCase()) ||

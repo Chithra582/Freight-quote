@@ -138,9 +138,16 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
     if (!calculationResult) return
 
     const shipmentId = `SH-${Math.floor(4000 + Math.random() * 9000)}`
+    const loggedUserEmail = localStorage.getItem('userEmail') || 'customer@apexgl.com'
+    const loggedUserName = localStorage.getItem('userName') || 'Alex Shipper'
+    const loggedCompany = localStorage.getItem('userCompany') || 'ABC Electronics Pvt Ltd'
+
     const newQuote = {
       id: calculationResult.quoteId,
       shipmentId: shipmentId,
+      customer: loggedCompany || loggedUserName,
+      customerEmail: loggedUserEmail,
+      ownerEmail: loggedUserEmail,
       origin: `${calculationResult.from} Port`,
       destination: `${calculationResult.to} Port`,
       mode: 'Ocean',
@@ -160,6 +167,9 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
     const newShipment = {
       id: shipmentId,
       quoteId: calculationResult.quoteId,
+      customer: loggedCompany || loggedUserName,
+      customerEmail: loggedUserEmail,
+      ownerEmail: loggedUserEmail,
       origin: calculationResult.from,
       destination: calculationResult.to,
       mode: 'Ocean',

@@ -148,17 +148,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
           { name: 'Roles & Permissions', path: '/admin/dashboard?tab=roles-permissions', icon: ShieldCheck },
           { name: 'All Shipments', path: '/dashboard/shipments', icon: Truck },
           { name: 'All Quotes Registry', path: '/admin/dashboard?tab=all-quotes', icon: FileText },
-          { name: 'Workflow Lifecycle', path: '/admin/dashboard?tab=workflow-monitor', icon: Activity },
-          { name: 'AI Pricing Monitor', path: '/admin/dashboard?tab=ai-pricing-monitor', icon: DollarSign },
-          { name: 'AI Agent Monitor', path: '/admin/dashboard?tab=ai-agent-monitor', icon: Cpu },
           { name: 'Master Data Hub', path: '/dashboard/master-data', icon: Database },
           { name: 'Route & Risk Intelligence', path: '/dashboard/routes', icon: MapPin },
           { name: 'Pricing & Margin Rules', path: '/admin/dashboard?tab=margin-policy', icon: Percent },
-          { name: 'Approval Rules', path: '/admin/dashboard?tab=approval-rules', icon: ListChecks },
           { name: 'Reports', path: '/admin/dashboard?tab=reports', icon: BarChart3 },
           { name: 'Audit Logs', path: '/admin/dashboard?tab=audit-logs', icon: MessageSquare },
-          { name: 'Notifications', path: '/admin/dashboard?tab=notifications', icon: Bell },
-          { name: 'System Settings', path: '/admin/dashboard?tab=settings', icon: Settings }
+          { name: 'Notifications', path: '/admin/dashboard?tab=notifications', icon: Bell }
         ]
       }
     ]

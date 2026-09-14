@@ -399,6 +399,9 @@ export default function NewShipmentEnquiry() {
     const newShipment = {
       id: shipmentId,
       quoteId: quoteId,
+      customer: formData.companyName || localStorage.getItem('userCompany') || localStorage.getItem('userName') || 'ABC Electronics Pvt Ltd',
+      customerEmail: formData.contactEmail || localStorage.getItem('userEmail') || 'customer@apexgl.com',
+      ownerEmail: formData.contactEmail || localStorage.getItem('userEmail') || 'customer@apexgl.com',
       origin: formData.origin,
       destination: formData.destination,
       mode: formData.serviceMode,
