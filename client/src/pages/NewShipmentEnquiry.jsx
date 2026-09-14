@@ -7,19 +7,10 @@ import {
   MapPin, 
   Calendar, 
   ShieldCheck, 
-  Info, 
   Truck, 
   Plane, 
   Anchor, 
   Train, 
-  Calculator, 
-  User, 
-  Building, 
-  Mail, 
-  Phone, 
-  Package, 
-  Layers, 
-  Sparkles, 
   CheckCircle2, 
   Trash2, 
   Plus,
@@ -27,20 +18,12 @@ import {
   DollarSign,
   CloudRain,
   Cpu,
-  Check,
-  Download,
   Zap,
-  RotateCcw,
-  TrendingUp,
-  Clock,
-  Shield,
-  FileCheck
+  TrendingUp
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
 import { ORIGIN_PORTS, DESTINATION_PORTS } from '../components/InstantQuoteCalculator'
-import { API_BASE_URL } from '../config/api'
-import { downloadQuotePDF } from '../utils/exportUtils'
 
 const INCOTERMS = [
   { value: 'EXW', label: 'EXW - Ex Works' },
@@ -101,11 +84,11 @@ export default function NewShipmentEnquiry() {
     return `${yyyy}-${mm}-${dd}`
   })()
 
-  // Form State
+  // Form State - initially empty parameters
   const [formData, setFormData] = useState({
     // Step 1 - Route
-    origin: 'Chennai',
-    destination: 'Singapore',
+    origin: '',
+    destination: '',
     pickupAddress: '',
     deliveryAddress: '',
     readyDate: tomorrowStr,
@@ -123,23 +106,23 @@ export default function NewShipmentEnquiry() {
         id: 1,
         packageType: 'container',
         containerType: '40hc',
-        unitCount: '2',
-        weight: '36800',
-        commodity: 'Commercial Export Goods',
+        unitCount: '1',
+        weight: '',
+        commodity: '',
         hsCode: '8708.29.00'
       }
     ],
     packageType: 'container',
     containerType: '40hc',
-    weight: '36800',
-    volume: '76',
-    commodity: 'Commercial Export Goods',
+    weight: '',
+    volume: '',
+    commodity: '',
     hsCode: '8708.29.00',
 
     // Step 4 - Value & Instructions
-    declaredValue: '3500000',
+    declaredValue: '',
     currency: 'INR',
-    specialInstructions: 'Standard dry 40HC container required.',
+    specialInstructions: 'Standard dry container required.',
     requiresCustomsClearance: true,
     requiresInsurance: true,
 
@@ -150,13 +133,16 @@ export default function NewShipmentEnquiry() {
     contactPhone: '+91 98765 43210'
   })
 
-  // Estimated baseline dynamic costs
+  // Estimated baseline dynamic costs - initially empty until user inputs parameters
   const [estimate, setEstimate] = useState({
-    distance: 1750,
-    cost: 148350,
-    transitTime: '5 – 6 Days',
-    carbonFootprint: '1.4 Tons CO2'
+    distance: 0,
+    cost: 0,
+    transitTime: '—',
+    carbonFootprint: '—'
   })
+
+  const totalWeightNum = formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 0
+  const hasSufficientParams = Boolean(formData.origin && formData.destination && totalWeightNum > 0)
 
   useEffect(() => {
     let token = localStorage.getItem('token')
@@ -176,12 +162,23 @@ export default function NewShipmentEnquiry() {
 
   // Recalculate dynamic costs when parameters change
   useEffect(() => {
+    const weightNum = parseFloat(formData.weight) || (formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0)) || 0
+    if (!formData.origin || !formData.destination || weightNum <= 0) {
+      setEstimate({
+        distance: 0,
+        cost: 0,
+        transitTime: '—',
+        carbonFootprint: '—'
+      })
+      setVerifiedResult(null)
+      return
+    }
+
     let baseRate = 129000
     if (formData.serviceMode === 'Air') baseRate = 280000
     if (formData.serviceMode === 'Road') baseRate = 85000
     if (formData.serviceMode === 'Rail') baseRate = 95000
 
-    const weightNum = parseFloat(formData.weight) || 36800
     const weightFactor = weightNum / 20000
     const calculatedCost = Math.round(baseRate * Math.max(0.8, weightFactor))
 
@@ -210,7 +207,7 @@ export default function NewShipmentEnquiry() {
         }
       }
     })
-  }, [formData.serviceMode, formData.weight, formData.origin, formData.destination])
+  }, [formData.serviceMode, formData.weight, formData.origin, formData.destination, formData.items])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -240,8 +237,8 @@ export default function NewShipmentEnquiry() {
       packageType: 'container',
       containerType: '40hc',
       unitCount: '1',
-      weight: '18400',
-      commodity: formData.commodity || 'Commercial Export Goods',
+      weight: '',
+      commodity: formData.commodity || '',
       hsCode: '8708.29.00'
     }
     const newItems = [...formData.items, newItem]
@@ -618,6 +615,7 @@ export default function NewShipmentEnquiry() {
                                 onChange={handleInputChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
                               >
+                                <option value="">-- Select Origin Port / Hub --</option>
                                 {ORIGIN_PORTS.map(h => (
                                   <option key={h.value} value={h.value}>{h.label}</option>
                                 ))}
@@ -636,6 +634,7 @@ export default function NewShipmentEnquiry() {
                                 onChange={handleInputChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
                               >
+                                <option value="">-- Select Destination Port / Hub --</option>
                                 {DESTINATION_PORTS.map(d => (
                                   <option key={d.value} value={d.value}>{d.label}</option>
                                 ))}
@@ -781,18 +780,22 @@ export default function NewShipmentEnquiry() {
                                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Units</label>
                                 <input
                                   type="number"
+                                  placeholder="1"
+                                  min="1"
                                   value={item.unitCount}
                                   onChange={e => handleItemChange(idx, 'unitCount', e.target.value)}
-                                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-blue-600"
                                 />
                               </div>
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Total Weight (kg)</label>
                                 <input
                                   type="number"
+                                  placeholder="e.g. 18400"
+                                  min="1"
                                   value={item.weight}
                                   onChange={e => handleItemChange(idx, 'weight', e.target.value)}
-                                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-blue-600"
                                 />
                               </div>
                             </div>
@@ -925,8 +928,24 @@ export default function NewShipmentEnquiry() {
                       {currentStep < 5 ? (
                         <button
                           type="button"
-                          onClick={() => setCurrentStep(prev => prev + 1)}
-                          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+                          onClick={() => {
+                            if (currentStep === 1) {
+                              if (!formData.origin || !formData.destination) {
+                                alert('Please select both Origin and Destination ports before proceeding.')
+                                return
+                              }
+                              if (formData.origin === formData.destination) {
+                                alert('Origin and Destination cannot be the same hub location.')
+                                return
+                              }
+                            }
+                            if (currentStep === 3 && totalWeightNum <= 0) {
+                              alert('Please enter a valid container cargo weight before proceeding.')
+                              return
+                            }
+                            setCurrentStep(prev => prev + 1)
+                          }}
+                          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5 active:scale-98"
                         >
                           <span>Next Step</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -934,11 +953,11 @@ export default function NewShipmentEnquiry() {
                       ) : (
                         <button
                           type="submit"
-                          disabled={isSubmitting}
-                          className="px-6 py-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-500/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
+                          disabled={isSubmitting || !hasSufficientParams}
+                          className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>{isSubmitting ? 'Submitting Quote...' : 'Submit Enquiry & Dispatch to Broker'}</span>
+                          <span>{isSubmitting ? 'Submitting...' : 'Submit Enquiry & Dispatch'}</span>
                         </button>
                       )}
                     </div>
@@ -966,20 +985,32 @@ export default function NewShipmentEnquiry() {
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 text-xs bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
-                    <div className="flex justify-between text-slate-300">
+                  <div className="space-y-2 text-xs bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
+                    <div className="flex justify-between items-center text-slate-300">
                       <span>Route Lane:</span>
-                      <strong className="text-white truncate max-w-[180px]">{formData.origin} ➔ {formData.destination}</strong>
+                      {formData.origin && formData.destination ? (
+                        <strong className="text-white truncate max-w-[180px]">{formData.origin} ➔ {formData.destination}</strong>
+                      ) : formData.origin ? (
+                        <strong className="text-slate-300 truncate max-w-[180px]">{formData.origin} ➔ <span className="text-slate-500 font-normal italic">Select destination</span></strong>
+                      ) : formData.destination ? (
+                        <strong className="text-slate-300 truncate max-w-[180px]"><span className="text-slate-500 font-normal italic">Select origin</span> ➔ {formData.destination}</strong>
+                      ) : (
+                        <span className="text-slate-500 italic">Select origin & destination</span>
+                      )}
                     </div>
-                    <div className="flex justify-between text-slate-300">
+                    <div className="flex justify-between items-center text-slate-300">
                       <span>Mode / Incoterm:</span>
                       <strong className="text-white">{formData.serviceMode} ({formData.containerLoad}) · {formData.incoterm}</strong>
                     </div>
-                    <div className="flex justify-between text-slate-300">
-                      <span>Weight & Commodity:</span>
-                      <strong className="text-white">
-                        {(formData.items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) || parseFloat(formData.weight) || 36800).toLocaleString()} kg · {formData.commodity}
-                      </strong>
+                    <div className="flex justify-between items-center text-slate-300">
+                      <span>Weight & Cargo:</span>
+                      {totalWeightNum > 0 ? (
+                        <strong className="text-white">
+                          {totalWeightNum.toLocaleString()} kg {formData.commodity ? `· ${formData.commodity}` : ''}
+                        </strong>
+                      ) : (
+                        <span className="text-slate-500 italic">Awaiting cargo weight</span>
+                      )}
                     </div>
                   </div>
 
@@ -1080,25 +1111,44 @@ export default function NewShipmentEnquiry() {
                     </div>
                   ) : (
                     <div className="space-y-4 pt-1">
-                      <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
-                        <span className="text-[10px] font-extrabold uppercase text-indigo-300 tracking-wider block">
-                          ESTIMATED RATE BASELINE
-                        </span>
-                        <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 font-mono">
-                          ₹ {estimate.cost.toLocaleString('en-IN')}
+                      {hasSufficientParams ? (
+                        <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
+                          <span className="text-[10px] font-extrabold uppercase text-indigo-300 tracking-wider block">
+                            ESTIMATED RATE BASELINE
+                          </span>
+                          <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 font-mono">
+                            ₹ {estimate.cost.toLocaleString('en-IN')}
+                          </div>
+                          <span className="text-[10px] text-slate-400 block mt-1">
+                            Indicative transit: {estimate.transitTime} · {estimate.carbonFootprint}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-slate-400 block mt-1">
-                          Indicative transit: {estimate.transitTime}
-                        </span>
-                      </div>
+                      ) : (
+                        <div className="p-4 bg-slate-950/40 border border-dashed border-slate-800 rounded-2xl text-center">
+                          <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider block">
+                            AWAITING PARAMETERS
+                          </span>
+                          <div className="text-2xl font-black text-slate-600 mt-1 font-mono">
+                            —
+                          </div>
+                          <span className="text-[10.5px] text-slate-500 block mt-1">
+                            Select origin, destination & enter cargo weight to calculate rate
+                          </span>
+                        </div>
+                      )}
 
                       <button
                         type="button"
+                        disabled={!hasSufficientParams}
                         onClick={startAgentVerification}
-                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                          hasSufficientParams
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 cursor-pointer active:scale-98'
+                            : 'bg-slate-800/70 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-75'
+                        }`}
                       >
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                        <span>Run 5-Agent Multi-Verification</span>
+                        <ShieldCheck className={`w-4 h-4 ${hasSufficientParams ? 'text-emerald-400' : 'text-slate-500'}`} />
+                        <span>{hasSufficientParams ? 'Run 5-Agent Multi-Verification' : 'Select Route & Weight to Verify'}</span>
                       </button>
                     </div>
                   )}

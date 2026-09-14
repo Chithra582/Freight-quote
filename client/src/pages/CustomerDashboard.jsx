@@ -31,7 +31,9 @@ import {
   Eye,
   UploadCloud,
   Building,
-  FolderLock
+  FolderLock,
+  ShieldCheck,
+  Scale
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
@@ -653,11 +655,11 @@ export default function CustomerDashboard() {
           </div>
 
           {/* Tab Navigation / Filter Bar */}
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1.5 sm:pb-0 max-w-full shrink-0">
               <Link
                 to="/user/dashboard"
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
                   activeTab === 'overview' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >

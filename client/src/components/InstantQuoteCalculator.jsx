@@ -3,15 +3,10 @@ import {
   Calculator, 
   MapPin, 
   Package, 
-  ArrowRight, 
   CheckCircle2, 
   Download, 
-  Sparkles, 
-  DollarSign, 
   TrendingUp, 
-  FileText,
-  RotateCcw,
-  ShieldCheck
+  RotateCcw
 } from 'lucide-react'
 import { downloadQuotePDF } from '../utils/exportUtils'
 
@@ -51,15 +46,15 @@ export const CONTAINER_TYPES = [
 ]
 
 export default function InstantQuoteCalculator({ onSaveToDashboard }) {
-  // 1. Input Form State matching user test specification exactly
-  const [fromLocation, setFromLocation] = useState('Chennai')
-  const [toLocation, setToLocation] = useState('Singapore')
+  // 1. Input Form State - initially empty parameters
+  const [fromLocation, setFromLocation] = useState('')
+  const [toLocation, setToLocation] = useState('')
   const [containerType, setContainerType] = useState('40HC')
-  const [containerCount, setContainerCount] = useState(2)
-  const [baseFreightPerContainer, setBaseFreightPerContainer] = useState(50000)
+  const [containerCount, setContainerCount] = useState('')
+  const [baseFreightPerContainer, setBaseFreightPerContainer] = useState('')
   const [bafPct, setBafPct] = useState(10)
-  const [originThcPerContainer, setOriginThcPerContainer] = useState(8000)
-  const [docFee, setDocFee] = useState(3000)
+  const [originThcPerContainer, setOriginThcPerContainer] = useState('')
+  const [docFee, setDocFee] = useState('')
   const [marginPct, setMarginPct] = useState(15)
 
   // Result state
@@ -68,6 +63,10 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
 
   const handleCalculate = (e) => {
     if (e) e.preventDefault()
+    if (!fromLocation || !toLocation) {
+      alert('Please select both Origin and Destination ports.')
+      return
+    }
 
     const count = parseInt(containerCount) || 1
     const basePerUnit = parseFloat(baseFreightPerContainer) || 0
@@ -122,14 +121,14 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
   }
 
   const handleReset = () => {
-    setFromLocation('Chennai')
-    setToLocation('Singapore')
+    setFromLocation('')
+    setToLocation('')
     setContainerType('40HC')
-    setContainerCount(2)
-    setBaseFreightPerContainer(50000)
+    setContainerCount('')
+    setBaseFreightPerContainer('')
     setBafPct(10)
-    setOriginThcPerContainer(8000)
-    setDocFee(3000)
+    setOriginThcPerContainer('')
+    setDocFee('')
     setMarginPct(15)
     setCalculationResult(null)
     setSavedSuccess(false)
@@ -302,6 +301,7 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   onChange={e => setFromLocation(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-600 cursor-pointer"
                 >
+                  <option value="">-- Select Origin Port --</option>
                   {ORIGIN_PORTS.map(p => (
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
@@ -318,6 +318,7 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   onChange={e => setToLocation(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-600 cursor-pointer"
                 >
+                  <option value="">-- Select Destination Port --</option>
                   {DESTINATION_PORTS.map(p => (
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
@@ -351,9 +352,9 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   type="number"
                   min="1"
                   max="50"
-                  required
+                  placeholder="e.g. 2"
                   value={containerCount}
-                  onChange={e => setContainerCount(parseInt(e.target.value) || 1)}
+                  onChange={e => setContainerCount(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                 />
               </div>
@@ -370,9 +371,9 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   <input
                     type="number"
                     step="100"
-                    required
+                    placeholder="e.g. 50000"
                     value={baseFreightPerContainer}
-                    onChange={e => setBaseFreightPerContainer(parseFloat(e.target.value) || 0)}
+                    onChange={e => setBaseFreightPerContainer(e.target.value)}
                     className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
@@ -386,7 +387,6 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   <input
                     type="number"
                     step="0.5"
-                    required
                     value={bafPct}
                     onChange={e => setBafPct(parseFloat(e.target.value) || 0)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600"
@@ -407,9 +407,9 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   <input
                     type="number"
                     step="100"
-                    required
+                    placeholder="e.g. 8000"
                     value={originThcPerContainer}
-                    onChange={e => setOriginThcPerContainer(parseFloat(e.target.value) || 0)}
+                    onChange={e => setOriginThcPerContainer(e.target.value)}
                     className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
@@ -424,9 +424,9 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
                   <input
                     type="number"
                     step="100"
-                    required
+                    placeholder="e.g. 3000"
                     value={docFee}
-                    onChange={e => setDocFee(parseFloat(e.target.value) || 0)}
+                    onChange={e => setDocFee(e.target.value)}
                     className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
@@ -464,7 +464,8 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-500/25 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+                disabled={!fromLocation || !toLocation || !baseFreightPerContainer}
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Calculator className="w-4 h-4" />
                 <span>Calculate Quote</span>
@@ -571,22 +572,22 @@ export default function InstantQuoteCalculator({ onSaveToDashboard }) {
             </div>
           ) : (
             <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-                <Calculator className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                <Calculator className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="font-black text-slate-900 text-base">Ready for Calculation</h4>
+                <h4 className="font-black text-slate-900 text-sm">Awaiting Quotation Parameters</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  Click <strong>"Calculate Quote"</strong> on the left to evaluate Base Freight, BAF, THC, Documentation, and 15% Margin.
+                  Select origin, destination and input freight parameters on the left to compute total buy cost and client sell price.
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono text-left space-y-1 text-slate-600">
-                <div className="text-[10.5px] font-bold text-slate-400 uppercase">Preset Test Scenario:</div>
-                <div>• Corridor: Chennai → Singapore</div>
-                <div>• Cargo: 2 × 40HC Containers</div>
-                <div>• Total Cost: ₹1,29,000</div>
-                <div>• Margin: 15% (₹19,350)</div>
-                <div className="font-bold text-blue-700">• Sell Price: ₹1,48,350</div>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-left space-y-1 text-slate-600">
+                <div className="text-[10px] font-bold text-slate-400 uppercase">Calculation Flow:</div>
+                <div className="text-[11px]">• Step 1: Base Freight (Rate × Count)</div>
+                <div className="text-[11px]">• Step 2: BAF Fuel Surcharge Markup</div>
+                <div className="text-[11px]">• Step 3: Origin Terminal Handling (THC)</div>
+                <div className="text-[11px]">• Step 4: Documentation & Port EDI Fee</div>
+                <div className="text-[11px]">• Step 5: Commercial Margin Markup</div>
               </div>
             </div>
           )}

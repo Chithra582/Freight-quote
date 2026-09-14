@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   LayoutDashboard, 
-  PlusCircle, 
+  PlusCircle,
   BarChart3, 
   Settings, 
   LogOut, 
@@ -15,21 +15,17 @@ import {
   Activity,
   Users,
   Database,
-  Anchor,
   MessageSquare,
-  Calculator,
   ShieldCheck,
   Percent,
   ListChecks,
   Scale,
   Cpu,
-  TrendingUp,
   UserCheck,
   Briefcase,
   Bell,
   User as UserIcon,
   FileSearch,
-  Layers,
   ShieldAlert,
   FolderCheck,
   DollarSign,
@@ -40,16 +36,11 @@ import {
 export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const activePath = location.pathname + location.search
 
-  const [userEmail, setUserEmail] = useState('alex@apexgl.com')
   const [userName, setUserName] = useState('Alex Shipper')
   const [userRole, setUserRole] = useState('customer')
 
   useEffect(() => {
-    const email = localStorage.getItem('userEmail') || 'alex@apexgl.com'
-    setUserEmail(email)
-    
     const name = localStorage.getItem('userName') || 'Alex Shipper'
     setUserName(name)
 
@@ -63,12 +54,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
 
   const normalizedRole = userRole.toLowerCase()
 
-  // Define side navigation strictly according to Section 6 (Dashboard Architecture) of the specification
+  // Define side navigation strictly aligned with each role's active dashboard tabs and pages
   let sections = []
 
   if (normalizedRole === 'customer' || normalizedRole === 'user') {
     // 1. Customer Portal:
-    // Side Navigation: Dashboard • My Shipments • Request Quote • My Quotes • Documents • Notifications • Profile
+    // Side Navigation: Dashboard • My Shipments • Request Quote • My Quotes • All Bookings • Documents • Notifications • Profile
     sections = [
       {
         title: 'CUSTOMER PORTAL',
@@ -76,8 +67,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
           { name: 'Dashboard', path: '/user/dashboard', icon: LayoutDashboard },
           { name: 'My Shipments', path: '/dashboard/shipments', icon: Truck },
           { name: 'Request Quote', path: '/dashboard/new-shipment', icon: PlusCircle },
-          { name: 'AI Multi-Agent Studio', path: '/dashboard/multi-agent', icon: Cpu },
           { name: 'My Quotes', path: '/user/dashboard?tab=quotes', icon: FileText },
+          { name: 'All Bookings', path: '/user/dashboard?tab=bookings', icon: FolderCheck },
           { name: 'Documents', path: '/user/dashboard?tab=documents', icon: FileSearch },
           { name: 'Notifications', path: '/user/dashboard?tab=notifications', icon: Bell },
           { name: 'Profile', path: '/user/dashboard?tab=profile', icon: UserIcon }
@@ -86,71 +77,46 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
     ]
   } else if (normalizedRole === 'company_manager' || normalizedRole === 'company') {
     // 2. Company Manager Portal:
-    // Sections: Dashboard • Shipment Requests • Agent List • Bookings • Notifications
+    // Supported tabs in CompanyManagerDashboard: Dashboard • Shipment Requests • Agent List
     sections = [
       {
         title: 'COMPANY MANAGER PORTAL',
         items: [
           { name: 'Dashboard', path: '/company/manager/dashboard', icon: LayoutDashboard },
           { name: 'Shipment Requests', path: '/company/manager/dashboard?tab=shipments', icon: Truck },
-          { name: 'Agent List', path: '/company/manager/dashboard?tab=agents', icon: Users },
-          { name: 'All Bookings', path: '/company/manager/dashboard?tab=bookings', icon: FolderCheck },
-          { name: 'AI Multi-Agent Studio', path: '/dashboard/multi-agent', icon: Cpu },
-          { name: 'Notifications', path: '/company/manager/dashboard?tab=notifications', icon: Bell },
-        ]
-      }
-    ]
-  } else if (normalizedRole === 'company_agent') {
-    // 3. Company Agent Portal (10 M4 Tabs):
-    // Dashboard • Incoming Requests • Pending Verification • Shipment Requests • Quote Verification • Document Review • Booking Management • Approved • Rejected • Notifications
-    sections = [
-      {
-        title: 'COMPANY AGENT PORTAL',
-        items: [
-          { name: 'Dashboard', path: '/agents/dashboard?tab=overview', icon: LayoutDashboard },
-          { name: 'Incoming Requests', path: '/agents/dashboard?tab=incoming-requests', icon: FileText },
-          { name: 'Pending Verification', path: '/agents/dashboard?tab=pending-verification', icon: ShieldAlert },
-          { name: 'Shipment Requests', path: '/agents/dashboard?tab=shipment-requests', icon: Truck },
-          { name: 'Quote Verification', path: '/agents/dashboard?tab=quote-verification', icon: ShieldCheck },
-          { name: 'Document Review', path: '/agents/dashboard?tab=document-review', icon: FileSearch },
-          { name: 'Booking Management', path: '/agents/dashboard?tab=booking-management', icon: FolderCheck },
-          { name: 'Approved Quotes', path: '/agents/dashboard?tab=approved', icon: UserCheck },
-          { name: 'Rejected Quotes', path: '/agents/dashboard?tab=rejected', icon: AlertTriangle },
-          { name: 'AI Multi-Agent Studio', path: '/dashboard/multi-agent', icon: Cpu },
-          { name: 'Notifications', path: '/agents/dashboard?tab=notifications', icon: Bell }
+          { name: 'Agent List', path: '/company/manager/dashboard?tab=agents', icon: Users }
         ]
       }
     ]
   } else if (
+    normalizedRole === 'company_agent' ||
     normalizedRole === 'freight_agent' || 
     normalizedRole === 'agent' || 
     normalizedRole === 'agent_operator' || 
     normalizedRole === 'broker'
   ) {
-    // 4. Freight Agent Portal:
-    // Side Navigation: Dashboard • Shipment Requests • All Shipments • Quote Requests • Quote Review • Generated Quotes • AI Pricing Analysis • Risk Analysis • Customers • Documents • Notifications • Profile
+    // 3. Freight Agent & Company Agent Portal (10 M4 Tabs in AgentOperationsDashboard):
+    // Dashboard • Incoming Requests • Pending Verification • Shipment Requests • Quote Verification • Document Review • Booking Management • Approved • Rejected • Notifications
     sections = [
       {
-        title: 'FREIGHT AGENT PORTAL',
+        title: normalizedRole === 'company_agent' ? 'COMPANY AGENT PORTAL' : 'FREIGHT AGENT DESK',
         items: [
           { name: 'Dashboard', path: '/agents/dashboard', icon: LayoutDashboard },
-          { name: 'Shipment Requests', path: '/agents/dashboard?tab=shipment-requests', icon: PlusCircle },
-          { name: 'All Shipments', path: '/dashboard/shipments', icon: Truck },
-          { name: 'Quote Requests', path: '/agents/dashboard?tab=quote-requests', icon: FileText },
-          { name: 'Quote Review', path: '/agents/dashboard?tab=quote-review', icon: ShieldCheck },
-          { name: 'Generated Quotes', path: '/agents/dashboard?tab=generated-quotes', icon: Layers },
-          { name: 'AI Pricing Analysis', path: '/agents/dashboard?tab=pricing-analysis', icon: DollarSign },
-          { name: 'Risk Analysis', path: '/agents/dashboard?tab=risk-analysis', icon: AlertTriangle },
-          { name: 'Customers', path: '/agents/dashboard?tab=customers', icon: Users },
-          { name: 'Documents', path: '/agents/dashboard?tab=documents', icon: FileSearch },
-          { name: 'Notifications', path: '/agents/dashboard?tab=notifications', icon: Bell },
-          { name: 'Profile', path: '/agents/dashboard?tab=profile', icon: UserIcon }
+          { name: 'Incoming Requests', path: '/agents/dashboard?tab=incoming', icon: FileText },
+          { name: 'Pending Verification', path: '/agents/dashboard?tab=pending', icon: ShieldAlert },
+          { name: 'Shipment Requests', path: '/agents/dashboard?tab=shipment-requests', icon: Truck },
+          { name: 'Quote Verification', path: '/agents/dashboard?tab=verification', icon: ShieldCheck },
+          { name: 'Document Review', path: '/agents/dashboard?tab=document-review', icon: FileSearch },
+          { name: 'Booking Management', path: '/agents/dashboard?tab=bookings', icon: FolderCheck },
+          { name: 'Approved Quotes', path: '/agents/dashboard?tab=approved', icon: UserCheck },
+          { name: 'Rejected Quotes', path: '/agents/dashboard?tab=rejected', icon: AlertTriangle },
+          { name: 'Notifications', path: '/agents/dashboard?tab=notifications', icon: Bell }
         ]
       }
     ]
   } else if (normalizedRole === 'customs_officer' || normalizedRole === 'customs') {
-    // 5. Customs Officer Portal:
-    // Side Navigation: Dashboard • Pending Reviews • Assigned Shipments • Document Verification • Customs Risk Flags • Completed Reviews • Notifications • Profile
+    // 4. Customs Officer Portal (Matching CustomsDashboard tabs):
+    // Dashboard • Pending Reviews • Assigned Shipments • Document Verification • Customs Risk Flags • Completed Reviews • Notifications • Profile
     sections = [
       {
         title: 'CUSTOMS OFFICER PORTAL',
@@ -167,35 +133,32 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
       }
     ]
   } else {
-    // 6. Admin Portal:
-    // Side Navigation: Dashboard • Companies & Approval • Users • Customers • Freight Agents • Customs Officers • Roles & Permissions • All Shipments • All Quotes • AI Pricing Monitor • AI Agent Monitor • Risk Intelligence • Locations • Routes • Carriers • Container Types • Cargo Categories • Pricing Rules • Reports • Notifications • Settings • Audit Logs
+    // 5. Admin Portal:
+    // Core Administrative, Commercial & Governance Functions:
     sections = [
       {
-        title: 'ADMIN PORTAL',
+        title: 'ADMIN SYSTEM CONSOLE',
         items: [
           { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
           { name: 'Companies & Approval', path: '/admin/dashboard?tab=companies', icon: Building },
-          { name: 'Users', path: '/admin/dashboard?tab=users', icon: Users },
+          { name: 'Users Management', path: '/admin/dashboard?tab=users', icon: Users },
           { name: 'Customers', path: '/admin/dashboard?tab=customers', icon: UserCheck },
           { name: 'Freight Agents', path: '/admin/dashboard?tab=freight-agents', icon: Briefcase },
           { name: 'Customs Officers', path: '/admin/dashboard?tab=customs-officers', icon: Scale },
           { name: 'Roles & Permissions', path: '/admin/dashboard?tab=roles-permissions', icon: ShieldCheck },
           { name: 'All Shipments', path: '/dashboard/shipments', icon: Truck },
-          { name: 'All Quotes', path: '/admin/dashboard?tab=all-quotes', icon: FileText },
+          { name: 'All Quotes Registry', path: '/admin/dashboard?tab=all-quotes', icon: FileText },
+          { name: 'Workflow Lifecycle', path: '/admin/dashboard?tab=workflow-monitor', icon: Activity },
           { name: 'AI Pricing Monitor', path: '/admin/dashboard?tab=ai-pricing-monitor', icon: DollarSign },
           { name: 'AI Agent Monitor', path: '/admin/dashboard?tab=ai-agent-monitor', icon: Cpu },
-          { name: 'AI Multi-Agent Studio', path: '/dashboard/multi-agent', icon: Cpu },
-          { name: 'Risk Intelligence', path: '/dashboard/routes', icon: MapPin },
-          { name: 'Locations & Ports', path: '/dashboard/master-data?tab=ports', icon: Anchor },
-          { name: 'Routes', path: '/dashboard/routes', icon: Activity },
-          { name: 'Carriers', path: '/dashboard/master-data?tab=carriers', icon: Database },
-          { name: 'Container Types', path: '/dashboard/master-data?tab=containers', icon: Layers },
-          { name: 'Cargo Categories', path: '/dashboard/master-data?tab=cargo', icon: ListChecks },
-          { name: 'Pricing Rules', path: '/admin/dashboard?tab=margin-policy', icon: Percent },
+          { name: 'Master Data Hub', path: '/dashboard/master-data', icon: Database },
+          { name: 'Route & Risk Intelligence', path: '/dashboard/routes', icon: MapPin },
+          { name: 'Pricing & Margin Rules', path: '/admin/dashboard?tab=margin-policy', icon: Percent },
+          { name: 'Approval Rules', path: '/admin/dashboard?tab=approval-rules', icon: ListChecks },
           { name: 'Reports', path: '/admin/dashboard?tab=reports', icon: BarChart3 },
+          { name: 'Audit Logs', path: '/admin/dashboard?tab=audit-logs', icon: MessageSquare },
           { name: 'Notifications', path: '/admin/dashboard?tab=notifications', icon: Bell },
-          { name: 'Settings', path: '/admin/dashboard?tab=settings', icon: Settings },
-          { name: 'Audit Logs', path: '/admin/dashboard?tab=audit-logs', icon: MessageSquare }
+          { name: 'System Settings', path: '/admin/dashboard?tab=settings', icon: Settings }
         ]
       }
     ]
