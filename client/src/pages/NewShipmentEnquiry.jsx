@@ -19,7 +19,8 @@ import {
   CloudRain,
   Cpu,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Clock
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
