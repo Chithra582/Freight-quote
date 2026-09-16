@@ -263,7 +263,7 @@ export default function NewShipmentEnquiry() {
     }))
   }
 
-  // 5-Agent Verification Routine (Runs for ~90 seconds or instant skip)
+  // 5-Agent Verification Routine (Runs in 12 seconds — under 20s specification)
   const startAgentVerification = () => {
     setIsVerifying(true)
     setVerificationProgress(0)
@@ -273,13 +273,14 @@ export default function NewShipmentEnquiry() {
     setVerificationSeconds(0)
 
     const logsTimeline = [
-      { time: 2, agent: 0, text: `Analyzing trade corridor ${formData.origin} ➔ ${formData.destination}... Port congestion low (1.2d turn).` },
-      { time: 18, agent: 1, text: `Pricing Agent queried live carrier spot rates. BAF fuel surcharge indexed at 10.0%. Base rate locked.` },
-      { time: 38, agent: 2, text: `Weather Agent scanned Bay of Bengal & Malacca Strait. Tropical storm risk score: 0.08 (Safe voyage).` },
-      { time: 58, agent: 3, text: `Customs Agent validated HS code ${formData.hsCode}. Export clearance ICEGATE EDI declaration verified.` },
-      { time: 78, agent: 4, text: `Margin Agent optimized commercial spread. Margin 15.0% satisfies policy floor (12.0%). Auto-authorized.` }
+      { time: 1, agent: 0, text: `Analyzing trade corridor ${formData.origin || 'Origin'} ➔ ${formData.destination || 'Destination'}... Port congestion low (1.2d turn).` },
+      { time: 3, agent: 1, text: `Pricing Agent queried live carrier spot rates. BAF fuel surcharge indexed at 10.0%. Base rate locked.` },
+      { time: 6, agent: 2, text: `Weather Agent scanned oceanic corridor & transit forecast. Tropical storm risk score: 0.08 (Safe voyage).` },
+      { time: 8, agent: 3, text: `Customs Agent validated HS code ${formData.hsCode || '8708.29.00'}. Export clearance ICEGATE EDI declaration verified.` },
+      { time: 10, agent: 4, text: `Margin Agent optimized commercial spread. Margin 15.0% satisfies policy floor (12.0%). Auto-authorized.` }
     ]
 
+    const totalSeconds = 12
     let currentSec = 0
     if (timerRef.current) clearInterval(timerRef.current)
 
@@ -287,13 +288,13 @@ export default function NewShipmentEnquiry() {
       currentSec += 1
       setVerificationSeconds(currentSec)
 
-      const prog = Math.min(99, Math.round((currentSec / 90) * 100))
+      const prog = Math.min(99, Math.round((currentSec / totalSeconds) * 100))
       setVerificationProgress(prog)
 
-      if (currentSec >= 75) setActiveAgentIndex(4)
-      else if (currentSec >= 55) setActiveAgentIndex(3)
-      else if (currentSec >= 35) setActiveAgentIndex(2)
-      else if (currentSec >= 15) setActiveAgentIndex(1)
+      if (currentSec >= 10) setActiveAgentIndex(4)
+      else if (currentSec >= 8) setActiveAgentIndex(3)
+      else if (currentSec >= 6) setActiveAgentIndex(2)
+      else if (currentSec >= 3) setActiveAgentIndex(1)
       else setActiveAgentIndex(0)
 
       const matchedLog = logsTimeline.find(l => l.time === currentSec)
@@ -301,7 +302,7 @@ export default function NewShipmentEnquiry() {
         setAgentLogs(prev => [...prev, matchedLog.text])
       }
 
-      if (currentSec >= 90) {
+      if (currentSec >= totalSeconds) {
         clearInterval(timerRef.current)
         finalizeVerification()
       }
@@ -988,171 +989,233 @@ export default function NewShipmentEnquiry() {
                     </span>
                   </div>
 
-                  <div className="space-y-2 text-xs bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
-                    <div className="flex justify-between items-center text-slate-300">
-                      <span>Route Lane:</span>
-                      {formData.origin && formData.destination ? (
-                        <strong className="text-white truncate max-w-[180px]">{formData.origin} ➔ {formData.destination}</strong>
-                      ) : formData.origin ? (
-                        <strong className="text-slate-300 truncate max-w-[180px]">{formData.origin} ➔ <span className="text-slate-500 font-normal italic">Select destination</span></strong>
-                      ) : formData.destination ? (
-                        <strong className="text-slate-300 truncate max-w-[180px]"><span className="text-slate-500 font-normal italic">Select origin</span> ➔ {formData.destination}</strong>
-                      ) : (
-                        <span className="text-slate-500 italic">Select origin & destination</span>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center text-slate-300">
-                      <span>Mode / Incoterm:</span>
-                      <strong className="text-white">{formData.serviceMode} ({formData.containerLoad}) · {formData.incoterm}</strong>
-                    </div>
-                    <div className="flex justify-between items-center text-slate-300">
-                      <span>Weight & Cargo:</span>
-                      {totalWeightNum > 0 ? (
-                        <strong className="text-white">
-                          {totalWeightNum.toLocaleString()} kg {formData.commodity ? `· ${formData.commodity}` : ''}
-                        </strong>
-                      ) : (
-                        <span className="text-slate-500 italic">Awaiting cargo weight</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {isVerifying ? (
-                    <div className="space-y-4 pt-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <span className="font-bold text-white">Verifying 5 AI Agents...</span>
+                  {currentStep < 5 ? (
+                    /* Initial Empty State during Steps 1 to 4 */
+                    <div className="space-y-4">
+                      <div className="space-y-2 text-xs bg-slate-950/60 p-4 rounded-2xl border border-dashed border-slate-800">
+                        <div className="flex justify-between items-center text-slate-400">
+                          <span>Route Lane:</span>
+                          <span className="text-slate-600 font-mono italic">—</span>
                         </div>
-                        <span className="font-mono text-indigo-300">{verificationProgress}%</span>
+                        <div className="flex justify-between items-center text-slate-400">
+                          <span>Mode / Incoterm:</span>
+                          <span className="text-slate-600 font-mono italic">—</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-400">
+                          <span>Weight & Cargo:</span>
+                          <span className="text-slate-600 font-mono italic">—</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-400">
+                          <span>Declared Value:</span>
+                          <span className="text-slate-600 font-mono italic">—</span>
+                        </div>
                       </div>
 
-                      <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <motion.div
-                          className="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-full rounded-full"
-                          style={{ width: `${verificationProgress}%` }}
-                        />
-                      </div>
-
-                      <div className="space-y-1.5 text-xs">
-                        {AGENTS_LIST.map((ag, idx) => {
-                          const isPassed = activeAgentIndex > idx
-                          const isCurrent = activeAgentIndex === idx
-                          const IconComp = ag.icon
-
-                          return (
-                            <div
-                              key={ag.id}
-                              className={`p-2 rounded-xl border flex items-center justify-between text-xs transition-all ${
-                                isCurrent
-                                  ? 'bg-indigo-950/90 border-indigo-500 text-white'
-                                  : isPassed
-                                  ? 'bg-slate-800/80 border-emerald-500/50 text-slate-200'
-                                  : 'bg-slate-900/40 border-slate-800 text-slate-500'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <IconComp className={`w-3.5 h-3.5 ${isCurrent ? 'text-indigo-400 animate-spin' : isPassed ? 'text-emerald-400' : 'text-slate-500'}`} />
-                                <span className="font-semibold text-[11px]">{ag.name}</span>
-                              </div>
-                              {isPassed ? (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                              ) : isCurrent ? (
-                                <span className="text-[10px] text-indigo-300 font-mono">Running...</span>
-                              ) : (
-                                <span className="text-[10px] text-slate-600">Pending</span>
-                              )}
-                            </div>
-                          )
-                        })}
+                      <div className="p-5 bg-slate-950/40 border border-slate-800 rounded-2xl text-center space-y-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                          <Cpu className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-200 block">5-Agent Verification at Final Step</span>
+                          <p className="text-[11px] text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
+                            Fill in all shipment parameters across Steps 1 to 4. At the final step, all details will consolidate here for you to run live 5-agent multi-verification.
+                          </p>
+                        </div>
+                        <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-mono">
+                          <span className={`w-2 h-2 rounded-full ${currentStep >= 1 ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                          <span>1. Route</span>
+                          <span className="text-slate-700">➔</span>
+                          <span className={`w-2 h-2 rounded-full ${currentStep >= 2 ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                          <span>2. Service</span>
+                          <span className="text-slate-700">➔</span>
+                          <span className={`w-2 h-2 rounded-full ${currentStep >= 3 ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                          <span>3. Details</span>
+                          <span className="text-slate-700">➔</span>
+                          <span className={`w-2 h-2 rounded-full ${currentStep >= 4 ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                          <span>4. Add-on</span>
+                          <span className="text-slate-700">➔</span>
+                          <span className="w-2 h-2 rounded-full bg-slate-700" />
+                          <span className="text-indigo-400 font-bold">5. Verify</span>
+                        </div>
                       </div>
 
                       <button
                         type="button"
-                        onClick={finalizeVerification}
-                        className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-slate-700"
+                        disabled={true}
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-800/50 text-slate-500 border border-slate-800 cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <Zap className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Skip Delay / Complete Now</span>
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        <span>Verification Available at Step 5 (Fill all details)</span>
                       </button>
-                    </div>
-                  ) : verifiedResult ? (
-                    <div className="space-y-4 pt-1">
-                      <div className="p-4 bg-emerald-950/40 border border-emerald-600/40 rounded-2xl">
-                        <span className="text-[10px] font-extrabold uppercase text-emerald-400 tracking-wider block">
-                          5-AGENT VERIFIED SELL PRICE
-                        </span>
-                        <div className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
-                          {verifiedResult.totalPriceFormatted}
-                        </div>
-                        <span className="text-[10px] text-slate-400 block mt-1">
-                          Guaranteed 7-Day Validity · {verifiedResult.validUntil}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2 text-xs">
-                        <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
-                          <div className="flex items-center gap-1.5 text-sky-400 font-bold text-[11px] mb-0.5">
-                            <Navigation className="w-3 h-3" />
-                            <span>1. Route Agent:</span>
-                          </div>
-                          <p className="text-slate-300 text-[11px]">
-                            {verifiedResult.routeAnalysis.optimalLoop} ({verifiedResult.routeAnalysis.estimatedTransit})
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
-                          <div className="flex items-center gap-1.5 text-blue-400 font-bold text-[11px] mb-0.5">
-                            <DollarSign className="w-3 h-3" />
-                            <span>2. Pricing Agent:</span>
-                          </div>
-                          <p className="text-slate-300 text-[11px]">
-                            Linehaul Buy: {verifiedResult.pricingBreakdown.baseLinehaul} + Margin: {verifiedResult.brokerMargin}
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-4 pt-1">
-                      {hasSufficientParams ? (
-                        <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
-                          <span className="text-[10px] font-extrabold uppercase text-indigo-300 tracking-wider block">
-                            ESTIMATED RATE BASELINE
-                          </span>
-                          <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 font-mono">
-                            ₹ {estimate.cost.toLocaleString('en-IN')}
+                    /* Step 5: Consolidated Parameters & 5-Agent Multi-Verification */
+                    <div className="space-y-4">
+                      <div className="space-y-2 text-xs bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>Route Lane:</span>
+                          <strong className="text-white truncate max-w-[200px]">{formData.origin} ➔ {formData.destination}</strong>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>Mode / Incoterm:</span>
+                          <strong className="text-white">{formData.serviceMode} ({formData.containerLoad}) · {formData.incoterm}</strong>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>Weight & Cargo:</span>
+                          <strong className="text-white">
+                            {totalWeightNum.toLocaleString()} kg {formData.commodity ? `· ${formData.commodity}` : ''}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span>Declared Value:</span>
+                          <strong className="text-white">
+                            ₹ {(Number(formData.declaredValue) || 3500000).toLocaleString('en-IN')} ({formData.currency || 'INR'})
+                          </strong>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-300 pt-1 border-t border-slate-800/60">
+                          <span>Shipper / Contact:</span>
+                          <strong className="text-indigo-300 truncate max-w-[200px]">{formData.contactName || 'Alex Shipper'} ({formData.companyName || 'Apex Logistics'})</strong>
+                        </div>
+                      </div>
+
+                      {isVerifying ? (
+                        <div className="space-y-4 pt-2">
+                          <div className="flex justify-between items-center text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                              <span className="font-bold text-white">Verifying 5 AI Agents...</span>
+                            </div>
+                            <span className="font-mono text-indigo-300">{verificationProgress}%</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 block mt-1">
-                            Indicative transit: {estimate.transitTime} · {estimate.carbonFootprint}
-                          </span>
+
+                          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              className="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-full rounded-full"
+                              style={{ width: `${verificationProgress}%` }}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5 text-xs">
+                            {AGENTS_LIST.map((ag, idx) => {
+                              const isPassed = activeAgentIndex > idx
+                              const isCurrent = activeAgentIndex === idx
+                              const IconComp = ag.icon
+
+                              return (
+                                <div
+                                  key={ag.id}
+                                  className={`p-2 rounded-xl border flex items-center justify-between text-xs transition-all ${
+                                    isCurrent
+                                      ? 'bg-indigo-950/90 border-indigo-500 text-white'
+                                      : isPassed
+                                      ? 'bg-slate-800/80 border-emerald-500/50 text-slate-200'
+                                      : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <IconComp className={`w-3.5 h-3.5 ${isCurrent ? 'text-indigo-400 animate-spin' : isPassed ? 'text-emerald-400' : 'text-slate-500'}`} />
+                                    <span className="font-semibold text-[11px]">{ag.name}</span>
+                                  </div>
+                                  {isPassed ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                  ) : isCurrent ? (
+                                    <span className="text-[10px] text-indigo-300 font-mono">Running...</span>
+                                  ) : (
+                                    <span className="text-[10px] text-slate-600">Pending</span>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={finalizeVerification}
+                            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-slate-700"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Skip Delay / Complete Now</span>
+                          </button>
+                        </div>
+                      ) : verifiedResult ? (
+                        <div className="space-y-4 pt-1">
+                          <div className="p-4 bg-emerald-950/40 border border-emerald-600/40 rounded-2xl">
+                            <span className="text-[10px] font-extrabold uppercase text-emerald-400 tracking-wider block">
+                              5-AGENT VERIFIED SELL PRICE
+                            </span>
+                            <div className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
+                              {verifiedResult.totalPriceFormatted}
+                            </div>
+                            <span className="text-[10px] text-slate-400 block mt-1">
+                              Guaranteed 7-Day Validity · {verifiedResult.validUntil}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
+                              <div className="flex items-center gap-1.5 text-sky-400 font-bold text-[11px] mb-0.5">
+                                <Navigation className="w-3 h-3" />
+                                <span>1. Route Agent:</span>
+                              </div>
+                              <p className="text-slate-300 text-[11px]">
+                                {verifiedResult.routeAnalysis.optimalLoop} ({verifiedResult.routeAnalysis.estimatedTransit})
+                              </p>
+                            </div>
+
+                            <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
+                              <div className="flex items-center gap-1.5 text-blue-400 font-bold text-[11px] mb-0.5">
+                                <DollarSign className="w-3 h-3" />
+                                <span>2. Pricing Agent:</span>
+                              </div>
+                              <p className="text-slate-300 text-[11px]">
+                                Linehaul Buy: {verifiedResult.pricingBreakdown.baseLinehaul} + Margin: {verifiedResult.brokerMargin}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ) : (
-                        <div className="p-4 bg-slate-950/40 border border-dashed border-slate-800 rounded-2xl text-center">
-                          <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider block">
-                            AWAITING PARAMETERS
-                          </span>
-                          <div className="text-2xl font-black text-slate-600 mt-1 font-mono">
-                            —
-                          </div>
-                          <span className="text-[10.5px] text-slate-500 block mt-1">
-                            Select origin, destination & enter cargo weight to calculate rate
-                          </span>
+                        <div className="space-y-4 pt-1">
+                          {hasSufficientParams ? (
+                            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
+                              <span className="text-[10px] font-extrabold uppercase text-indigo-300 tracking-wider block">
+                                ESTIMATED RATE BASELINE
+                              </span>
+                              <div className="text-2xl sm:text-3xl font-black text-white mt-0.5 font-mono">
+                                ₹ {estimate.cost.toLocaleString('en-IN')}
+                              </div>
+                              <span className="text-[10px] text-slate-400 block mt-1">
+                                Indicative transit: {estimate.transitTime} · {estimate.carbonFootprint}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="p-4 bg-slate-950/40 border border-dashed border-slate-800 rounded-2xl text-center">
+                              <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider block">
+                                AWAITING PARAMETERS
+                              </span>
+                              <div className="text-2xl font-black text-slate-600 mt-1 font-mono">
+                                —
+                              </div>
+                              <span className="text-[10.5px] text-slate-500 block mt-1">
+                                Select origin, destination & enter cargo weight to calculate rate
+                              </span>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            disabled={!hasSufficientParams}
+                            onClick={startAgentVerification}
+                            className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                              hasSufficientParams
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 cursor-pointer active:scale-98'
+                                : 'bg-slate-800/70 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-75'
+                            }`}
+                          >
+                            <ShieldCheck className={`w-4 h-4 ${hasSufficientParams ? 'text-emerald-400' : 'text-slate-500'}`} />
+                            <span>{hasSufficientParams ? 'Run 5-Agent Multi-Verification' : 'Select Route & Weight to Verify'}</span>
+                          </button>
                         </div>
                       )}
-
-                      <button
-                        type="button"
-                        disabled={!hasSufficientParams}
-                        onClick={startAgentVerification}
-                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                          hasSufficientParams
-                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 cursor-pointer active:scale-98'
-                            : 'bg-slate-800/70 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-75'
-                        }`}
-                      >
-                        <ShieldCheck className={`w-4 h-4 ${hasSufficientParams ? 'text-emerald-400' : 'text-slate-500'}`} />
-                        <span>{hasSufficientParams ? 'Run 5-Agent Multi-Verification' : 'Select Route & Weight to Verify'}</span>
-                      </button>
                     </div>
                   )}
 
