@@ -27,105 +27,105 @@ import Sidebar from '../components/Sidebar'
 
 export const ALL_ORIGIN_HUBS = [
   {
-    category: '⚓ Ocean Sea Ports (Marine Freight)',
+    category: 'Ocean Sea Ports',
     options: [
-      { value: 'JNPT Port (Nhava Sheva, Navi Mumbai)', label: '⚓ [Ocean Port] JNPT Nhava Sheva Container Terminal, Navi Mumbai, MH (INNSA)' },
-      { value: 'Chennai Port (Rajaji Salai, Chennai)', label: '⚓ [Ocean Port] Chennai Port Trust Container Terminal, Rajaji Salai, Chennai (INMAA)' },
-      { value: 'Mundra Port (APSEZ, Kutch, Gujarat)', label: '⚓ [Ocean Port] Mundra Port APSEZ Container Terminal, Kutch, Gujarat (INMUN)' },
-      { value: 'Cochin Port (Vallarpadam ICTT, Kochi)', label: '⚓ [Ocean Port] Cochin Port Vallarpadam ICTT, Kochi, Kerala (INCOK)' },
-      { value: 'Kolkata Port (Netaji Subhas Dock)', label: '⚓ [Ocean Port] Kolkata Port Trust, Netaji Subhas Dock, West Bengal (INCCU)' },
-      { value: 'Visakhapatnam Port (VCTPL, Andhra Pradesh)', label: '⚓ [Ocean Port] Visakhapatnam Port VCTPL Terminal, Andhra Pradesh (INVTZ)' },
-      { value: 'Tuticorin Port (VOC Port, Tamil Nadu)', label: '⚓ [Ocean Port] V.O. Chidambaranar Port Container Wharf, Tuticorin (INTUT)' },
-      { value: 'Hazira Port (Adani Terminal, Surat)', label: '⚓ [Ocean Port] Hazira Port Adani Container Terminal, Surat, Gujarat (INHZR)' }
+      { value: 'JNPT Port (Nhava Sheva, Navi Mumbai)', label: 'JNPT Nhava Sheva Container Terminal, Navi Mumbai (INNSA)' },
+      { value: 'Chennai Port (Rajaji Salai, Chennai)', label: 'Chennai Port Trust Container Terminal, Chennai (INMAA)' },
+      { value: 'Mundra Port (APSEZ, Kutch, Gujarat)', label: 'Mundra Port APSEZ Container Terminal, Gujarat (INMUN)' },
+      { value: 'Cochin Port (Vallarpadam ICTT, Kochi)', label: 'Cochin Port Vallarpadam ICTT, Kerala (INCOK)' },
+      { value: 'Kolkata Port (Netaji Subhas Dock)', label: 'Kolkata Port Netaji Subhas Dock, West Bengal (INCCU)' },
+      { value: 'Visakhapatnam Port (VCTPL, Andhra Pradesh)', label: 'Visakhapatnam Port VCTPL Terminal, Andhra Pradesh (INVTZ)' },
+      { value: 'Tuticorin Port (VOC Port, Tamil Nadu)', label: 'V.O. Chidambaranar Port Container Wharf, Tuticorin (INTUT)' },
+      { value: 'Hazira Port (Adani Terminal, Surat)', label: 'Hazira Port Adani Container Terminal, Gujarat (INHZR)' }
     ]
   },
   {
-    category: '✈️ Air Cargo Terminals (Airport Freight)',
+    category: 'Air Cargo Airports',
     options: [
-      { value: 'Delhi IGI Airport Cargo Complex (DEL)', label: '✈️ [Air Cargo] Delhi IGI Airport International Cargo Complex, New Delhi (DEL)' },
-      { value: 'Mumbai Air Cargo Complex (BOM)', label: '✈️ [Air Cargo] Mumbai CSMI Airport Cargo City, Sahar, Andheri East (BOM)' },
-      { value: 'Bengaluru Kempegowda Cargo Terminal (BLR)', label: '✈️ [Air Cargo] Bengaluru BLR Airport Cargo Village, Devanahalli (BLR)' },
-      { value: 'Chennai International Air Cargo (MAA)', label: '✈️ [Air Cargo] Chennai Airport Cargo Complex, Meenambakkam, GST Road (MAA)' },
-      { value: 'Hyderabad RGIA Air Cargo Terminal (HYD)', label: '✈️ [Air Cargo] Hyderabad RGIA Air Cargo Complex, Shamshabad (HYD)' },
-      { value: 'Kolkata NSCBI Airport Cargo (CCU)', label: '✈️ [Air Cargo] Kolkata NSCBI Airport Cargo Complex, Dum Dum (CCU)' },
-      { value: 'Ahmedabad SVPI Airport Cargo (AMD)', label: '✈️ [Air Cargo] Ahmedabad SVPI Airport Cargo Terminal, Hansol (AMD)' }
+      { value: 'Delhi IGI Airport Cargo Complex (DEL)', label: 'Delhi IGI Airport Cargo Complex, New Delhi (DEL)' },
+      { value: 'Mumbai Air Cargo Complex (BOM)', label: 'Mumbai CSMI Airport Cargo City, Sahar (BOM)' },
+      { value: 'Bengaluru Kempegowda Cargo Terminal (BLR)', label: 'Bengaluru Kempegowda Cargo Village, Devanahalli (BLR)' },
+      { value: 'Chennai International Air Cargo (MAA)', label: 'Chennai Airport Cargo Complex, Meenambakkam (MAA)' },
+      { value: 'Hyderabad RGIA Air Cargo Terminal (HYD)', label: 'Hyderabad RGIA Air Cargo Complex, Shamshabad (HYD)' },
+      { value: 'Kolkata NSCBI Airport Cargo (CCU)', label: 'Kolkata NSCBI Airport Cargo Complex, Dum Dum (CCU)' },
+      { value: 'Ahmedabad SVPI Airport Cargo (AMD)', label: 'Ahmedabad SVPI Airport Cargo Terminal, Hansol (AMD)' }
     ]
   },
   {
-    category: '🚛 Road Logistics Parks & Trucking Hubs (Surface Freight)',
+    category: 'Road Logistics Hubs',
     options: [
-      { value: 'Bhiwandi Freight Hub (Thane-Mumbai, MH)', label: '🚛 [Road Hub] Bhiwandi Logistics Park, Mumbai-Nashik Highway, MH' },
-      { value: 'Delhi NCR Logistics Hub (Sonipat/Kundli, HR)', label: '🚛 [Road Hub] Delhi NCR Multi-Modal Freight Hub, NH-44, Sonipat/Kundli, HR' },
-      { value: 'Bengaluru Hosur Road Freight Terminal (KA)', label: '🚛 [Road Hub] Hosur Road Logistics Hub, Electronic City Industrial Corridor, KA' },
-      { value: 'Chennai Sriperumbudur Transport Park (TN)', label: '🚛 [Road Hub] Sriperumbudur Industrial Logistics Terminal, NH-48, Chennai, TN' },
-      { value: 'Pune Chakan Industrial Freight Hub (MH)', label: '🚛 [Road Hub] Chakan Auto Logistics Complex, Phase II MIDC, Pune, MH' },
-      { value: 'Ahmedabad Sanand Freight Terminal (GJ)', label: '🚛 [Road Hub] Sanand GIDC Multi-Modal Transport Park, Ahmedabad, GJ' },
-      { value: 'Kolkata Dankuni Freight Terminal (WB)', label: '🚛 [Road Hub] Dankuni Multi-Modal Freight Depot, Hooghly Highway, WB' }
+      { value: 'Bhiwandi Freight Hub (Thane-Mumbai, MH)', label: 'Bhiwandi Logistics Park, Mumbai-Nashik Highway' },
+      { value: 'Delhi NCR Logistics Hub (Sonipat/Kundli, HR)', label: 'Delhi NCR Multi-Modal Freight Hub, Sonipat' },
+      { value: 'Bengaluru Hosur Road Freight Terminal (KA)', label: 'Hosur Road Logistics Hub, Electronic City, Bengaluru' },
+      { value: 'Chennai Sriperumbudur Transport Park (TN)', label: 'Sriperumbudur Industrial Logistics Terminal, Chennai' },
+      { value: 'Pune Chakan Industrial Freight Hub (MH)', label: 'Chakan Auto Logistics Complex, MIDC, Pune' },
+      { value: 'Ahmedabad Sanand Freight Terminal (GJ)', label: 'Sanand GIDC Multi-Modal Transport Park, Ahmedabad' },
+      { value: 'Kolkata Dankuni Freight Terminal (WB)', label: 'Dankuni Multi-Modal Freight Depot, Hooghly Highway' }
     ]
   },
   {
-    category: '🚆 Rail ICD Container Depots (Intermodal Rail)',
+    category: 'Rail Container Depots (ICD)',
     options: [
-      { value: 'ICD Tughlakabad CONCOR (TKD Delhi)', label: '🚆 [Rail ICD] ICD Tughlakabad CONCOR Rail Container Depot, New Delhi' },
-      { value: 'ICD Whitefield CONCOR (Bengaluru, KA)', label: '🚆 [Rail ICD] ICD Whitefield Container Railhead, Bengaluru, KA' },
-      { value: 'ICD Dadri Eastern DFC Terminal (Noida/UP)', label: '🚆 [Rail ICD] ICD Dadri Eastern Dedicated Freight Corridor Terminal, Greater Noida, UP' },
-      { value: 'ICD Sanathnagar CONCOR (Hyderabad, TS)', label: '🚆 [Rail ICD] ICD Sanathnagar Container Rail Terminal, Hyderabad, TS' },
-      { value: 'ICD Dhandari Kalan Dry Port (Ludhiana, PB)', label: '🚆 [Rail ICD] ICD Dhandari Kalan Dry Port Rail Terminal, Ludhiana, PB' },
-      { value: 'ICD Sabarmati CONCOR Depot (Ahmedabad, GJ)', label: '🚆 [Rail ICD] ICD Sabarmati Container Rail Depot, Ahmedabad, GJ' }
+      { value: 'ICD Tughlakabad CONCOR (TKD Delhi)', label: 'ICD Tughlakabad CONCOR Rail Depot, New Delhi' },
+      { value: 'ICD Whitefield CONCOR (Bengaluru, KA)', label: 'ICD Whitefield Container Railhead, Bengaluru' },
+      { value: 'ICD Dadri Eastern DFC Terminal (Noida/UP)', label: 'ICD Dadri Eastern DFC Terminal, Greater Noida' },
+      { value: 'ICD Sanathnagar CONCOR (Hyderabad, TS)', label: 'ICD Sanathnagar Container Rail Terminal, Hyderabad' },
+      { value: 'ICD Dhandari Kalan Dry Port (Ludhiana, PB)', label: 'ICD Dhandari Kalan Dry Port Rail Terminal, Ludhiana' },
+      { value: 'ICD Sabarmati CONCOR Depot (Ahmedabad, GJ)', label: 'ICD Sabarmati Container Rail Depot, Ahmedabad' }
     ]
   }
 ]
 
 export const ALL_DESTINATION_HUBS = [
   {
-    category: '⚓ International Ocean Ports (Sea Freight)',
+    category: 'Ocean Sea Ports',
     options: [
-      { value: 'Port of Singapore (Pasir Panjang Terminal)', label: '⚓ [Ocean Port] Port of Singapore, Pasir Panjang Container Terminal (SGSIN)' },
-      { value: 'Jebel Ali Port (DP World, Dubai, UAE)', label: '⚓ [Ocean Port] Jebel Ali Port, DP World Terminal 1, Dubai, UAE (AEJEA)' },
-      { value: 'Port of Rotterdam (Maasvlakte 2, Netherlands)', label: '⚓ [Ocean Port] Port of Rotterdam, Maasvlakte 2 Deepwater Harbor, Netherlands (NLRTM)' },
-      { value: 'Port of Shanghai (Yangshan Deepwater, China)', label: '⚓ [Ocean Port] Port of Shanghai, Yangshan Deep Water Port, China (CNSHA)' },
-      { value: 'Port of Hamburg (Altenwerder CTA, Germany)', label: '⚓ [Ocean Port] Port of Hamburg, Container Terminal Altenwerder, Germany (DEHAM)' },
-      { value: 'Port of Los Angeles (Pier 400, USA)', label: '⚓ [Ocean Port] Port of Los Angeles, Pier 400 APM Terminal, CA, USA (USLAX)' },
-      { value: 'Port of Antwerp (Deurganckdock, Belgium)', label: '⚓ [Ocean Port] Port of Antwerp, Deurganckdock Container Terminal, Belgium (BEANR)' },
-      { value: 'Port of Colombo (Jaya Terminal, Sri Lanka)', label: '⚓ [Ocean Port] Port of Colombo, Jaya Container Terminal, Sri Lanka (LKCMB)' },
-      { value: 'Port of New York & New Jersey (Port Newark, USA)', label: '⚓ [Ocean Port] Port of New York & New Jersey, Port Newark Terminal, USA (USNYC)' }
+      { value: 'Port of Singapore (Pasir Panjang Terminal)', label: 'Port of Singapore, Pasir Panjang Container Terminal (SGSIN)' },
+      { value: 'Jebel Ali Port (DP World, Dubai, UAE)', label: 'Jebel Ali Port, DP World Terminal 1, Dubai (AEJEA)' },
+      { value: 'Port of Rotterdam (Maasvlakte 2, Netherlands)', label: 'Port of Rotterdam, Maasvlakte 2 Deepwater Harbor (NLRTM)' },
+      { value: 'Port of Shanghai (Yangshan Deepwater, China)', label: 'Port of Shanghai, Yangshan Deep Water Port (CNSHA)' },
+      { value: 'Port of Hamburg (Altenwerder CTA, Germany)', label: 'Port of Hamburg, Container Terminal Altenwerder (DEHAM)' },
+      { value: 'Port of Los Angeles (Pier 400, USA)', label: 'Port of Los Angeles, Pier 400 APM Terminal (USLAX)' },
+      { value: 'Port of Antwerp (Deurganckdock, Belgium)', label: 'Port of Antwerp, Deurganckdock Container Terminal (BEANR)' },
+      { value: 'Port of Colombo (Jaya Terminal, Sri Lanka)', label: 'Port of Colombo, Jaya Container Terminal (LKCMB)' },
+      { value: 'Port of New York & New Jersey (Port Newark, USA)', label: 'Port of New York & New Jersey, Port Newark (USNYC)' }
     ]
   },
   {
-    category: '✈️ Global Air Cargo Terminals (Airport Freight)',
+    category: 'Air Cargo Airports',
     options: [
-      { value: 'Frankfurt Airport CargoCity South (FRA)', label: '✈️ [Air Cargo] Frankfurt CargoCity South Gate 31, 60549 Frankfurt, Germany (FRA)' },
-      { value: 'Dubai International Dnata Cargo (DXB)', label: '✈️ [Air Cargo] Dubai Airport Cargo Mega Terminal, Airport Road, Dubai, UAE (DXB)' },
-      { value: 'Singapore Changi Cargo Center (SIN)', label: '✈️ [Air Cargo] Singapore Changi Air Cargo Complex, 819663 Singapore (SIN)' },
-      { value: 'London Heathrow Cargo Centre (LHR)', label: '✈️ [Air Cargo] London Heathrow Cargo Centre, Shoreham Rd, Hounslow, UK (LHR)' },
-      { value: 'Hong Kong Airport SuperTerminal 1 (HKG)', label: '✈️ [Air Cargo] Hong Kong International SuperTerminal 1, Chek Lap Kok (HKG)' },
-      { value: 'Chicago O\'Hare Cargo Center (ORD)', label: '✈️ [Air Cargo] Chicago O\'Hare International Cargo Center, IL, USA (ORD)' },
-      { value: 'Amsterdam Schiphol Logistics Park (AMS)', label: '✈️ [Air Cargo] Amsterdam Schiphol Cargo Terminal, 1118 CP Schiphol, Netherlands (AMS)' },
-      { value: 'New York JFK Air Cargo Center (JFK)', label: '✈️ [Air Cargo] New York JFK Air Cargo Center Bldg 77, Jamaica, NY, USA (JFK)' }
+      { value: 'Frankfurt Airport CargoCity South (FRA)', label: 'Frankfurt Airport CargoCity South Gate 31 (FRA)' },
+      { value: 'Dubai International Dnata Cargo (DXB)', label: 'Dubai International Airport Cargo Terminal (DXB)' },
+      { value: 'Singapore Changi Cargo Center (SIN)', label: 'Singapore Changi Air Cargo Complex (SIN)' },
+      { value: 'London Heathrow Cargo Centre (LHR)', label: 'London Heathrow Cargo Centre, Shoreham Rd (LHR)' },
+      { value: 'Hong Kong Airport SuperTerminal 1 (HKG)', label: 'Hong Kong International SuperTerminal 1 (HKG)' },
+      { value: 'Chicago O\'Hare Cargo Center (ORD)', label: 'Chicago O\'Hare International Cargo Center (ORD)' },
+      { value: 'Amsterdam Schiphol Logistics Park (AMS)', label: 'Amsterdam Schiphol Cargo Terminal (AMS)' },
+      { value: 'New York JFK Air Cargo Center (JFK)', label: 'New York JFK Air Cargo Center Bldg 77 (JFK)' }
     ]
   },
   {
-    category: '🚛 Road Logistics Hubs & Cross-Border Depots (Surface Freight)',
+    category: 'Road Logistics Hubs',
     options: [
-      { value: 'Bengaluru Peenya Freight Terminal (KA)', label: '🚛 [Road Hub] Peenya Industrial Logistics Depot, Tumkur Road, Bengaluru, KA' },
-      { value: 'Hyderabad Patancheru Logistics Park (TS)', label: '🚛 [Road Hub] Patancheru Industrial Freight Complex, Outer Ring Road, Hyderabad, TS' },
-      { value: 'Chennai Ambattur Industrial Freight Hub (TN)', label: '🚛 [Road Hub] Ambattur Industrial Logistics Center, Chennai, TN' },
-      { value: 'Delhi NCR Manesar Freight Terminal (HR)', label: '🚛 [Road Hub] Manesar Auto Logistics Depot, Sector 8 IMT Manesar, Gurugram, HR' },
-      { value: 'Mumbai Dronagiri CFS Hub (Navi Mumbai, MH)', label: '🚛 [Road Hub] Dronagiri CFS Warehousing Zone, JNPT Corridor, Uran, MH' },
-      { value: 'Jaipur VKIA Transport Hub (RJ)', label: '🚛 [Road Hub] Vishwakarma Industrial Freight Terminal, Sikar Road, Jaipur, RJ' },
-      { value: 'Petrapole Land Port Terminal (India-Bangladesh Border)', label: '🚛 [Road Hub] Petrapole Land Customs Station & Freight Yard, Border LCS' },
-      { value: 'Raxaul Integrated Checkpost (India-Nepal Border)', label: '🚛 [Road Hub] Raxaul Integrated Checkpost & Truck Freight Depot, Border ICP' }
+      { value: 'Bengaluru Peenya Freight Terminal (KA)', label: 'Peenya Industrial Logistics Depot, Bengaluru' },
+      { value: 'Hyderabad Patancheru Logistics Park (TS)', label: 'Patancheru Industrial Freight Complex, Hyderabad' },
+      { value: 'Chennai Ambattur Industrial Freight Hub (TN)', label: 'Ambattur Industrial Logistics Center, Chennai' },
+      { value: 'Delhi NCR Manesar Freight Terminal (HR)', label: 'Manesar Auto Logistics Depot, Gurugram' },
+      { value: 'Mumbai Dronagiri CFS Hub (Navi Mumbai, MH)', label: 'Dronagiri CFS Warehousing Zone, Navi Mumbai' },
+      { value: 'Jaipur VKIA Transport Hub (RJ)', label: 'Vishwakarma Industrial Freight Terminal, Jaipur' },
+      { value: 'Petrapole Land Port Terminal (India-Bangladesh Border)', label: 'Petrapole Land Customs Station & Freight Yard' },
+      { value: 'Raxaul Integrated Checkpost (India-Nepal Border)', label: 'Raxaul Integrated Checkpost & Freight Depot' }
     ]
   },
   {
-    category: '🚆 Intermodal Rail Terminals & Port Railheads (Rail Freight)',
+    category: 'Rail Container Depots (ICD)',
     options: [
-      { value: 'JNPT Port Rail Terminal (Western DFC Node)', label: '🚆 [Rail Yard] JNPT Port Dedicated Rail Wharf Node, Nhava Sheva, Navi Mumbai' },
-      { value: 'Mundra Port Railhead (Adani Intermodal Yard)', label: '🚆 [Rail Yard] Mundra Port Container Rail Terminal, Port Road, Kutch, Gujarat' },
-      { value: 'Pipavav Port Container Rail Terminal (Gujarat)', label: '🚆 [Rail Yard] Pipavav Port APM Terminals Railhead, Amreli, Gujarat' },
-      { value: 'Chennai Port Harbour Rail Yard (Tamil Nadu)', label: '🚆 [Rail Yard] Chennai Port Dedicated Rail Yard, Port Trust Enclosure, Chennai' },
-      { value: 'Nagpur MIHAN Multi-Modal Rail Logistics Hub', label: '🚆 [Rail Yard] Nagpur MIHAN Intermodal Container Depot, Nagpur, Maharashtra' },
-      { value: 'Duisburg Intermodal Rail Terminal (Germany)', label: '🚆 [Rail Yard] Duisburg Intermodal Terminal (DIT), Rhine-Ruhr Gateway, Germany' }
+      { value: 'JNPT Port Rail Terminal (Western DFC Node)', label: 'JNPT Port Dedicated Rail Wharf Node, Navi Mumbai' },
+      { value: 'Mundra Port Railhead (Adani Intermodal Yard)', label: 'Mundra Port Container Rail Terminal, Gujarat' },
+      { value: 'Pipavav Port Container Rail Terminal (Gujarat)', label: 'Pipavav Port APM Terminals Railhead, Gujarat' },
+      { value: 'Chennai Port Harbour Rail Yard (Tamil Nadu)', label: 'Chennai Port Dedicated Rail Yard, Chennai' },
+      { value: 'Nagpur MIHAN Multi-Modal Rail Logistics Hub', label: 'Nagpur MIHAN Intermodal Container Depot' },
+      { value: 'Duisburg Intermodal Rail Terminal (Germany)', label: 'Duisburg Intermodal Terminal, Germany' }
     ]
   }
 ]
@@ -738,20 +738,20 @@ export default function NewShipmentEnquiry() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-slate-700 font-semibold text-xs mb-1.5">
-                              Origin Port / Airport / Hub / Terminal
+                              Origin Location
                             </label>
-                            <div className="relative">
-                              <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <div className="relative flex items-center">
+                              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                               <select
                                 required
                                 name="origin"
                                 value={formData.origin}
                                 onChange={handleInputChange}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
+                                className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer font-medium transition-all"
                               >
-                                <option value="">-- Select Origin (All Modes Available) --</option>
+                                <option value="">Select Origin Location</option>
                                 {ALL_ORIGIN_HUBS.map(cat => (
-                                  <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                                  <optgroup key={cat.category} label={cat.category}>
                                     {cat.options.map(h => (
                                       <option key={h.value} value={h.value}>{h.label}</option>
                                     ))}
@@ -763,20 +763,20 @@ export default function NewShipmentEnquiry() {
 
                           <div>
                             <label className="block text-slate-700 font-semibold text-xs mb-1.5">
-                              Destination Port / Airport / Hub / Terminal
+                              Destination Location
                             </label>
-                            <div className="relative">
-                              <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <div className="relative flex items-center">
+                              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                               <select
                                 required
                                 name="destination"
                                 value={formData.destination}
                                 onChange={handleInputChange}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
+                                className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer font-medium transition-all"
                               >
-                                <option value="">-- Select Destination (All Modes Available) --</option>
+                                <option value="">Select Destination Location</option>
                                 {ALL_DESTINATION_HUBS.map(cat => (
-                                  <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                                  <optgroup key={cat.category} label={cat.category}>
                                     {cat.options.map(d => (
                                       <option key={d.value} value={d.value}>{d.label}</option>
                                     ))}
@@ -790,8 +790,8 @@ export default function NewShipmentEnquiry() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-slate-700 font-semibold text-xs mb-1.5">Cargo Ready Date</label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <div className="relative flex items-center">
+                              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                               <input
                                 type="date"
                                 required
@@ -799,15 +799,15 @@ export default function NewShipmentEnquiry() {
                                 value={formData.readyDate}
                                 onChange={handleInputChange}
                                 min={todayStr}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
+                                className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition-all"
                               />
                             </div>
                           </div>
 
                           <div>
                             <label className="block text-slate-700 font-semibold text-xs mb-1.5">Target Delivery Date</label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <div className="relative flex items-center">
+                              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                               <input
                                 type="date"
                                 required
@@ -815,7 +815,7 @@ export default function NewShipmentEnquiry() {
                                 value={formData.deliveryDate}
                                 onChange={handleInputChange}
                                 min={formData.readyDate || todayStr}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
+                                className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition-all"
                               />
                             </div>
                           </div>
