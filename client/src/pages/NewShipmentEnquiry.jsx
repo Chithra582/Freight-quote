@@ -24,7 +24,121 @@ import {
 } from 'lucide-react'
 
 import Sidebar from '../components/Sidebar'
-import { ORIGIN_PORTS, DESTINATION_PORTS } from '../components/InstantQuoteCalculator'
+
+export const ROUTES_BY_MODE = {
+  Ocean: {
+    name: 'Ocean Freight',
+    originLabel: 'Origin Ocean Port (Sea)',
+    destinationLabel: 'Destination Ocean Port (Sea)',
+    placeholderOrigin: '-- Select Origin Ocean Port --',
+    placeholderDest: '-- Select Destination Ocean Port --',
+    origins: [
+      { value: 'JNPT Nhava Sheva (Mumbai)', label: 'JNPT Nhava Sheva, Mumbai (INNSA)' },
+      { value: 'Chennai Port', label: 'Chennai Port (INMAA)' },
+      { value: 'Mundra Port', label: 'Mundra Port, Gujarat (INMUN)' },
+      { value: 'Cochin Port', label: 'Cochin Port, Kerala (INCOK)' },
+      { value: 'Kolkata Port', label: 'Kolkata SPM Port / Haldia (INCCU)' },
+      { value: 'Visakhapatnam Port', label: 'Visakhapatnam Port (INVTZ)' },
+      { value: 'Tuticorin Port', label: 'V.O. Chidambaranar Port, Tuticorin (INTUT)' },
+      { value: 'Hazira Port', label: 'Hazira Port, Surat (INHZR)' },
+      { value: 'Mormugao Port', label: 'Mormugao Port, Goa (INMRM)' }
+    ],
+    destinations: [
+      { value: 'Port of Singapore', label: 'Singapore (Port of Singapore SGSIN)' },
+      { value: 'Jebel Ali (Dubai)', label: 'Dubai (Jebel Ali Port AEJEA)' },
+      { value: 'Port of Rotterdam', label: 'Rotterdam (Port of Rotterdam NLRTM)' },
+      { value: 'Port of Shanghai', label: 'Shanghai (Port of Shanghai CNSHA)' },
+      { value: 'Port of Hamburg', label: 'Hamburg (Port of Hamburg DEHAM)' },
+      { value: 'Port of Los Angeles', label: 'Los Angeles (Port of Los Angeles USLAX)' },
+      { value: 'Port of Antwerp', label: 'Antwerp (Port of Antwerp BEANR)' },
+      { value: 'Port of Colombo', label: 'Colombo (Port of Colombo LKCMB)' },
+      { value: 'Port of Busan', label: 'Busan (Port of Busan KRPUS)' },
+      { value: 'Port of New York', label: 'New York (Port of New York & NJ USNYC)' },
+      { value: 'Port of Felixstowe', label: 'Felixstowe (Port of Felixstowe GBFXT)' }
+    ]
+  },
+  Air: {
+    name: 'Air Freight',
+    originLabel: 'Origin Cargo Airport (Air)',
+    destinationLabel: 'Destination Cargo Airport (Air)',
+    placeholderOrigin: '-- Select Origin Cargo Airport --',
+    placeholderDest: '-- Select Destination Cargo Airport --',
+    origins: [
+      { value: 'Delhi IGI Cargo (DEL)', label: 'Delhi — Indira Gandhi Int\'l Airport (DEL)' },
+      { value: 'Mumbai Cargo Terminal (BOM)', label: 'Mumbai — Chhatrapati Shivaji Int\'l (BOM)' },
+      { value: 'Bengaluru Cargo Hub (BLR)', label: 'Bengaluru — Kempegowda Int\'l Airport (BLR)' },
+      { value: 'Chennai Air Cargo (MAA)', label: 'Chennai International Airport (MAA)' },
+      { value: 'Hyderabad RGIA Cargo (HYD)', label: 'Hyderabad — Rajiv Gandhi Int\'l (HYD)' },
+      { value: 'Kolkata NSCBI Cargo (CCU)', label: 'Kolkata — Netaji Subhash Chandra Bose Int\'l (CCU)' },
+      { value: 'Ahmedabad Air Cargo (AMD)', label: 'Ahmedabad — SVPI Airport (AMD)' },
+      { value: 'Cochin CIAL Cargo (COK)', label: 'Cochin International Airport (COK)' }
+    ],
+    destinations: [
+      { value: 'Frankfurt Cargo City (FRA)', label: 'Frankfurt — Frankfurt CargoCity (FRA)' },
+      { value: 'Dubai World Central (DXB)', label: 'Dubai — Cargo Mega Terminal (DXB/DWC)' },
+      { value: 'Singapore Changi Cargo (SIN)', label: 'Singapore — Changi Cargo Center (SIN)' },
+      { value: 'London Heathrow Cargo (LHR)', label: 'London — Heathrow Cargo Center (LHR)' },
+      { value: 'Hong Kong Air Cargo (HKG)', label: 'Hong Kong — SuperTerminal 1 (HKG)' },
+      { value: 'Chicago O\'Hare Cargo (ORD)', label: 'Chicago — O\'Hare International Cargo (ORD)' },
+      { value: 'Amsterdam Schiphol Cargo (AMS)', label: 'Amsterdam — Schiphol Cargo (AMS)' },
+      { value: 'Tokyo Haneda Air Hub (HND)', label: 'Tokyo — Haneda / Narita Air Freight (HND/NRT)' },
+      { value: 'New York JFK Cargo (JFK)', label: 'New York — JFK Air Cargo Center (JFK)' },
+      { value: 'Incheon Cargo Terminal (ICN)', label: 'Seoul — Incheon International Airport (ICN)' }
+    ]
+  },
+  Road: {
+    name: 'Road Freight',
+    originLabel: 'Origin Trucking Hub / Logistics Park (Road)',
+    destinationLabel: 'Destination Logistics Hub / Terminal (Road)',
+    placeholderOrigin: '-- Select Origin Logistics Hub --',
+    placeholderDest: '-- Select Destination Logistics Hub --',
+    origins: [
+      { value: 'Bhiwandi Logistics Hub (Mumbai)', label: 'Mumbai — Bhiwandi Mega Freight Hub' },
+      { value: 'Delhi NCR Multi-Modal Park', label: 'Delhi NCR — Sonipat / Kundli Logistics Hub' },
+      { value: 'Hosur Road Industrial Corridor (Bengaluru)', label: 'Bengaluru — Hosur Road Freight Hub' },
+      { value: 'Sriperumbudur Hub (Chennai)', label: 'Chennai — Sriperumbudur Logistics Park' },
+      { value: 'Chakan Auto Logistics Hub (Pune)', label: 'Pune — Chakan Industrial Transport Hub' },
+      { value: 'Sanand Industrial Corridor (Ahmedabad)', label: 'Ahmedabad — Sanand Freight Terminal' },
+      { value: 'Dankuni Freight Terminal (Kolkata)', label: 'Kolkata — Dankuni Logistics Hub' },
+      { value: 'Shamshabad Logistics Hub (Hyderabad)', label: 'Hyderabad — Shamshabad Cargo Park' }
+    ],
+    destinations: [
+      { value: 'Bengaluru Peenya Industrial Hub', label: 'Bengaluru — Peenya Industrial Cargo Hub' },
+      { value: 'Hyderabad Patancheru Mega Hub', label: 'Hyderabad — Patancheru Freight Terminal' },
+      { value: 'Chennai Ambattur Industrial Estate', label: 'Chennai — Ambattur Industrial Hub' },
+      { value: 'Delhi NCR Manesar Hub', label: 'Delhi NCR — Manesar Auto Freight Center' },
+      { value: 'Nhava Sheva CFS Logistics Park', label: 'Mumbai — Nhava Sheva CFS Warehousing Hub' },
+      { value: 'Jaipur Vishwakarma Industrial Zone', label: 'Jaipur — VKIA Logistics Terminal' },
+      { value: 'Petrapole Border Terminal (India-Bangladesh)', label: 'Petrapole Border Terminal (India-Bangladesh)' },
+      { value: 'Raxaul Inland Depot (India-Nepal)', label: 'Raxaul Border Terminal (India-Nepal Corridor)' }
+    ]
+  },
+  Rail: {
+    name: 'Rail Freight',
+    originLabel: 'Origin Inland Container Depot / ICD (Rail)',
+    destinationLabel: 'Destination Rail Terminal / Port Railhead (Rail)',
+    placeholderOrigin: '-- Select Origin ICD Terminal --',
+    placeholderDest: '-- Select Destination Rail Terminal --',
+    origins: [
+      { value: 'ICD Tughlakabad (TKD Delhi)', label: 'Delhi NCR — ICD Tughlakabad (CONCOR TKD)' },
+      { value: 'ICD Whitefield (Bengaluru)', label: 'Bengaluru — ICD Whitefield Railhead' },
+      { value: 'ICD Dadri (Noida / UP)', label: 'Noida / Greater Noida — ICD Dadri (Eastern DFC)' },
+      { value: 'ICD Sanathnagar (Hyderabad)', label: 'Hyderabad — ICD Sanathnagar CONCOR' },
+      { value: 'ICD Dhandari Kalan (Ludhiana)', label: 'Ludhiana — ICD Dhandari Kalan Rail Hub' },
+      { value: 'ICD Sabarmati (Ahmedabad)', label: 'Ahmedabad — ICD Sabarmati Rail Depot' },
+      { value: 'ICD Dronagiri (Navi Mumbai)', label: 'Navi Mumbai — ICD Dronagiri CFS Railhead' }
+    ],
+    destinations: [
+      { value: 'JNPT Port Rail Terminal (Mumbai)', label: 'JNPT Port Railhead (Western DFC Direct)' },
+      { value: 'Mundra Port Rail Yard (Gujarat)', label: 'Mundra Port Dedicated Rail Terminal' },
+      { value: 'Pipavav Port Railhead (Gujarat)', label: 'Pipavav Port Container Rail Terminal' },
+      { value: 'Chennai Port Railway Yard', label: 'Chennai Port Dedicated Rail Wharf' },
+      { value: 'ICD Nagpur Multi-Modal Hub', label: 'Nagpur — MIHAN Multi-Modal Rail Logistics' },
+      { value: 'Duisburg Intermodal Rail Terminal (Germany)', label: 'Duisburg Intermodal Terminal (Euro-Asia Corridor)' },
+      { value: 'Khorgos Gateway Rail Hub (Kazakhstan Border)', label: 'Khorgos Gateway (Trans-Eurasia Rail Corridor)' }
+    ]
+  }
+}
 
 const INCOTERMS = [
   { value: 'EXW', label: 'EXW - Ex Works' },
@@ -176,9 +290,17 @@ export default function NewShipmentEnquiry() {
     }
 
     let baseRate = 129000
-    if (formData.serviceMode === 'Air') baseRate = 280000
-    if (formData.serviceMode === 'Road') baseRate = 85000
-    if (formData.serviceMode === 'Rail') baseRate = 95000
+    let transitDays = '12 – 18 Days'
+    if (formData.serviceMode === 'Air') {
+      baseRate = 280000
+      transitDays = '2 – 3 Days'
+    } else if (formData.serviceMode === 'Road') {
+      baseRate = 85000
+      transitDays = '3 – 5 Days'
+    } else if (formData.serviceMode === 'Rail') {
+      baseRate = 95000
+      transitDays = '4 – 6 Days'
+    }
 
     const weightFactor = weightNum / 20000
     const calculatedCost = Math.round(baseRate * Math.max(0.8, weightFactor))
@@ -186,7 +308,7 @@ export default function NewShipmentEnquiry() {
     setEstimate({
       distance: 1750,
       cost: calculatedCost,
-      transitTime: formData.serviceMode === 'Air' ? '2 – 3 Days' : '5 – 6 Days',
+      transitTime: transitDays,
       carbonFootprint: `${(weightNum * 0.00008).toFixed(2)} Tons CO2`
     })
 
@@ -209,6 +331,21 @@ export default function NewShipmentEnquiry() {
       }
     })
   }, [formData.serviceMode, formData.weight, formData.origin, formData.destination, formData.items])
+
+  const currentModeRoutes = ROUTES_BY_MODE[formData.serviceMode] || ROUTES_BY_MODE.Ocean
+
+  const handleModeChange = (mode) => {
+    const newModeRoutes = ROUTES_BY_MODE[mode] || ROUTES_BY_MODE.Ocean
+    const isOriginValid = newModeRoutes.origins.some(o => o.value === formData.origin)
+    const isDestValid = newModeRoutes.destinations.some(d => d.value === formData.destination)
+
+    setFormData(prev => ({
+      ...prev,
+      serviceMode: mode,
+      origin: isOriginValid ? prev.origin : '',
+      destination: isDestValid ? prev.destination : ''
+    }))
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -366,8 +503,8 @@ export default function NewShipmentEnquiry() {
       shipmentId: shipmentId,
       customer: formData.companyName || 'ABC Electronics Pvt Ltd',
       customerEmail: formData.contactEmail || 'customer@apexgl.com',
-      origin: `${formData.origin} Port`,
-      destination: `${formData.destination} Port`,
+      origin: formData.origin || 'Custom Origin',
+      destination: formData.destination || 'Custom Destination',
       mode: formData.serviceMode,
       service: `${formData.serviceMode} Direct Verified Express`,
       container: formData.containerType || '40HC',
@@ -599,18 +736,63 @@ export default function NewShipmentEnquiry() {
 
                 {/* Form Content */}
                 <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
-                  <form onSubmit={(e) => { e.preventDefault(); if (currentStep === 5) handleSubmitEnquiry(e); }}>
+                  <form 
+                    onSubmit={(e) => { e.preventDefault(); }} 
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                  >
                     
                     {/* STEP 1: ROUTE & DATES */}
                     {currentStep === 1 && (
                       <div className="space-y-5">
-                        <h2 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3">
-                          1. Route Origins & Cargo Readiness
-                        </h2>
+                        <div className="border-b border-slate-100 pb-3">
+                          <h2 className="text-base font-black text-slate-900">
+                            1. Transport Mode & Route Corridor
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Select freight transport mode to list matching origin & destination hubs.
+                          </p>
+                        </div>
+
+                        {/* Transport Mode Selection */}
+                        <div>
+                          <label className="block text-slate-700 font-semibold text-xs mb-2">Transport Mode</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[
+                              { mode: 'Ocean', icon: Anchor, desc: 'Sea Ports & Vessels' },
+                              { mode: 'Air', icon: Plane, desc: 'Cargo Airports' },
+                              { mode: 'Road', icon: Truck, desc: 'Logistics Parks & Hubs' },
+                              { mode: 'Rail', icon: Train, desc: 'ICD Rail Terminals' }
+                            ].map((item) => {
+                              const IconComp = item.icon
+                              const isSelected = formData.serviceMode === item.mode
+                              return (
+                                <button
+                                  key={item.mode}
+                                  type="button"
+                                  onClick={() => handleModeChange(item.mode)}
+                                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-600/20 shadow-xs'
+                                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <IconComp className={`w-5 h-5 ${isSelected ? 'text-blue-600' : 'text-slate-500'}`} />
+                                    {isSelected && <span className="w-2 h-2 rounded-full bg-blue-600" />}
+                                  </div>
+                                  <div className="font-bold text-xs text-slate-900">{item.mode}</div>
+                                  <div className="text-[10px] text-slate-500 leading-tight">{item.desc}</div>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-slate-700 font-semibold text-xs mb-1.5">Origin Port / Hub</label>
+                            <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                              {currentModeRoutes.originLabel}
+                            </label>
                             <div className="relative">
                               <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
                               <select
@@ -620,8 +802,8 @@ export default function NewShipmentEnquiry() {
                                 onChange={handleInputChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
                               >
-                                <option value="">-- Select Origin Port / Hub --</option>
-                                {ORIGIN_PORTS.map(h => (
+                                <option value="">{currentModeRoutes.placeholderOrigin}</option>
+                                {currentModeRoutes.origins.map(h => (
                                   <option key={h.value} value={h.value}>{h.label}</option>
                                 ))}
                               </select>
@@ -629,7 +811,9 @@ export default function NewShipmentEnquiry() {
                           </div>
 
                           <div>
-                            <label className="block text-slate-700 font-semibold text-xs mb-1.5">Destination Port / Hub</label>
+                            <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                              {currentModeRoutes.destinationLabel}
+                            </label>
                             <div className="relative">
                               <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
                               <select
@@ -639,8 +823,8 @@ export default function NewShipmentEnquiry() {
                                 onChange={handleInputChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
                               >
-                                <option value="">-- Select Destination Port / Hub --</option>
-                                {DESTINATION_PORTS.map(d => (
+                                <option value="">{currentModeRoutes.placeholderDest}</option>
+                                {currentModeRoutes.destinations.map(d => (
                                   <option key={d.value} value={d.value}>{d.label}</option>
                                 ))}
                               </select>
@@ -687,16 +871,21 @@ export default function NewShipmentEnquiry() {
                     {/* STEP 2: SERVICE & INCOTERM */}
                     {currentStep === 2 && (
                       <div className="space-y-5">
-                        <h2 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3">
-                          2. Transport Mode & Incoterm
-                        </h2>
+                        <div className="border-b border-slate-100 pb-3">
+                          <h2 className="text-base font-black text-slate-900">
+                            2. Transport Mode & Incoterm
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Confirm your transport mode and select the commercial Incoterm trade terms.
+                          </p>
+                        </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {[
-                            { mode: 'Ocean', icon: Anchor, desc: 'FCL & LCL Sea' },
-                            { mode: 'Air', icon: Plane, desc: 'Priority Air' },
-                            { mode: 'Road', icon: Truck, desc: 'Inland Haulage' },
-                            { mode: 'Rail', icon: Train, desc: 'Container Rail' }
+                            { mode: 'Ocean', icon: Anchor, desc: 'Sea Ports & Vessels' },
+                            { mode: 'Air', icon: Plane, desc: 'Cargo Airports' },
+                            { mode: 'Road', icon: Truck, desc: 'Logistics Parks & Hubs' },
+                            { mode: 'Rail', icon: Train, desc: 'ICD Rail Terminals' }
                           ].map((item) => {
                             const IconComp = item.icon
                             const isSelected = formData.serviceMode === item.mode
@@ -704,7 +893,7 @@ export default function NewShipmentEnquiry() {
                               <button
                                 key={item.mode}
                                 type="button"
-                                onClick={() => setFormData(prev => ({ ...prev, serviceMode: item.mode }))}
+                                onClick={() => handleModeChange(item.mode)}
                                 className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                                   isSelected
                                     ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-600/20'
@@ -936,7 +1125,7 @@ export default function NewShipmentEnquiry() {
                           onClick={() => {
                             if (currentStep === 1) {
                               if (!formData.origin || !formData.destination) {
-                                alert('Please select both Origin and Destination ports before proceeding.')
+                                alert('Please select both Origin and Destination hubs before proceeding.')
                                 return
                               }
                               if (formData.origin === formData.destination) {
@@ -957,12 +1146,13 @@ export default function NewShipmentEnquiry() {
                         </button>
                       ) : (
                         <button
-                          type="submit"
+                          type="button"
+                          onClick={handleSubmitEnquiry}
                           disabled={isSubmitting || !hasSufficientParams}
-                          className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>{isSubmitting ? 'Submitting...' : 'Submit Enquiry & Dispatch'}</span>
+                          <span>{isSubmitting ? 'Submitting...' : (verifiedResult ? 'Submit Verified Enquiry & Dispatch' : 'Submit Enquiry & Dispatch')}</span>
                         </button>
                       )}
                     </div>
@@ -1172,6 +1362,51 @@ export default function NewShipmentEnquiry() {
                                 Linehaul Buy: {verifiedResult.pricingBreakdown.baseLinehaul} + Margin: {verifiedResult.brokerMargin}
                               </p>
                             </div>
+
+                            <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
+                              <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px] mb-0.5">
+                                <CloudRain className="w-3 h-3" />
+                                <span>3. Weather Agent:</span>
+                              </div>
+                              <p className="text-slate-300 text-[11px]">
+                                Corridor Risk Score: 0.08 (Safe voyage clearance)
+                              </p>
+                            </div>
+
+                            <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
+                              <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px] mb-0.5">
+                                <ShieldCheck className="w-3 h-3" />
+                                <span>4. Customs Agent:</span>
+                              </div>
+                              <p className="text-slate-300 text-[11px]">
+                                HS Code {formData.hsCode || '8708.29.00'} verified · Regulatory Compliant
+                              </p>
+                            </div>
+
+                            <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/80">
+                              <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px] mb-0.5">
+                                <TrendingUp className="w-3 h-3" />
+                                <span>5. Margin Agent:</span>
+                              </div>
+                              <p className="text-slate-300 text-[11px]">
+                                Margin {verifiedResult.marginPct}% approved (above 12% policy floor)
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={handleSubmitEnquiry}
+                              disabled={isSubmitting}
+                              className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>{isSubmitting ? 'Submitting Quote...' : 'Confirm & Submit 5-Agent Verified Quote'}</span>
+                            </button>
+                            <span className="text-[10px] text-slate-400 block text-center mt-1">
+                              Guaranteed 7-day rate lock · Will NOT auto-submit until you click
+                            </span>
                           </div>
                         </div>
                       ) : (
