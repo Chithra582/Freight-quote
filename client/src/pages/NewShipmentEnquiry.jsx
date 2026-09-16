@@ -25,120 +25,110 @@ import {
 
 import Sidebar from '../components/Sidebar'
 
-export const ROUTES_BY_MODE = {
-  Ocean: {
-    name: 'Ocean Freight',
-    originLabel: 'Origin Ocean Port (Sea)',
-    destinationLabel: 'Destination Ocean Port (Sea)',
-    placeholderOrigin: '-- Select Origin Ocean Port --',
-    placeholderDest: '-- Select Destination Ocean Port --',
-    origins: [
-      { value: 'JNPT Nhava Sheva (Mumbai)', label: 'JNPT Nhava Sheva, Mumbai (INNSA)' },
-      { value: 'Chennai Port', label: 'Chennai Port (INMAA)' },
-      { value: 'Mundra Port', label: 'Mundra Port, Gujarat (INMUN)' },
-      { value: 'Cochin Port', label: 'Cochin Port, Kerala (INCOK)' },
-      { value: 'Kolkata Port', label: 'Kolkata SPM Port / Haldia (INCCU)' },
-      { value: 'Visakhapatnam Port', label: 'Visakhapatnam Port (INVTZ)' },
-      { value: 'Tuticorin Port', label: 'V.O. Chidambaranar Port, Tuticorin (INTUT)' },
-      { value: 'Hazira Port', label: 'Hazira Port, Surat (INHZR)' },
-      { value: 'Mormugao Port', label: 'Mormugao Port, Goa (INMRM)' }
-    ],
-    destinations: [
-      { value: 'Port of Singapore', label: 'Singapore (Port of Singapore SGSIN)' },
-      { value: 'Jebel Ali (Dubai)', label: 'Dubai (Jebel Ali Port AEJEA)' },
-      { value: 'Port of Rotterdam', label: 'Rotterdam (Port of Rotterdam NLRTM)' },
-      { value: 'Port of Shanghai', label: 'Shanghai (Port of Shanghai CNSHA)' },
-      { value: 'Port of Hamburg', label: 'Hamburg (Port of Hamburg DEHAM)' },
-      { value: 'Port of Los Angeles', label: 'Los Angeles (Port of Los Angeles USLAX)' },
-      { value: 'Port of Antwerp', label: 'Antwerp (Port of Antwerp BEANR)' },
-      { value: 'Port of Colombo', label: 'Colombo (Port of Colombo LKCMB)' },
-      { value: 'Port of Busan', label: 'Busan (Port of Busan KRPUS)' },
-      { value: 'Port of New York', label: 'New York (Port of New York & NJ USNYC)' },
-      { value: 'Port of Felixstowe', label: 'Felixstowe (Port of Felixstowe GBFXT)' }
+export const ALL_ORIGIN_HUBS = [
+  {
+    category: '⚓ Ocean Sea Ports (Marine Freight)',
+    options: [
+      { value: 'JNPT Port (Nhava Sheva, Navi Mumbai)', label: '⚓ [Ocean Port] JNPT Nhava Sheva Container Terminal, Navi Mumbai, MH (INNSA)' },
+      { value: 'Chennai Port (Rajaji Salai, Chennai)', label: '⚓ [Ocean Port] Chennai Port Trust Container Terminal, Rajaji Salai, Chennai (INMAA)' },
+      { value: 'Mundra Port (APSEZ, Kutch, Gujarat)', label: '⚓ [Ocean Port] Mundra Port APSEZ Container Terminal, Kutch, Gujarat (INMUN)' },
+      { value: 'Cochin Port (Vallarpadam ICTT, Kochi)', label: '⚓ [Ocean Port] Cochin Port Vallarpadam ICTT, Kochi, Kerala (INCOK)' },
+      { value: 'Kolkata Port (Netaji Subhas Dock)', label: '⚓ [Ocean Port] Kolkata Port Trust, Netaji Subhas Dock, West Bengal (INCCU)' },
+      { value: 'Visakhapatnam Port (VCTPL, Andhra Pradesh)', label: '⚓ [Ocean Port] Visakhapatnam Port VCTPL Terminal, Andhra Pradesh (INVTZ)' },
+      { value: 'Tuticorin Port (VOC Port, Tamil Nadu)', label: '⚓ [Ocean Port] V.O. Chidambaranar Port Container Wharf, Tuticorin (INTUT)' },
+      { value: 'Hazira Port (Adani Terminal, Surat)', label: '⚓ [Ocean Port] Hazira Port Adani Container Terminal, Surat, Gujarat (INHZR)' }
     ]
   },
-  Air: {
-    name: 'Air Freight',
-    originLabel: 'Origin Cargo Airport (Air)',
-    destinationLabel: 'Destination Cargo Airport (Air)',
-    placeholderOrigin: '-- Select Origin Cargo Airport --',
-    placeholderDest: '-- Select Destination Cargo Airport --',
-    origins: [
-      { value: 'Delhi IGI Cargo (DEL)', label: 'Delhi — Indira Gandhi Int\'l Airport (DEL)' },
-      { value: 'Mumbai Cargo Terminal (BOM)', label: 'Mumbai — Chhatrapati Shivaji Int\'l (BOM)' },
-      { value: 'Bengaluru Cargo Hub (BLR)', label: 'Bengaluru — Kempegowda Int\'l Airport (BLR)' },
-      { value: 'Chennai Air Cargo (MAA)', label: 'Chennai International Airport (MAA)' },
-      { value: 'Hyderabad RGIA Cargo (HYD)', label: 'Hyderabad — Rajiv Gandhi Int\'l (HYD)' },
-      { value: 'Kolkata NSCBI Cargo (CCU)', label: 'Kolkata — Netaji Subhash Chandra Bose Int\'l (CCU)' },
-      { value: 'Ahmedabad Air Cargo (AMD)', label: 'Ahmedabad — SVPI Airport (AMD)' },
-      { value: 'Cochin CIAL Cargo (COK)', label: 'Cochin International Airport (COK)' }
-    ],
-    destinations: [
-      { value: 'Frankfurt Cargo City (FRA)', label: 'Frankfurt — Frankfurt CargoCity (FRA)' },
-      { value: 'Dubai World Central (DXB)', label: 'Dubai — Cargo Mega Terminal (DXB/DWC)' },
-      { value: 'Singapore Changi Cargo (SIN)', label: 'Singapore — Changi Cargo Center (SIN)' },
-      { value: 'London Heathrow Cargo (LHR)', label: 'London — Heathrow Cargo Center (LHR)' },
-      { value: 'Hong Kong Air Cargo (HKG)', label: 'Hong Kong — SuperTerminal 1 (HKG)' },
-      { value: 'Chicago O\'Hare Cargo (ORD)', label: 'Chicago — O\'Hare International Cargo (ORD)' },
-      { value: 'Amsterdam Schiphol Cargo (AMS)', label: 'Amsterdam — Schiphol Cargo (AMS)' },
-      { value: 'Tokyo Haneda Air Hub (HND)', label: 'Tokyo — Haneda / Narita Air Freight (HND/NRT)' },
-      { value: 'New York JFK Cargo (JFK)', label: 'New York — JFK Air Cargo Center (JFK)' },
-      { value: 'Incheon Cargo Terminal (ICN)', label: 'Seoul — Incheon International Airport (ICN)' }
+  {
+    category: '✈️ Air Cargo Terminals (Airport Freight)',
+    options: [
+      { value: 'Delhi IGI Airport Cargo Complex (DEL)', label: '✈️ [Air Cargo] Delhi IGI Airport International Cargo Complex, New Delhi (DEL)' },
+      { value: 'Mumbai Air Cargo Complex (BOM)', label: '✈️ [Air Cargo] Mumbai CSMI Airport Cargo City, Sahar, Andheri East (BOM)' },
+      { value: 'Bengaluru Kempegowda Cargo Terminal (BLR)', label: '✈️ [Air Cargo] Bengaluru BLR Airport Cargo Village, Devanahalli (BLR)' },
+      { value: 'Chennai International Air Cargo (MAA)', label: '✈️ [Air Cargo] Chennai Airport Cargo Complex, Meenambakkam, GST Road (MAA)' },
+      { value: 'Hyderabad RGIA Air Cargo Terminal (HYD)', label: '✈️ [Air Cargo] Hyderabad RGIA Air Cargo Complex, Shamshabad (HYD)' },
+      { value: 'Kolkata NSCBI Airport Cargo (CCU)', label: '✈️ [Air Cargo] Kolkata NSCBI Airport Cargo Complex, Dum Dum (CCU)' },
+      { value: 'Ahmedabad SVPI Airport Cargo (AMD)', label: '✈️ [Air Cargo] Ahmedabad SVPI Airport Cargo Terminal, Hansol (AMD)' }
     ]
   },
-  Road: {
-    name: 'Road Freight',
-    originLabel: 'Origin Trucking Hub / Logistics Park (Road)',
-    destinationLabel: 'Destination Logistics Hub / Terminal (Road)',
-    placeholderOrigin: '-- Select Origin Logistics Hub --',
-    placeholderDest: '-- Select Destination Logistics Hub --',
-    origins: [
-      { value: 'Bhiwandi Logistics Hub (Mumbai)', label: 'Mumbai — Bhiwandi Mega Freight Hub' },
-      { value: 'Delhi NCR Multi-Modal Park', label: 'Delhi NCR — Sonipat / Kundli Logistics Hub' },
-      { value: 'Hosur Road Industrial Corridor (Bengaluru)', label: 'Bengaluru — Hosur Road Freight Hub' },
-      { value: 'Sriperumbudur Hub (Chennai)', label: 'Chennai — Sriperumbudur Logistics Park' },
-      { value: 'Chakan Auto Logistics Hub (Pune)', label: 'Pune — Chakan Industrial Transport Hub' },
-      { value: 'Sanand Industrial Corridor (Ahmedabad)', label: 'Ahmedabad — Sanand Freight Terminal' },
-      { value: 'Dankuni Freight Terminal (Kolkata)', label: 'Kolkata — Dankuni Logistics Hub' },
-      { value: 'Shamshabad Logistics Hub (Hyderabad)', label: 'Hyderabad — Shamshabad Cargo Park' }
-    ],
-    destinations: [
-      { value: 'Bengaluru Peenya Industrial Hub', label: 'Bengaluru — Peenya Industrial Cargo Hub' },
-      { value: 'Hyderabad Patancheru Mega Hub', label: 'Hyderabad — Patancheru Freight Terminal' },
-      { value: 'Chennai Ambattur Industrial Estate', label: 'Chennai — Ambattur Industrial Hub' },
-      { value: 'Delhi NCR Manesar Hub', label: 'Delhi NCR — Manesar Auto Freight Center' },
-      { value: 'Nhava Sheva CFS Logistics Park', label: 'Mumbai — Nhava Sheva CFS Warehousing Hub' },
-      { value: 'Jaipur Vishwakarma Industrial Zone', label: 'Jaipur — VKIA Logistics Terminal' },
-      { value: 'Petrapole Border Terminal (India-Bangladesh)', label: 'Petrapole Border Terminal (India-Bangladesh)' },
-      { value: 'Raxaul Inland Depot (India-Nepal)', label: 'Raxaul Border Terminal (India-Nepal Corridor)' }
+  {
+    category: '🚛 Road Logistics Parks & Trucking Hubs (Surface Freight)',
+    options: [
+      { value: 'Bhiwandi Freight Hub (Thane-Mumbai, MH)', label: '🚛 [Road Hub] Bhiwandi Logistics Park, Mumbai-Nashik Highway, MH' },
+      { value: 'Delhi NCR Logistics Hub (Sonipat/Kundli, HR)', label: '🚛 [Road Hub] Delhi NCR Multi-Modal Freight Hub, NH-44, Sonipat/Kundli, HR' },
+      { value: 'Bengaluru Hosur Road Freight Terminal (KA)', label: '🚛 [Road Hub] Hosur Road Logistics Hub, Electronic City Industrial Corridor, KA' },
+      { value: 'Chennai Sriperumbudur Transport Park (TN)', label: '🚛 [Road Hub] Sriperumbudur Industrial Logistics Terminal, NH-48, Chennai, TN' },
+      { value: 'Pune Chakan Industrial Freight Hub (MH)', label: '🚛 [Road Hub] Chakan Auto Logistics Complex, Phase II MIDC, Pune, MH' },
+      { value: 'Ahmedabad Sanand Freight Terminal (GJ)', label: '🚛 [Road Hub] Sanand GIDC Multi-Modal Transport Park, Ahmedabad, GJ' },
+      { value: 'Kolkata Dankuni Freight Terminal (WB)', label: '🚛 [Road Hub] Dankuni Multi-Modal Freight Depot, Hooghly Highway, WB' }
     ]
   },
-  Rail: {
-    name: 'Rail Freight',
-    originLabel: 'Origin Inland Container Depot / ICD (Rail)',
-    destinationLabel: 'Destination Rail Terminal / Port Railhead (Rail)',
-    placeholderOrigin: '-- Select Origin ICD Terminal --',
-    placeholderDest: '-- Select Destination Rail Terminal --',
-    origins: [
-      { value: 'ICD Tughlakabad (TKD Delhi)', label: 'Delhi NCR — ICD Tughlakabad (CONCOR TKD)' },
-      { value: 'ICD Whitefield (Bengaluru)', label: 'Bengaluru — ICD Whitefield Railhead' },
-      { value: 'ICD Dadri (Noida / UP)', label: 'Noida / Greater Noida — ICD Dadri (Eastern DFC)' },
-      { value: 'ICD Sanathnagar (Hyderabad)', label: 'Hyderabad — ICD Sanathnagar CONCOR' },
-      { value: 'ICD Dhandari Kalan (Ludhiana)', label: 'Ludhiana — ICD Dhandari Kalan Rail Hub' },
-      { value: 'ICD Sabarmati (Ahmedabad)', label: 'Ahmedabad — ICD Sabarmati Rail Depot' },
-      { value: 'ICD Dronagiri (Navi Mumbai)', label: 'Navi Mumbai — ICD Dronagiri CFS Railhead' }
-    ],
-    destinations: [
-      { value: 'JNPT Port Rail Terminal (Mumbai)', label: 'JNPT Port Railhead (Western DFC Direct)' },
-      { value: 'Mundra Port Rail Yard (Gujarat)', label: 'Mundra Port Dedicated Rail Terminal' },
-      { value: 'Pipavav Port Railhead (Gujarat)', label: 'Pipavav Port Container Rail Terminal' },
-      { value: 'Chennai Port Railway Yard', label: 'Chennai Port Dedicated Rail Wharf' },
-      { value: 'ICD Nagpur Multi-Modal Hub', label: 'Nagpur — MIHAN Multi-Modal Rail Logistics' },
-      { value: 'Duisburg Intermodal Rail Terminal (Germany)', label: 'Duisburg Intermodal Terminal (Euro-Asia Corridor)' },
-      { value: 'Khorgos Gateway Rail Hub (Kazakhstan Border)', label: 'Khorgos Gateway (Trans-Eurasia Rail Corridor)' }
+  {
+    category: '🚆 Rail ICD Container Depots (Intermodal Rail)',
+    options: [
+      { value: 'ICD Tughlakabad CONCOR (TKD Delhi)', label: '🚆 [Rail ICD] ICD Tughlakabad CONCOR Rail Container Depot, New Delhi' },
+      { value: 'ICD Whitefield CONCOR (Bengaluru, KA)', label: '🚆 [Rail ICD] ICD Whitefield Container Railhead, Bengaluru, KA' },
+      { value: 'ICD Dadri Eastern DFC Terminal (Noida/UP)', label: '🚆 [Rail ICD] ICD Dadri Eastern Dedicated Freight Corridor Terminal, Greater Noida, UP' },
+      { value: 'ICD Sanathnagar CONCOR (Hyderabad, TS)', label: '🚆 [Rail ICD] ICD Sanathnagar Container Rail Terminal, Hyderabad, TS' },
+      { value: 'ICD Dhandari Kalan Dry Port (Ludhiana, PB)', label: '🚆 [Rail ICD] ICD Dhandari Kalan Dry Port Rail Terminal, Ludhiana, PB' },
+      { value: 'ICD Sabarmati CONCOR Depot (Ahmedabad, GJ)', label: '🚆 [Rail ICD] ICD Sabarmati Container Rail Depot, Ahmedabad, GJ' }
     ]
   }
-}
+]
+
+export const ALL_DESTINATION_HUBS = [
+  {
+    category: '⚓ International Ocean Ports (Sea Freight)',
+    options: [
+      { value: 'Port of Singapore (Pasir Panjang Terminal)', label: '⚓ [Ocean Port] Port of Singapore, Pasir Panjang Container Terminal (SGSIN)' },
+      { value: 'Jebel Ali Port (DP World, Dubai, UAE)', label: '⚓ [Ocean Port] Jebel Ali Port, DP World Terminal 1, Dubai, UAE (AEJEA)' },
+      { value: 'Port of Rotterdam (Maasvlakte 2, Netherlands)', label: '⚓ [Ocean Port] Port of Rotterdam, Maasvlakte 2 Deepwater Harbor, Netherlands (NLRTM)' },
+      { value: 'Port of Shanghai (Yangshan Deepwater, China)', label: '⚓ [Ocean Port] Port of Shanghai, Yangshan Deep Water Port, China (CNSHA)' },
+      { value: 'Port of Hamburg (Altenwerder CTA, Germany)', label: '⚓ [Ocean Port] Port of Hamburg, Container Terminal Altenwerder, Germany (DEHAM)' },
+      { value: 'Port of Los Angeles (Pier 400, USA)', label: '⚓ [Ocean Port] Port of Los Angeles, Pier 400 APM Terminal, CA, USA (USLAX)' },
+      { value: 'Port of Antwerp (Deurganckdock, Belgium)', label: '⚓ [Ocean Port] Port of Antwerp, Deurganckdock Container Terminal, Belgium (BEANR)' },
+      { value: 'Port of Colombo (Jaya Terminal, Sri Lanka)', label: '⚓ [Ocean Port] Port of Colombo, Jaya Container Terminal, Sri Lanka (LKCMB)' },
+      { value: 'Port of New York & New Jersey (Port Newark, USA)', label: '⚓ [Ocean Port] Port of New York & New Jersey, Port Newark Terminal, USA (USNYC)' }
+    ]
+  },
+  {
+    category: '✈️ Global Air Cargo Terminals (Airport Freight)',
+    options: [
+      { value: 'Frankfurt Airport CargoCity South (FRA)', label: '✈️ [Air Cargo] Frankfurt CargoCity South Gate 31, 60549 Frankfurt, Germany (FRA)' },
+      { value: 'Dubai International Dnata Cargo (DXB)', label: '✈️ [Air Cargo] Dubai Airport Cargo Mega Terminal, Airport Road, Dubai, UAE (DXB)' },
+      { value: 'Singapore Changi Cargo Center (SIN)', label: '✈️ [Air Cargo] Singapore Changi Air Cargo Complex, 819663 Singapore (SIN)' },
+      { value: 'London Heathrow Cargo Centre (LHR)', label: '✈️ [Air Cargo] London Heathrow Cargo Centre, Shoreham Rd, Hounslow, UK (LHR)' },
+      { value: 'Hong Kong Airport SuperTerminal 1 (HKG)', label: '✈️ [Air Cargo] Hong Kong International SuperTerminal 1, Chek Lap Kok (HKG)' },
+      { value: 'Chicago O\'Hare Cargo Center (ORD)', label: '✈️ [Air Cargo] Chicago O\'Hare International Cargo Center, IL, USA (ORD)' },
+      { value: 'Amsterdam Schiphol Logistics Park (AMS)', label: '✈️ [Air Cargo] Amsterdam Schiphol Cargo Terminal, 1118 CP Schiphol, Netherlands (AMS)' },
+      { value: 'New York JFK Air Cargo Center (JFK)', label: '✈️ [Air Cargo] New York JFK Air Cargo Center Bldg 77, Jamaica, NY, USA (JFK)' }
+    ]
+  },
+  {
+    category: '🚛 Road Logistics Hubs & Cross-Border Depots (Surface Freight)',
+    options: [
+      { value: 'Bengaluru Peenya Freight Terminal (KA)', label: '🚛 [Road Hub] Peenya Industrial Logistics Depot, Tumkur Road, Bengaluru, KA' },
+      { value: 'Hyderabad Patancheru Logistics Park (TS)', label: '🚛 [Road Hub] Patancheru Industrial Freight Complex, Outer Ring Road, Hyderabad, TS' },
+      { value: 'Chennai Ambattur Industrial Freight Hub (TN)', label: '🚛 [Road Hub] Ambattur Industrial Logistics Center, Chennai, TN' },
+      { value: 'Delhi NCR Manesar Freight Terminal (HR)', label: '🚛 [Road Hub] Manesar Auto Logistics Depot, Sector 8 IMT Manesar, Gurugram, HR' },
+      { value: 'Mumbai Dronagiri CFS Hub (Navi Mumbai, MH)', label: '🚛 [Road Hub] Dronagiri CFS Warehousing Zone, JNPT Corridor, Uran, MH' },
+      { value: 'Jaipur VKIA Transport Hub (RJ)', label: '🚛 [Road Hub] Vishwakarma Industrial Freight Terminal, Sikar Road, Jaipur, RJ' },
+      { value: 'Petrapole Land Port Terminal (India-Bangladesh Border)', label: '🚛 [Road Hub] Petrapole Land Customs Station & Freight Yard, Border LCS' },
+      { value: 'Raxaul Integrated Checkpost (India-Nepal Border)', label: '🚛 [Road Hub] Raxaul Integrated Checkpost & Truck Freight Depot, Border ICP' }
+    ]
+  },
+  {
+    category: '🚆 Intermodal Rail Terminals & Port Railheads (Rail Freight)',
+    options: [
+      { value: 'JNPT Port Rail Terminal (Western DFC Node)', label: '🚆 [Rail Yard] JNPT Port Dedicated Rail Wharf Node, Nhava Sheva, Navi Mumbai' },
+      { value: 'Mundra Port Railhead (Adani Intermodal Yard)', label: '🚆 [Rail Yard] Mundra Port Container Rail Terminal, Port Road, Kutch, Gujarat' },
+      { value: 'Pipavav Port Container Rail Terminal (Gujarat)', label: '🚆 [Rail Yard] Pipavav Port APM Terminals Railhead, Amreli, Gujarat' },
+      { value: 'Chennai Port Harbour Rail Yard (Tamil Nadu)', label: '🚆 [Rail Yard] Chennai Port Dedicated Rail Yard, Port Trust Enclosure, Chennai' },
+      { value: 'Nagpur MIHAN Multi-Modal Rail Logistics Hub', label: '🚆 [Rail Yard] Nagpur MIHAN Intermodal Container Depot, Nagpur, Maharashtra' },
+      { value: 'Duisburg Intermodal Rail Terminal (Germany)', label: '🚆 [Rail Yard] Duisburg Intermodal Terminal (DIT), Rhine-Ruhr Gateway, Germany' }
+    ]
+  }
+]
 
 const INCOTERMS = [
   { value: 'EXW', label: 'EXW - Ex Works' },
@@ -332,18 +322,10 @@ export default function NewShipmentEnquiry() {
     })
   }, [formData.serviceMode, formData.weight, formData.origin, formData.destination, formData.items])
 
-  const currentModeRoutes = ROUTES_BY_MODE[formData.serviceMode] || ROUTES_BY_MODE.Ocean
-
   const handleModeChange = (mode) => {
-    const newModeRoutes = ROUTES_BY_MODE[mode] || ROUTES_BY_MODE.Ocean
-    const isOriginValid = newModeRoutes.origins.some(o => o.value === formData.origin)
-    const isDestValid = newModeRoutes.destinations.some(d => d.value === formData.destination)
-
     setFormData(prev => ({
       ...prev,
-      serviceMode: mode,
-      origin: isOriginValid ? prev.origin : '',
-      destination: isDestValid ? prev.destination : ''
+      serviceMode: mode
     }))
   }
 
@@ -746,52 +728,17 @@ export default function NewShipmentEnquiry() {
                       <div className="space-y-5">
                         <div className="border-b border-slate-100 pb-3">
                           <h2 className="text-base font-black text-slate-900">
-                            1. Transport Mode & Route Corridor
+                            1. Route Origins & Cargo Readiness
                           </h2>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Select freight transport mode to list matching origin & destination hubs.
+                            Select your shipment origin and destination from all freight modes (Ocean Ports, Cargo Airports, Road Terminals, or Rail ICDs).
                           </p>
-                        </div>
-
-                        {/* Transport Mode Selection */}
-                        <div>
-                          <label className="block text-slate-700 font-semibold text-xs mb-2">Transport Mode</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {[
-                              { mode: 'Ocean', icon: Anchor, desc: 'Sea Ports & Vessels' },
-                              { mode: 'Air', icon: Plane, desc: 'Cargo Airports' },
-                              { mode: 'Road', icon: Truck, desc: 'Logistics Parks & Hubs' },
-                              { mode: 'Rail', icon: Train, desc: 'ICD Rail Terminals' }
-                            ].map((item) => {
-                              const IconComp = item.icon
-                              const isSelected = formData.serviceMode === item.mode
-                              return (
-                                <button
-                                  key={item.mode}
-                                  type="button"
-                                  onClick={() => handleModeChange(item.mode)}
-                                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                                    isSelected
-                                      ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-600/20 shadow-xs'
-                                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-1.5">
-                                    <IconComp className={`w-5 h-5 ${isSelected ? 'text-blue-600' : 'text-slate-500'}`} />
-                                    {isSelected && <span className="w-2 h-2 rounded-full bg-blue-600" />}
-                                  </div>
-                                  <div className="font-bold text-xs text-slate-900">{item.mode}</div>
-                                  <div className="text-[10px] text-slate-500 leading-tight">{item.desc}</div>
-                                </button>
-                              )
-                            })}
-                          </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-slate-700 font-semibold text-xs mb-1.5">
-                              {currentModeRoutes.originLabel}
+                              Origin Port / Airport / Hub / Terminal
                             </label>
                             <div className="relative">
                               <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -802,9 +749,13 @@ export default function NewShipmentEnquiry() {
                                 onChange={handleInputChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
                               >
-                                <option value="">{currentModeRoutes.placeholderOrigin}</option>
-                                {currentModeRoutes.origins.map(h => (
-                                  <option key={h.value} value={h.value}>{h.label}</option>
+                                <option value="">-- Select Origin (All Modes Available) --</option>
+                                {ALL_ORIGIN_HUBS.map(cat => (
+                                  <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                                    {cat.options.map(h => (
+                                      <option key={h.value} value={h.value}>{h.label}</option>
+                                    ))}
+                                  </optgroup>
                                 ))}
                               </select>
                             </div>
@@ -812,7 +763,7 @@ export default function NewShipmentEnquiry() {
 
                           <div>
                             <label className="block text-slate-700 font-semibold text-xs mb-1.5">
-                              {currentModeRoutes.destinationLabel}
+                              Destination Port / Airport / Hub / Terminal
                             </label>
                             <div className="relative">
                               <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -823,9 +774,13 @@ export default function NewShipmentEnquiry() {
                                 onChange={handleInputChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer font-medium"
                               >
-                                <option value="">{currentModeRoutes.placeholderDest}</option>
-                                {currentModeRoutes.destinations.map(d => (
-                                  <option key={d.value} value={d.value}>{d.label}</option>
+                                <option value="">-- Select Destination (All Modes Available) --</option>
+                                {ALL_DESTINATION_HUBS.map(cat => (
+                                  <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                                    {cat.options.map(d => (
+                                      <option key={d.value} value={d.value}>{d.label}</option>
+                                    ))}
+                                  </optgroup>
                                 ))}
                               </select>
                             </div>
@@ -1180,8 +1135,8 @@ export default function NewShipmentEnquiry() {
                     </span>
                   </div>
 
-                  {currentStep < 5 ? (
-                    /* Initial Empty State during Steps 1 to 4 */
+                  {currentStep < 4 ? (
+                    /* Initial Empty State during Steps 1 to 3 */
                     <div className="space-y-4">
                       <div className="space-y-2 text-xs bg-slate-950/60 p-4 rounded-2xl border border-dashed border-slate-800">
                         <div className="flex justify-between items-center text-slate-400">
@@ -1207,9 +1162,9 @@ export default function NewShipmentEnquiry() {
                           <Cpu className="w-5 h-5" />
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-slate-200 block">5-Agent Verification at Final Step</span>
+                          <span className="text-xs font-bold text-slate-200 block">5-Agent Verification Unlocks at Step 4</span>
                           <p className="text-[11px] text-slate-400 max-w-xs mx-auto mt-1 leading-relaxed">
-                            Fill in all shipment parameters across Steps 1 to 4. At the final step, all details will consolidate here for you to run live 5-agent multi-verification.
+                            Fill in your route corridor, transport mode, and cargo specs in Steps 1 to 3. At Step 4, all parameters consolidate here for you to run live 5-agent multi-verification.
                           </p>
                         </div>
                         <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-mono">
@@ -1217,16 +1172,13 @@ export default function NewShipmentEnquiry() {
                           <span>1. Route</span>
                           <span className="text-slate-700">➔</span>
                           <span className={`w-2 h-2 rounded-full ${currentStep >= 2 ? 'bg-blue-500' : 'bg-slate-700'}`} />
-                          <span>2. Service</span>
+                          <span>2. Mode</span>
                           <span className="text-slate-700">➔</span>
                           <span className={`w-2 h-2 rounded-full ${currentStep >= 3 ? 'bg-blue-500' : 'bg-slate-700'}`} />
-                          <span>3. Details</span>
-                          <span className="text-slate-700">➔</span>
-                          <span className={`w-2 h-2 rounded-full ${currentStep >= 4 ? 'bg-blue-500' : 'bg-slate-700'}`} />
-                          <span>4. Add-on</span>
+                          <span>3. Cargo</span>
                           <span className="text-slate-700">➔</span>
                           <span className="w-2 h-2 rounded-full bg-slate-700" />
-                          <span className="text-indigo-400 font-bold">5. Verify</span>
+                          <span className="text-indigo-400 font-bold">4. Verify</span>
                         </div>
                       </div>
 
@@ -1236,11 +1188,11 @@ export default function NewShipmentEnquiry() {
                         className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-800/50 text-slate-500 border border-slate-800 cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <Clock className="w-4 h-4 text-slate-500" />
-                        <span>Verification Available at Step 5 (Fill all details)</span>
+                        <span>Verification Available at Step 4 (Fill cargo details)</span>
                       </button>
                     </div>
                   ) : (
-                    /* Step 5: Consolidated Parameters & 5-Agent Multi-Verification */
+                    /* Step 4 & 5: Consolidated Parameters & 5-Agent Multi-Verification */
                     <div className="space-y-4">
                       <div className="space-y-2 text-xs bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
                         <div className="flex justify-between items-center text-slate-300">
